@@ -33,7 +33,7 @@
 - Protect admin-restricted endpoints with `@UseGuards(JwtAuthGuard, RolesGuard)` and the `@Roles('admin')` decorator.
 - Use a custom parameter decorator `@CurrentUser()` to extract user details from the JWT request object. Avoid using `@Req()` to prevent `any` typing.
 - Configure the global `ValidationPipe` with `whitelist: true, forbidNonWhitelisted: true`.
-- Exclude `password_hash` or other sensitive fields from API responses using `@Exclude()` and the `ClassSerializerInterceptor`.
+- Exclude `passwordHash` or other sensitive fields from API responses using `@Exclude()` and the `ClassSerializerInterceptor`.
 - Always use TypeORM parameterized queries — **NEVER** build queries via string concatenation.
 - Return standardized API error formats and correct HTTP status codes as specified in `API_SPEC.md`.
 
@@ -42,10 +42,10 @@
 ## [ROUTE: backend-auth] — Applies when: writing auth, JWT strategy, or token lifecycle logic
 
 - Implement **Refresh Token Rotation**: each refresh token must be usable exactly once.
-- On refresh token usage: mark the old token as `is_revoked = true` IMMEDIATELY before generating the new token pair.
+- On refresh token usage: mark the old token as `isRevoked = true` IMMEDIATELY before generating the new token pair.
 - **Reuse Detection**: If an already revoked refresh token is sent to the `/auth/refresh` endpoint → immediately revoke ALL refresh tokens belonging to that user (force logout on all devices).
 - Access Token TTL: **15 minutes** (`expiresIn: '15m'`).
-- Refresh Token TTL: **7 days** (`expires_at = NOW() + 7 days`).
+- Refresh Token TTL: **7 days** (`expiresAt = NOW() + 7 days`).
 - Store refresh tokens as a **SHA-256 hash** in the database — do not save plaintext values.
 - Store access tokens in Zustand client memory — do not persist access tokens in `localStorage`.
 - Store refresh tokens in secure **HttpOnly Cookies** to mitigate XSS risks.
@@ -59,7 +59,7 @@
 - The entire transfer flow (debiting sender, crediting receiver, and writing transaction logs) MUST be executed within a single database transaction using a TypeORM `QueryRunner`.
 - Use a **Pessimistic Write Lock** (`lock: { mode: 'pessimistic_write' }`) when reading account records to process transfers.
 - Lock accounts in ascending order of `account.id` to prevent **deadlocks**.
-- Validate the `idempotency_key` BEFORE starting the database transaction — if the key exists, return the cached result immediately.
+- Validate the `idempotencyKey` BEFORE starting the database transaction — if the key exists, return the cached result immediately.
 - Enforce the transaction flow structure: `try/catch/finally` where `catch` calls `rollbackTransaction()` and `finally` calls `queryRunner.release()`.
 - Update account balances via database-level SQL expressions (`balance = balance - :amount`) rather than reading, updating in memory, and saving to avoid stale read anomalies.
 - Validate transfer values: amount must be > 0, have at most 2 decimal places, and not exceed the available balance.
@@ -120,7 +120,7 @@
 - Seed datasets must include at least: **2 customer accounts** and **1 admin account** with sufficient transaction history for demo purposes.
 - Migration file naming standard: `timestamp_describe_change` (e.g., `1719624000000_create_users_table`).
 - Define entities in the `entities/` folder inside their respective domain modules. Do not write entities into a global folder.
-- Add `created_at` and `updated_at` timestamps to all entity tables.
+- Add `createdAt` and `updatedAt` timestamps to all entity tables.
 - Explicitly map monetary attributes in entities using `@Column({ type: 'numeric', precision: 18, scale: 2 })`.
 
 ---
@@ -140,6 +140,21 @@
 - The backend ESLint config is located at [`backend/eslint.config.mjs`](file:///e:/Work/SimpleBankingApp/backend/eslint.config.mjs). It uses `typescript-eslint` with `recommendedTypeChecked` rules and `prettier` integration.
 - Do **NOT** globally disable ESLint rules in `eslint.config.mjs` — override rules at the specific line or file level only when strictly necessary.
 - Run ESLint from the `backend/` directory so the `parserOptions.projectService` can resolve `tsconfig.json` correctly.
+
+---
+
+## [ROUTE: code-explanation] — Applies when: the user asks for code explanation, walkthrough, review, or optimization
+
+- **Role:** You are an Expert Software Engineer and a highly patient Technical Mentor.
+- **Tone:** Professional, encouraging, and highly accessible. Focus on "Why" and "How", not just "What".
+- **Language:** Always explain in clear, concise, and professional English.
+- **Execution on Demand:** Do not dump all information at once. Only execute the specific skill requested by the user's command. If the user provides code without a command, reply with a polite menu asking: "Which skill would you like me to apply to this code? (/explain, /walkthrough, /review, /optimize)".
+- **Formatting:** Use clean Markdown, bold headers, and bullet points to ensure high scannability. Avoid dense walls of text.
+- **Trigger Commands & Structures:**
+  - **`/explain`:** High-level concept. Provide: Overview (1-2 sentences), Architecture & Flow, and a simple real-world Analogy.
+  - **`/walkthrough`:** Logical deep-dive. Break down the Execution Flow, and explain The "Why" behind specific logic.
+  - **`/review`:** Bug & vulnerability hunt. Identify Potential Pitfalls, Code Smells, and give a Health Score (A to F).
+  - **`/optimize`:** Performance & clean code. Provide the Refactored Code, and list the Improvements Made (e.g., efficiency, readability).
 
 ---
 

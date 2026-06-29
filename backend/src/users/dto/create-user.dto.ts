@@ -12,7 +12,7 @@ export class CreateUserDto {
   })
   @IsString()
   @Length(2, 100)
-  full_name: string;
+  fullName: string;
 
   @ApiProperty({
     example: 'user@example.com',
@@ -22,15 +22,15 @@ export class CreateUserDto {
   email: string;
 
   /**
-   * Password must be at least 8 characters and contain:
+   * Password must be at least 6 characters and contain:
    * uppercase, lowercase, digit, and a special character.
    */
   @ApiProperty({
     example: 'Password@123',
-    description: 'Min 8 chars: uppercase, lowercase, digit, special character',
+    description: 'Min 6 chars: uppercase, lowercase, digit, special character',
   })
   @IsString()
-  @Length(8, 128)
+  @Length(6, 128)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/, {
     message:
       'password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character',

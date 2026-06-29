@@ -18,26 +18,26 @@ const mockExpense = 1250000;
 const mockTransactions = [
   {
     id: '1',
-    created_at: '2026-06-29T10:30:00Z',
+    createdAt: '2026-06-29T10:30:00Z',
     direction: 'credit',
     amount: '1500000',
-    counterpart_name: 'Salary Transfer',
+    counterpartName: 'Salary Transfer',
     description: 'June 2026 Salary',
   },
   {
     id: '2',
-    created_at: '2026-06-28T15:45:00Z',
+    createdAt: '2026-06-28T15:45:00Z',
     direction: 'debit',
     amount: '350000',
-    counterpart_name: 'Starbucks',
+    counterpartName: 'Starbucks',
     description: 'Coffee',
   },
   {
     id: '3',
-    created_at: '2026-06-27T09:15:00Z',
+    createdAt: '2026-06-27T09:15:00Z',
     direction: 'credit',
     amount: '500000',
-    counterpart_name: 'Jane Doe',
+    counterpartName: 'Jane Doe',
     description: 'Dinner split',
   },
 ];
@@ -52,14 +52,14 @@ export default function DashboardPage() {
   const columns = [
     {
       title: 'Date',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       render: (date: string) => <Text type="secondary">{new Date(date).toLocaleDateString('vi-VN')}</Text>,
     },
     {
       title: 'Counterpart',
-      dataIndex: 'counterpart_name',
-      key: 'counterpart_name',
+      dataIndex: 'counterpartName',
+      key: 'counterpartName',
       render: (text: string) => <Text strong>{text}</Text>,
     },
     {
