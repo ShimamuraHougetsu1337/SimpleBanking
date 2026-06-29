@@ -96,6 +96,7 @@
 - Disable form submit buttons when `isPending` is true to prevent duplicate submits.
 - Format all displayed monetary values as VND: `new Intl.NumberFormat('vi-VN', {style: 'currency', currency: 'VND'}).format(amount)`.
 - Always provide empty and error views for tables.
+- Ensure the UI is **pretty, premium-looking, and compatible/fullscreen for desktop screens**. Use responsive design techniques to adapt layouts and prevent hardcoded container widths that break fullscreen desktop views.
 
 ---
 

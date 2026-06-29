@@ -316,6 +316,14 @@ export function BalanceCard() {
 
 ---
 
+## UI Layout & Styling Requirements
+
+- **Visual Appeal**: The UI must be pretty and feature a premium, modern design. Avoid generic color schemes. Use sophisticated patterns like glassmorphism (where appropriate), subtle gradients, and smooth micro-animations.
+- **Responsiveness**: The UI must be compatible with desktop screens. Avoid hardcoded fixed widths that prevent the app from scaling natively or taking advantage of full-screen desktop real estate.
+- **Container Structure**: Use responsive containers (e.g. `min-height: 100vh` without constraining `max-width` arbitrarily unless strictly for a readable content column) to ensure that pages fill the viewport gracefully.
+
+---
+
 ## Utility Functions
 
 ```typescript
