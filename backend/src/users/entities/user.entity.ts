@@ -35,7 +35,7 @@ export class User {
   id: string;
 
   @Column({ name: 'full_name', length: 100 })
-  full_name: string;
+  fullName: string;
 
   @Column({ length: 255, unique: true })
   email: string;
@@ -43,7 +43,7 @@ export class User {
   /** Stored as bcrypt hash (cost ≥ 10). Never exposed in API responses. */
   @Exclude()
   @Column({ name: 'password_hash', length: 255 })
-  password_hash: string;
+  passwordHash: string;
 
   @Column({
     type: 'enum',
@@ -60,10 +60,10 @@ export class User {
   status: UserStatus;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updated_at: Date;
+  updatedAt: Date;
 
   /**
    * Lazy relations — declared here so TypeORM can build the schema.

@@ -28,7 +28,7 @@ async function bootstrap() {
     }),
   );
 
-  // --- ClassSerializerInterceptor — enables @Exclude() on password_hash ---
+  // --- ClassSerializerInterceptor — enables @Exclude() on passwordHash ---
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // --- Swagger (available in non-production environments) ---

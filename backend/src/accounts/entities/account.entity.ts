@@ -22,14 +22,14 @@ export class Account {
   id: string;
 
   @Column({ name: 'user_id', type: 'uuid' })
-  user_id: string;
+  userId: string;
 
   @ManyToOne(() => User, (user) => user.accounts, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column({ name: 'account_number', length: 20, unique: true })
-  account_number: string;
+  accountNumber: string;
 
   @Column({ type: 'numeric', precision: 18, scale: 2, default: 0.0 })
   balance: string;
@@ -45,10 +45,10 @@ export class Account {
   status: AccountStatus;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updated_at: Date;
+  updatedAt: Date;
 
   @OneToMany(
     () => Transaction,

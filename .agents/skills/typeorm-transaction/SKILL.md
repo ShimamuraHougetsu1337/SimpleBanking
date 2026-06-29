@@ -53,7 +53,7 @@ export class TransactionsService {
     // === STEP 0: Check Idempotency Key BEFORE opening the transaction ===
     const existing = await this.dataSource
       .getRepository(Transaction)
-      .findOne({ where: { idempotency_key: dto.idempotency_key } });
+      .findOne({ where: { idempotencyKey: dto.idempotencyKey } });
 
     if (existing) {
       return existing; // Return cached result, skip processing
@@ -77,7 +77,7 @@ export class TransactionsService {
 
       // === STEP 3: Fetch and lock receiver account — sorted by ID to prevent deadlocks ===
       const toAccount = await queryRunner.manager.findOne(Account, {
-        where: { account_number: dto.to_account_number },
+        where: { accountNumber: dto.to_accountNumber },
         lock: { mode: 'pessimistic_write' },
       });
 
@@ -130,7 +130,7 @@ export class TransactionsService {
         to_account_id: toAccount.id,
         amount: dto.amount,
         description: dto.description,
-        idempotency_key: dto.idempotency_key,
+        idempotencyKey: dto.idempotencyKey,
         status: 'success',
         type: 'transfer',
       });
@@ -164,7 +164,7 @@ export class TransferDto {
   @ApiProperty({ example: 'VN17198234569999' })
   @IsString()
   @IsNotEmpty()
-  to_account_number: string;
+  to_accountNumber: string;
 
   @ApiProperty({ example: '500000.00', description: 'Decimal string, max 2 decimal places' })
   @IsString()
@@ -180,7 +180,7 @@ export class TransferDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   @IsUUID('4')
   @IsNotEmpty()
-  idempotency_key: string;
+  idempotencyKey: string;
 }
 ```
 

@@ -36,12 +36,12 @@ export class UsersService {
       throw new ConflictException('Email is already registered');
     }
 
-    const password_hash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_SALT_ROUNDS);
 
     const user = this.userRepository.create({
-      full_name: dto.full_name,
+      fullName: dto.fullName,
       email: dto.email,
-      password_hash,
+      passwordHash,
     });
 
     return this.userRepository.save(user);
@@ -88,7 +88,7 @@ export class UsersService {
     limit: number,
   ): Promise<{ data: User[]; total: number }> {
     const [data, total] = await this.userRepository.findAndCount({
-      order: { created_at: 'DESC' },
+      order: { createdAt: 'DESC' },
       skip: (page - 1) * limit,
       take: limit,
     });

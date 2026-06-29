@@ -79,26 +79,26 @@ Register a new user account. Automatically creates a bank account for the user.
 **Request Body:**
 ```json
 {
-  "full_name": "Nguyen Van A",
+  "fullName": "Nguyen Van A",
   "email": "user@example.com",
   "password": "Password@123"
 }
 ```
 
 **Validation:**
-- `full_name`: Required, 2–100 characters
+- `fullName`: Required, 2–100 characters
 - `email`: Required, valid email format, unique
-- `password`: Required, minimum 8 characters, must contain uppercase, lowercase, numbers, and special characters
+- `password`: Required, minimum 6 characters, must contain uppercase, lowercase, numbers, and special characters
 
 **Response `201 Created`:**
 ```json
 {
   "id": "uuid",
-  "full_name": "Nguyen Van A",
+  "fullName": "Nguyen Van A",
   "email": "user@example.com",
   "role": "customer",
   "status": "active",
-  "created_at": "2026-06-29T03:00:00Z"
+  "createdAt": "2026-06-29T03:00:00Z"
 }
 ```
 
@@ -121,10 +121,10 @@ Authenticate user and issue token pair.
 **Response `200 OK`:**
 ```json
 {
-  "access_token": "eyJhbGci...",
-  "refresh_token": "opaque-refresh-token-string",
-  "token_type": "Bearer",
-  "expires_in": 900
+  "accessToken": "eyJhbGci...",
+  "refreshToken": "opaque-refresh-token-string",
+  "tokenType": "Bearer",
+  "expiresIn": 900
 }
 ```
 
@@ -139,17 +139,17 @@ Exchange an active refresh token for a new token pair (Refresh Token Rotation).
 **Request Body:**
 ```json
 {
-  "refresh_token": "opaque-refresh-token-string"
+  "refreshToken": "opaque-refresh-token-string"
 }
 ```
 
 **Response `200 OK`:**
 ```json
 {
-  "access_token": "eyJhbGci...",
-  "refresh_token": "new-opaque-refresh-token",
-  "token_type": "Bearer",
-  "expires_in": 900
+  "accessToken": "eyJhbGci...",
+  "refreshToken": "new-opaque-refresh-token",
+  "tokenType": "Bearer",
+  "expiresIn": 900
 }
 ```
 
@@ -161,12 +161,12 @@ Exchange an active refresh token for a new token pair (Refresh Token Rotation).
 
 Revoke the current refresh token.
 
-**Headers:** `Authorization: Bearer <access_token>`
+**Headers:** `Authorization: Bearer <accessToken>`
 
 **Request Body:**
 ```json
 {
-  "refresh_token": "opaque-refresh-token-string"
+  "refreshToken": "opaque-refresh-token-string"
 }
 ```
 
@@ -187,14 +187,14 @@ Retrieve bank account information and balance of the currently authenticated use
 ```json
 {
   "id": "uuid",
-  "account_number": "VN17198234561234",
+  "accountNumber": "VN17198234561234",
   "balance": "1500000.00",
   "currency": "VND",
   "status": "active",
-  "created_at": "2026-06-29T03:00:00Z",
+  "createdAt": "2026-06-29T03:00:00Z",
   "owner": {
     "id": "uuid",
-    "full_name": "Nguyen Van A",
+    "fullName": "Nguyen Van A",
     "email": "user@example.com"
   }
 }
@@ -215,29 +215,29 @@ Perform an internal transfer. Processed within a single database transaction.
 **Request Body:**
 ```json
 {
-  "to_account_number": "VN17198234569999",
+  "to_accountNumber": "VN17198234569999",
   "amount": "500000.00",
   "description": "Coffee share",
-  "idempotency_key": "uuid-v4-generated-by-client"
+  "idempotencyKey": "uuid-v4-generated-by-client"
 }
 ```
 
 **Validation:**
-- `to_account_number`: Required, must exist, cannot be the sender's account, status must be active
+- `to_accountNumber`: Required, must exist, cannot be the sender's account, status must be active
 - `amount`: Required, positive decimal string, > 0, max 2 decimal places, must be ≤ available balance
 - `description`: Optional, max 255 characters
-- `idempotency_key`: Required, valid UUID v4
+- `idempotencyKey`: Required, valid UUID v4
 
 **Response `201 Created`:**
 ```json
 {
   "id": "uuid",
-  "from_account_number": "VN17198234561234",
-  "to_account_number": "VN17198234569999",
+  "from_accountNumber": "VN17198234561234",
+  "to_accountNumber": "VN17198234569999",
   "amount": "500000.00",
   "description": "Coffee share",
   "status": "success",
-  "created_at": "2026-06-29T03:05:00Z"
+  "createdAt": "2026-06-29T03:05:00Z"
 }
 ```
 
@@ -262,8 +262,8 @@ Retrieve transaction history of the current user account (paginated).
 | `page` | number | 1 | Current page |
 | `limit` | number | 10 | Records per page (max 50) |
 | `type` | string | all | Filter by: `transfer` / `deposit` / `withdraw` |
-| `from_date` | ISO date | - | Filter transactions from date |
-| `to_date` | ISO date | - | Filter transactions to date |
+| `fromDate` | ISO date | - | Filter transactions from date |
+| `toDate` | ISO date | - | Filter transactions to date |
 
 **Response `200 OK`:**
 ```json
@@ -274,18 +274,18 @@ Retrieve transaction history of the current user account (paginated).
       "type": "transfer",
       "direction": "debit",
       "amount": "500000.00",
-      "counterpart_account": "VN17198234569999",
-      "counterpart_name": "Tran Thi B",
+      "counterpartAccount": "VN17198234569999",
+      "counterpartName": "Tran Thi B",
       "description": "Coffee share",
       "status": "success",
-      "created_at": "2026-06-29T03:05:00Z"
+      "createdAt": "2026-06-29T03:05:00Z"
     }
   ],
   "meta": {
     "page": 1,
     "limit": 10,
     "total": 45,
-    "total_pages": 5
+    "totalPages": 5
   }
 }
 ```
@@ -308,16 +308,16 @@ List all users in the system.
   "data": [
     {
       "id": "uuid",
-      "full_name": "Nguyen Van A",
+      "fullName": "Nguyen Van A",
       "email": "user@example.com",
       "role": "customer",
       "status": "active",
-      "account_number": "VN17198234561234",
+      "accountNumber": "VN17198234561234",
       "balance": "1500000.00",
-      "created_at": "2026-06-29T03:00:00Z"
+      "createdAt": "2026-06-29T03:00:00Z"
     }
   ],
-  "meta": { "page": 1, "limit": 10, "total": 25, "total_pages": 3 }
+  "meta": { "page": 1, "limit": 10, "total": 25, "totalPages": 3 }
 }
 ```
 
@@ -350,7 +350,7 @@ Lock or unlock a user account.
 {
   "id": "uuid",
   "status": "locked",
-  "updated_at": "2026-06-29T03:10:00Z"
+  "updatedAt": "2026-06-29T03:10:00Z"
 }
 ```
 
@@ -362,6 +362,6 @@ Lock or unlock a user account.
 
 Retrieve all system transactions.
 
-**Query Parameters:** `page`, `limit`, `from_date`, `to_date`, `status`, `account_number`
+**Query Parameters:** `page`, `limit`, `fromDate`, `toDate`, `status`, `accountNumber`
 
 **Response:** Same format as `GET /transactions` but unfiltered by user.

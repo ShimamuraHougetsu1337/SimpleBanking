@@ -26,7 +26,7 @@ export class Transaction {
   id: string;
 
   @Column({ name: 'from_account_id', type: 'uuid', nullable: true })
-  from_account_id: string | null;
+  fromAccountId: string | null;
 
   @ManyToOne(() => Account, (account) => account.outgoingTransactions, {
     nullable: true,
@@ -35,7 +35,7 @@ export class Transaction {
   fromAccount: Account | null;
 
   @Column({ name: 'to_account_id', type: 'uuid', nullable: true })
-  to_account_id: string | null;
+  toAccountId: string | null;
 
   @ManyToOne(() => Account, (account) => account.incomingTransactions, {
     nullable: true,
@@ -64,8 +64,8 @@ export class Transaction {
   description: string;
 
   @Column({ name: 'idempotency_key', length: 64, unique: true, nullable: true })
-  idempotency_key: string;
+  idempotencyKey: string;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  created_at: Date;
+  createdAt: Date;
 }

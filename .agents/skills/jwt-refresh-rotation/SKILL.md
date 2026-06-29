@@ -65,7 +65,7 @@ import {
 } from 'typeorm';
 import { User } from '@/users/entities/user.entity';
 
-@Entity('refresh_tokens')
+@Entity('refreshTokens')
 export class RefreshToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -81,14 +81,14 @@ export class RefreshToken {
   @Column({ name: 'token_hash', unique: true })
   token_hash: string;
 
-  @Column({ name: 'is_revoked', default: false })
-  is_revoked: boolean;
+  @Column({ name: 'isRevoked', default: false })
+  isRevoked: boolean;
 
-  @Column({ name: 'expires_at', type: 'timestamptz' })
-  expires_at: Date;
+  @Column({ name: 'expiresAt', type: 'timestamptz' })
+  expiresAt: Date;
 
-  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  created_at: Date;
+  @CreateDateColumn({ type: 'timestamptz', name: 'createdAt' })
+  createdAt: Date;
 }
 ```
 
@@ -187,8 +187,8 @@ export class AuthService {
     await this.refreshTokenRepository.save({
       user_id: user.id,
       token_hash: tokenHash,
-      expires_at: expiresAt,
-      is_revoked: false,
+      expiresAt: expiresAt,
+      isRevoked: false,
     });
 
     return { accessToken, refreshToken: rawRefreshToken };
@@ -198,7 +198,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     if (!user) throw new UnauthorizedException('Incorrect email or password');
 
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) throw new UnauthorizedException('Incorrect email or password');
 
     if (user.status === 'locked') {
@@ -221,24 +221,24 @@ export class AuthService {
     }
 
     // === REUSE DETECTION ===
-    if (storedToken.is_revoked) {
+    if (storedToken.isRevoked) {
       // Token already used — suspected malicious access attempt.
       // Immediately revoke all existing refresh tokens for this user.
       await this.refreshTokenRepository.update(
         { user_id: storedToken.user_id },
-        { is_revoked: true },
+        { isRevoked: true },
       );
       throw new UnauthorizedException(
         'Abnormal session activity. Please log in again.',
       );
     }
 
-    if (storedToken.expires_at < new Date()) {
+    if (storedToken.expiresAt < new Date()) {
       throw new UnauthorizedException('Session expired');
     }
 
     // Invalidate old token immediately
-    await this.refreshTokenRepository.update(storedToken.id, { is_revoked: true });
+    await this.refreshTokenRepository.update(storedToken.id, { isRevoked: true });
 
     // Generate new token pair
     return this.generateTokenPair(storedToken.user);
@@ -248,15 +248,15 @@ export class AuthService {
     const tokenHash = this.hashToken(rawRefreshToken);
     await this.refreshTokenRepository.update(
       { token_hash: tokenHash },
-      { is_revoked: true },
+      { isRevoked: true },
     );
   }
 
   async register(registerDto: RegisterDto) {
-    const password_hash = await bcrypt.hash(registerDto.password, 12);
+    const passwordHash = await bcrypt.hash(registerDto.password, 12);
     const user = await this.usersService.create({
       ...registerDto,
-      password_hash,
+      passwordHash,
     });
     // Automatically initialize a bank account for the newly registered user
     await this.accountsService.create(user.id);
@@ -293,10 +293,10 @@ export class AuthController {
   async login(@Body() dto: LoginDto) {
     const { accessToken, refreshToken } = await this.authService.login(dto.email, dto.password);
     return {
-      access_token: accessToken,
-      refresh_token: refreshToken,
-      token_type: 'Bearer',
-      expires_in: 900,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      tokenType: 'Bearer',
+      expiresIn: 900,
     };
   }
 
@@ -304,15 +304,15 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Exchange refresh token' })
   async refresh(@Body() dto: RefreshTokenDto) {
-    const { accessToken, refreshToken } = await this.authService.refreshTokens(dto.refresh_token);
-    return { access_token: accessToken, refresh_token: refreshToken, token_type: 'Bearer', expires_in: 900 };
+    const { accessToken, refreshToken } = await this.authService.refreshTokens(dto.refreshToken);
+    return { accessToken: accessToken, refreshToken: refreshToken, tokenType: 'Bearer', expiresIn: 900 };
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout user session' })
   async logout(@Body() dto: RefreshTokenDto) {
-    await this.authService.logout(dto.refresh_token);
+    await this.authService.logout(dto.refreshToken);
     return { message: 'Logged out successfully' };
   }
 }
@@ -357,9 +357,9 @@ export class AuthModule {}
 ## Security Integration Checklist
 
 - [ ] Save SHA-256 hashed refresh tokens in the database, never raw strings.
-- [ ] Invalidate the used refresh token (`is_revoked = true`) BEFORE returning the newly generated token pair.
+- [ ] Invalidate the used refresh token (`isRevoked = true`) BEFORE returning the newly generated token pair.
 - [ ] Implement user refresh token reuse checks, setting all user active tokens to invalid.
 - [ ] Enforce Access Token TTL to 15 minutes, and Refresh Token TTL to 7 days.
-- [ ] Ensure `password_hash` is excluded from the serialized user output using the `@Exclude()` decorator.
+- [ ] Ensure `passwordHash` is excluded from the serialized user output using the `@Exclude()` decorator.
 - [ ] Verify `ClassSerializerInterceptor` is registered globally.
 - [ ] Verify `JwtStrategy` is registered under auth module providers.

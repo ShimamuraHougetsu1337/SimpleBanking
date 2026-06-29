@@ -14,21 +14,21 @@ export class RefreshToken {
   id: string;
 
   @Column({ name: 'user_id', type: 'uuid' })
-  user_id: string;
+  userId: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })
   user: User;
 
   @Column({ name: 'token_hash', length: 255, unique: true })
-  token_hash: string;
+  tokenHash: string;
 
   @Column({ name: 'is_revoked', default: false })
-  is_revoked: boolean;
+  isRevoked: boolean;
 
   @Column({ name: 'expires_at', type: 'timestamptz' })
-  expires_at: Date;
+  expiresAt: Date;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  created_at: Date;
+  createdAt: Date;
 }
