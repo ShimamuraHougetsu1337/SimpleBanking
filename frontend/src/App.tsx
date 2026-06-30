@@ -8,6 +8,7 @@ import TransactionsPage from './pages/TransactionsPage';
 
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 
 import { AppLayout } from './components/layout/AppLayout';
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -51,6 +52,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/admin/users" replace /> },
       { path: 'users', element: <AdminUsersPage /> },
       { path: 'transactions', element: <AdminTransactionsPage /> },
+      { path: 'settings', element: <AdminSettingsPage /> },
     ],
   },
   {

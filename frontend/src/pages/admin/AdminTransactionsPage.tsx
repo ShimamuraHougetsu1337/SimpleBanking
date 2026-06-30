@@ -1,50 +1,53 @@
-import { Card, Table, Typography, Tag, Space, Button, Input, DatePicker, Row, Col, Statistic, ConfigProvider } from 'antd';
-import { SearchOutlined, FilterOutlined, SwapOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
+import {
+  Card,
+  Table,
+  Typography,
+  Tag,
+  Space,
+  Button,
+  Input,
+  DatePicker,
+  Select,
+  Row,
+  Col,
+  Statistic,
+  ConfigProvider,
+} from 'antd';
+import {
+  SearchOutlined,
+  FilterOutlined,
+  SwapOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+} from '@ant-design/icons';
+import { useAdminTransactions } from '@/hooks/admin/useAdminTransactions';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
+const { Option } = Select;
 
-// Mock Data
-const mockTransactions = [
-  {
-    id: 'tx-1001',
-    created_at: '2026-06-29T10:30:00Z',
-    sender_name: 'System',
-    receiver_name: 'John Doe',
-    amount: '1500000',
-    status: 'completed',
-    type: 'deposit',
-  },
-  {
-    id: 'tx-1002',
-    created_at: '2026-06-28T15:45:00Z',
-    sender_name: 'John Doe',
-    receiver_name: 'Starbucks (Merchant)',
-    amount: '350000',
-    status: 'completed',
-    type: 'transfer',
-  },
-  {
-    id: 'tx-1003',
-    created_at: '2026-06-27T09:15:00Z',
-    sender_name: 'Jane Smith',
-    receiver_name: 'John Doe',
-    amount: '500000',
-    status: 'failed',
-    type: 'transfer',
-  },
-  {
-    id: 'tx-1004',
-    created_at: '2026-06-26T11:20:00Z',
-    sender_name: 'John Doe',
-    receiver_name: 'Jane Smith',
-    amount: '2000000',
-    status: 'completed',
-    type: 'transfer',
-  },
-];
+const CARD_SHADOW_STYLE = {
+  boxShadow: '0 2px 5px -1px rgba(50, 50, 93, 0.25), 0 1px 3px -1px rgba(0, 0, 0, 0.3)',
+  borderRadius: '12px',
+  border: 'none',
+  background: '#ffffff',
+};
 
 export default function AdminTransactionsPage() {
+  const {
+    transactions,
+    total,
+    page,
+    pageSize,
+    searchQuery,
+    typeFilter,
+    handleSearchChange,
+    handleTypeFilterChange,
+    handleDateRangeChange,
+    handlePageChange,
+    stats,
+  } = useAdminTransactions();
+
   const formatVND = (amount: string) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(amount));
   };
@@ -54,18 +57,22 @@ export default function AdminTransactionsPage() {
       title: 'Tx ID',
       dataIndex: 'id',
       key: 'id',
-      // Left-align text
+      align: 'left' as const,
       render: (id: string) => <Text type="secondary" copyable>{id}</Text>,
     },
     {
       title: 'Date & Time',
       dataIndex: 'created_at',
       key: 'created_at',
-      align: 'right' as const, // Right-align dates
+      align: 'right' as const,
       render: (date: string) => (
         <Space direction="vertical" size={0}>
-          <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{new Date(date).toLocaleDateString('vi-VN')}</Text>
-          <Text type="secondary" style={{ fontSize: 12, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{new Date(date).toLocaleTimeString('vi-VN')}</Text>
+          <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
+            {new Date(date).toLocaleDateString('vi-VN')}
+          </Text>
+          <Text type="secondary" style={{ fontSize: 12, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>
+            {new Date(date).toLocaleTimeString('vi-VN')}
+          </Text>
         </Space>
       ),
     },
@@ -73,15 +80,15 @@ export default function AdminTransactionsPage() {
       title: 'Sender',
       dataIndex: 'sender_name',
       key: 'sender_name',
-      // Left-align text
-      render: (name: string) => <Text strong>{name}</Text>,
+      align: 'left' as const,
+      render: (name: string) => <Text strong style={{ color: '#1e293b' }}>{name}</Text>,
     },
     {
       title: 'Receiver',
       dataIndex: 'receiver_name',
       key: 'receiver_name',
-      // Left-align text
-      render: (name: string) => <Text strong>{name}</Text>,
+      align: 'left' as const,
+      render: (name: string) => <Text strong style={{ color: '#1e293b' }}>{name}</Text>,
     },
     {
       title: 'Type',
@@ -111,9 +118,9 @@ export default function AdminTransactionsPage() {
       title: 'Amount',
       dataIndex: 'amount',
       key: 'amount',
-      align: 'right' as const, // Right-align numeric values
+      align: 'right' as const,
       render: (amount: string) => (
-        <Text strong style={{ fontSize: '15px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        <Text strong style={{ fontSize: '15px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
           {formatVND(amount)}
         </Text>
       ),
@@ -125,38 +132,70 @@ export default function AdminTransactionsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Title level={2} style={{ margin: 0, color: '#1e293b' }}>All Transactions</Title>
         <Space>
-          <Button icon={<FilterOutlined />}>Filters</Button>
-          <Button type="primary" style={{ borderRadius: 8 }}>Export Report</Button>
+          <Button icon={<FilterOutlined />}>More Filters</Button>
+          <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Export Report</Button>
         </Space>
       </div>
 
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
-          <Card variant="borderless">
-            <Statistic title="Total Volume (24h)" value={14250000} formatter={(val) => formatVND(val.toString())} prefix={<SwapOutlined />} />
+          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
+            <Statistic
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Total Volume</span>}
+              value={stats.totalVolume}
+              formatter={(val) => formatVND(val.toString())}
+              prefix={<SwapOutlined style={{ color: '#3B82F6' }} />}
+              valueStyle={{ color: '#1e293b', fontWeight: 700 }}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card variant="borderless">
-            <Statistic title="Successful Txs (24h)" value={1204} valueStyle={{ color: '#10B981' }} prefix={<ArrowUpOutlined />} />
+          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
+            <Statistic
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Successful Txs</span>}
+              value={stats.successfulCount}
+              valueStyle={{ color: '#10B981', fontWeight: 700 }}
+              prefix={<ArrowUpOutlined style={{ color: '#10B981' }} />}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card variant="borderless">
-            <Statistic title="Failed Txs (24h)" value={12} valueStyle={{ color: '#EF4444' }} prefix={<ArrowDownOutlined />} />
+          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
+            <Statistic
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Failed Txs</span>}
+              value={stats.failedCount}
+              valueStyle={{ color: '#EF4444', fontWeight: 700 }}
+              prefix={<ArrowDownOutlined style={{ color: '#EF4444' }} />}
+            />
           </Card>
         </Col>
       </Row>
 
-      <Card variant="borderless" bodyStyle={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '24px 24px 16px', display: 'flex', gap: 16 }}>
+      <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ padding: '24px 24px 16px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
           <Input
             placeholder="Search by Tx ID, Sender, or Receiver..."
-            prefix={<SearchOutlined />}
-            style={{ width: 350, borderRadius: 8 }}
+            prefix={<SearchOutlined style={{ color: '#64748b' }} />}
+            style={{ width: 300, borderRadius: 8, height: 40 }}
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
-          <RangePicker style={{ borderRadius: 8 }} />
+          <Select
+            value={typeFilter}
+            onChange={handleTypeFilterChange}
+            style={{ width: 150, height: 40 }}
+            dropdownStyle={{ borderRadius: 8 }}
+          >
+            <Option value="all">All Types</Option>
+            <Option value="deposit">Deposit</Option>
+            <Option value="transfer">Transfer</Option>
+          </Select>
+          <RangePicker
+            style={{ borderRadius: 8, height: 40 }}
+            onChange={handleDateRangeChange}
+          />
         </div>
+
         <ConfigProvider
           theme={{
             components: {
@@ -173,9 +212,15 @@ export default function AdminTransactionsPage() {
         >
           <Table
             columns={columns}
-            dataSource={mockTransactions}
+            dataSource={transactions}
             rowKey="id"
-            pagination={{ pageSize: 10, showSizeChanger: true }}
+            pagination={{
+              current: page,
+              pageSize: pageSize,
+              total: total,
+              showSizeChanger: true,
+              onChange: handlePageChange,
+            }}
           />
         </ConfigProvider>
       </Card>
