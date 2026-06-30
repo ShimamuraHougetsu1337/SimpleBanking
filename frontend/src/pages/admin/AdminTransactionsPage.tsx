@@ -132,23 +132,23 @@ export default function AdminTransactionsPage() {
 
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
-          <Card bordered={false}>
+          <Card variant="borderless">
             <Statistic title="Total Volume (24h)" value={14250000} formatter={(val) => formatVND(val.toString())} prefix={<SwapOutlined />} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false}>
+          <Card variant="borderless">
             <Statistic title="Successful Txs (24h)" value={1204} valueStyle={{ color: '#10B981' }} prefix={<ArrowUpOutlined />} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false}>
+          <Card variant="borderless">
             <Statistic title="Failed Txs (24h)" value={12} valueStyle={{ color: '#EF4444' }} prefix={<ArrowDownOutlined />} />
           </Card>
         </Col>
       </Row>
 
-      <Card bordered={false} bodyStyle={{ padding: 0, overflow: 'hidden' }}>
+      <Card variant="borderless" bodyStyle={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '24px 24px 16px', display: 'flex', gap: 16 }}>
           <Input
             placeholder="Search by Tx ID, Sender, or Receiver..."

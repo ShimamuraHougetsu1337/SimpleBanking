@@ -132,23 +132,23 @@ export default function AdminUsersPage() {
 
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
-          <Card bordered={false}>
+          <Card variant="borderless">
             <Statistic title="Total Users" value={1254} prefix={<UsergroupAddOutlined />} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false}>
+          <Card variant="borderless">
             <Statistic title="Active Accounts" value={1180} valueStyle={{ color: '#10B981' }} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card bordered={false}>
+          <Card variant="borderless">
             <Statistic title="Locked Accounts" value={74} valueStyle={{ color: '#EF4444' }} prefix={<UserDeleteOutlined />} />
           </Card>
         </Col>
       </Row>
 
-      <Card bordered={false} bodyStyle={{ padding: 0, overflow: 'hidden' }}>
+      <Card variant="borderless" bodyStyle={{ padding: 0, overflow: 'hidden' }}>
         <ConfigProvider
           theme={{
             components: {

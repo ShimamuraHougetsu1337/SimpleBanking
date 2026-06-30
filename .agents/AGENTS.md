@@ -18,6 +18,12 @@
 - **All code comments MUST be written in English** — this applies to inline comments, block comments, JSDoc, and TODO/FIXME notes. No exceptions.
 - Each file should export a single primary responsibility (Single Responsibility Principle).
 - **Path aliases**: All cross-module imports in `backend/src/` and `frontend/src/` MUST use the `@/` path alias (e.g., `import { User } from '@/users/entities/user.entity'`). Same-module (sibling) imports use relative paths (`./` or `../`). Never use deep relative paths like `../../` to cross module boundaries.
+- **Clean Code & Code Quality:**
+  - **Meaningful Naming:** Use descriptive, intention-revealing names for variables, functions, and components (e.g., `isUserLoading` instead of `loading`).
+  - **Single Responsibility Principle (SRP):** Ensure each function, component, or custom hook does exactly one thing and does it well.
+  - **DRY (Don't Repeat Yourself):** Abstract repetitive logic into utility functions or custom hooks to keep the codebase lean.
+  - **Robust Error Handling:** Implement clean `try/catch` blocks, centralized API error handling, and graceful degradation for both frontend UI and backend services.
+- **Strict Interfaces:** Utilize TypeScript to define strict contracts (Interfaces, DTOs, Prop Types) for components and services, making them predictable and type-safe.
 
 ---
 

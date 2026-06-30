@@ -15,12 +15,15 @@ Use this skill when developing frontend UI components, managing layouts, styling
 ## UI Framework and Foundations
 
 - **Library**: Use **Ant Design (antd v5)** exclusively. Override default Antd tokens using `ConfigProvider` to soften borders and adjust shadows.
+- **Clean Code & SRP**: Follow the Single Responsibility Principle. Ensure custom hooks handle logic and components only render UI. Use descriptive, self-documenting naming conventions.
+- **Atomic Modular Architecture**: Decompose UIs into Atoms, Molecules, and Organisms. Avoid monolith UI files by extracting reusable components (e.g., `<AuthCard>`, `<TransactionTable>`).
 - **Responsiveness**: Ensure the UI is fluid, premium-looking, and fully compatible with desktop screens. Use CSS Flexbox/Grid or Antd Grid (`Row`/`Col`). Avoid fixed container widths that break ultra-wide desktop views.
 - **Aesthetics (Banking App Style)**:
   - **Typography**: Strictly use **Inter** for all UI elements. Use medium/semibold weights for labels and bold/extrabold for prominent financial numbers.
   - **Borders & Shapes**: Rely on shadows rather than hard borders to separate cards. Use `borderRadius: 8px` for inner elements and `12px` to `16px` for outer cards/modals.
 - **Monetary Values**: Always format as VND: `new Intl.NumberFormat('vi-VN', {style: 'currency', currency: 'VND'}).format(amount)`. Use larger font sizes and high-contrast text for balances.
 - **States & Feedback**: Always handle `loading`, `error`, and `success`. Disable action buttons during pending states. Use Antd's `message` or `notification` for feedback.
+- **Forms and Validation**: By default, limit noisy validations. Use `validateTrigger="onSubmit"` on `<Form>` components so that error messages only appear after the user attempts to submit the form, rather than while they are typing.
 
 ## Global Layout Guidelines
 

@@ -354,6 +354,22 @@ export function getErrorMessage(error: unknown): string {
 
 ---
 
+## Frontend Craftsmanship & Code Quality
+
+### 1. Clean Code
+- **Meaningful Naming:** Use descriptive, intention-revealing names for variables, functions, and components (e.g., `isCartLoading` instead of `loading`).
+- **Single Responsibility Principle (SRP):** Ensure each function or custom hook does exactly one thing and does it well.
+- **DRY (Don't Repeat Yourself):** Abstract repetitive logic into utility functions or custom hooks to keep the codebase lean.
+- **Robust Error Handling:** Implement clean `try/catch` blocks, centralized API error handling, and graceful UI degradation (Error Boundaries).
+
+### 2. Component Separation & Modular Architecture
+- **Atomic Design Thinking:** Decompose UIs into Atoms (Buttons, Inputs), Molecules (Form Fields), and Organisms (Login Cards).
+- **Separation of Concerns:** Separate business logic (state management, API calls) from presentational UI components by utilizing custom hooks.
+- **Strict Prop Types/Interfaces:** Utilize TypeScript to define strict contracts for components, making them predictable and type-safe.
+- **Folder Structuring:** Organize components logically (e.g., `components/common`, `components/features/auth`) for high discoverability.
+
+---
+
 ## Environment Configuration
 
 ```env
