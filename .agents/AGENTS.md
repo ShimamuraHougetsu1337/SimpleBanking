@@ -6,6 +6,22 @@
 
 ---
 
+## [ROUTE: skill-routing] — Applies when: evaluating a new task
+
+Before starting to code, evaluate if your task falls into any of the specialized categories below. If it does, you **MUST** use the `view_file` tool to read the corresponding `SKILL.md` file before taking any action.
+
+- **Refactoring, Code Quality, or Code Review** ➜ Read `.agents/skills/clean-code/SKILL.md`
+- **User uses commands: /explain, /walkthrough, /review, /optimize** ➜ Read `.agents/skills/code-assistant-commands/SKILL.md`
+- **Docker Compose, Containerization, or Deployment** ➜ Read `.agents/skills/docker-compose-setup/SKILL.md`
+- **Frontend UI, Styling, Layouts, or Ant Design components** ➜ Read `.agents/skills/frontend-ui-guidelines/SKILL.md`
+- **Authentication, JWT, Login/Logout, or Refresh Tokens** ➜ Read `.agents/skills/jwt-refresh-rotation/SKILL.md`
+- **Creating new NestJS Features, Modules, or Entities** ➜ Read `.agents/skills/nestjs-module-scaffold/SKILL.md`
+- **Frontend API Integration, Axios, or React Query hooks** ➜ Read `.agents/skills/react-api-layer/SKILL.md`
+- **Database Transactions, Money Transfers, or Balance Updates** ➜ Read `.agents/skills/typeorm-transaction/SKILL.md`
+- **User uses command: /commit_message** ➜ Read `.agents/skills/commit-message/SKILL.md`
+
+---
+
 ## [ROUTE: coding-conventions] — Applies when: writing any TypeScript file
 
 - Always use **TypeScript strict mode** (`"strict": true` in `tsconfig.json`).
@@ -19,9 +35,16 @@
 - Each file should export a single primary responsibility (Single Responsibility Principle).
 - **Path aliases**: All cross-module imports in `backend/src/` and `frontend/src/` MUST use the `@/` path alias (e.g., `import { User } from '@/users/entities/user.entity'`). Same-module (sibling) imports use relative paths (`./` or `../`). Never use deep relative paths like `../../` to cross module boundaries.
 - **Clean Code & Code Quality:**
-  - **Meaningful Naming:** Use descriptive, intention-revealing names for variables, functions, and components (e.g., `isUserLoading` instead of `loading`).
-  - **Single Responsibility Principle (SRP):** Ensure each function, component, or custom hook does exactly one thing and does it well.
-  - **DRY (Don't Repeat Yourself):** Abstract repetitive logic into utility functions or custom hooks to keep the codebase lean.
+  - **Constants Over Magic Numbers:** Replace hard-coded values with named constants at the top of the file or in a dedicated constants file.
+  - **Meaningful Naming:** Variables, functions, and classes should reveal their purpose (e.g., `isUserLoading` instead of `loading`). Avoid obscure abbreviations.
+  - **Smart Comments:** Make code self-documenting. Don't comment on what the code does; use comments to explain *why* something is done a certain way.
+  - **Single Responsibility Principle (SRP):** Each function/component should do exactly one thing. If it needs a comment to explain what it does, split it.
+  - **DRY (Don't Repeat Yourself):** Extract repeated code into reusable functions and maintain single sources of truth.
+  - **Clean Structure:** Keep related code together and organize code in a logical hierarchy using consistent conventions.
+  - **Encapsulation:** Hide implementation details, expose clear interfaces, and move nested conditionals into well-named functions.
+  - **Code Quality Maintenance:** Refactor continuously, fix technical debt early, and leave code cleaner than you found it.
+  - **Testing:** Write tests before fixing bugs, keep tests readable, and test edge cases.
+  - **Version Control:** Write clear commit messages, make small focused commits, and use meaningful branch names.
   - **Robust Error Handling:** Implement clean `try/catch` blocks, centralized API error handling, and graceful degradation for both frontend UI and backend services.
 - **Strict Interfaces:** Utilize TypeScript to define strict contracts (Interfaces, DTOs, Prop Types) for components and services, making them predictable and type-safe.
 
@@ -45,34 +68,6 @@
 
 ---
 
-## [ROUTE: backend-auth] — Applies when: writing auth, JWT strategy, or token lifecycle logic
-
-- Implement **Refresh Token Rotation**: each refresh token must be usable exactly once.
-- On refresh token usage: mark the old token as `isRevoked = true` IMMEDIATELY before generating the new token pair.
-- **Reuse Detection**: If an already revoked refresh token is sent to the `/auth/refresh` endpoint → immediately revoke ALL refresh tokens belonging to that user (force logout on all devices).
-- Access Token TTL: **15 minutes** (`expiresIn: '15m'`).
-- Refresh Token TTL: **7 days** (`expiresAt = NOW() + 7 days`).
-- Store refresh tokens as a **SHA-256 hash** in the database — do not save plaintext values.
-- Store access tokens in Zustand client memory — do not persist access tokens in `localStorage`.
-- Store refresh tokens in secure **HttpOnly Cookies** to mitigate XSS risks.
-- JWT payload definition: `{ sub: user.id, email: user.email, role: user.role }`. Do not include credentials or hashes in the payload.
-- Leverage `@nestjs/passport` and `@nestjs/jwt` — do not roll custom JWT handlers.
-
----
-
-## [ROUTE: backend-transaction] — Applies when: implementing money transfers or balance modifications
-
-- The entire transfer flow (debiting sender, crediting receiver, and writing transaction logs) MUST be executed within a single database transaction using a TypeORM `QueryRunner`.
-- Use a **Pessimistic Write Lock** (`lock: { mode: 'pessimistic_write' }`) when reading account records to process transfers.
-- Lock accounts in ascending order of `account.id` to prevent **deadlocks**.
-- Validate the `idempotencyKey` BEFORE starting the database transaction — if the key exists, return the cached result immediately.
-- Enforce the transaction flow structure: `try/catch/finally` where `catch` calls `rollbackTransaction()` and `finally` calls `queryRunner.release()`.
-- Update account balances via database-level SQL expressions (`balance = balance - :amount`) rather than reading, updating in memory, and saving to avoid stale read anomalies.
-- Validate transfer values: amount must be > 0, have at most 2 decimal places, and not exceed the available balance.
-- Validate destination accounts: must exist, have an `active` status, and cannot be identical to the sender's account.
-- **NEVER** allow account balances to drop below zero — enforce this through both database CHECK constraints and application-level checks.
-
----
 
 ## [ROUTE: frontend-react] — Applies when: writing React code, components, or hooks
 
@@ -83,6 +78,7 @@
   - Retry the failed original request with the new access token.
   - If refresh fails → clear the auth state and redirect the client to `/login`.
 - Leverage **React Query** (`useQuery`, `useMutation`) for all server state orchestration. Do not trigger manual fetch operations inside `useEffect`.
+- **ALWAYS invalidate query caches (`queryClient.invalidateQueries(...)`)** when you update, create, or delete data to ensure the UI stays synchronized with the backend state.
 - Leverage **Zustand** to manage local client states (authenticated user, tokens, global loading, modals).
 - **DO NOT** use Redux Toolkit in this project.
 - Wrap secure views in a `<ProtectedRoute>` component to redirect unauthenticated traffic to `/login`.
@@ -91,20 +87,6 @@
 
 ---
 
-## [ROUTE: frontend-ui] — Applies when: implementing UI layouts, forms, and tables
-
-- Use **Ant Design (antd v5)** as the principal UI library — do not mix MUI or Bootstrap into the project.
-- Implement transaction lists using the Ant Design `<Table>` component with **server-side pagination** (bind `pagination.onChange` to API calls).
-- Use Ant Design's `<Form>` and `<Form.Item rules={[...]}>` for all forms — do not use react-hook-form.
-- Display balances and monetary counters using the Ant Design `<Statistic>` component.
-- Display success or error toast feedback through Ant Design's `message.success()`, `message.error()`, or `notification.open()`.
-- Always handle three states for asynchronous calls: `loading` (bind to React Query's `isLoading` / `isPending`), `error`, and `success`.
-- Disable form submit buttons when `isPending` is true to prevent duplicate submits.
-- Format all displayed monetary values as VND: `new Intl.NumberFormat('vi-VN', {style: 'currency', currency: 'VND'}).format(amount)`.
-- Always provide empty and error views for tables.
-- Ensure the UI is **pretty, premium-looking, and compatible/fullscreen for desktop screens**. Use responsive design techniques to adapt layouts and prevent hardcoded container widths that break fullscreen desktop views.
-
----
 
 ## [ROUTE: security] — Applies when: modifying auth layers, database queries, inputs, or env files
 
@@ -147,32 +129,12 @@
 - Do **NOT** globally disable ESLint rules in `eslint.config.mjs` — override rules at the specific line or file level only when strictly necessary.
 - Run ESLint from the `backend/` directory so the `parserOptions.projectService` can resolve `tsconfig.json` correctly.
 
----
-
-## [ROUTE: code-explanation] — Applies when: the user asks for code explanation, walkthrough, review, or optimization
-
-- **Role:** You are an Expert Software Engineer and a highly patient Technical Mentor.
-- **Tone:** Professional, encouraging, and highly accessible. Focus on "Why" and "How", not just "What".
-- **Language:** Always explain in clear, concise, and professional English.
-- **Execution on Demand:** Do not dump all information at once. Only execute the specific skill requested by the user's command. If the user provides code without a command, reply with a polite menu asking: "Which skill would you like me to apply to this code? (/explain, /walkthrough, /review, /optimize)".
-- **Formatting:** Use clean Markdown, bold headers, and bullet points to ensure high scannability. Avoid dense walls of text.
-- **Trigger Commands & Structures:**
-  - **`/explain`:** High-level concept. Provide: Overview (1-2 sentences), Architecture & Flow, and a simple real-world Analogy.
-  - **`/walkthrough`:** Logical deep-dive. Break down the Execution Flow, and explain The "Why" behind specific logic.
-  - **`/review`:** Bug & vulnerability hunt. Identify Potential Pitfalls, Code Smells, and give a Health Score (A to F).
-  - **`/optimize`:** Performance & clean code. Provide the Refactored Code, and list the Improvements Made (e.g., efficiency, readability).
-
----
-
 ## Rules Priority in Case of Conflict
 
 If instructions appear to conflict, resolve them using the following priority order:
 1. `[ROUTE: security]` — Security measures always take precedence.
-2. `[ROUTE: backend-transaction]` — Data consistency and transaction integrity.
-3. `[ROUTE: backend-auth]` — User authentication and token rotation flows.
-4. `[ROUTE: backend-nestjs]` — Backend code conventions.
-5. `[ROUTE: frontend-react]` — Frontend application logic.
-6. `[ROUTE: frontend-ui]` — Layout, design, and feedback standards.
-7. `[ROUTE: coding-conventions]` — General code formatting.
-8. `[ROUTE: database]` — Database structure and seeding.
-9. `[ROUTE: eslint-enforcement]` — Code quality gate, applied after every TypeScript edit.
+2. `[ROUTE: backend-nestjs]` — Backend code conventions.
+3. `[ROUTE: frontend-react]` — Frontend application logic.
+4. `[ROUTE: coding-conventions]` — General code formatting.
+5. `[ROUTE: database]` — Database structure and seeding.
+6. `[ROUTE: eslint-enforcement]` — Code quality gate, applied after every TypeScript edit.

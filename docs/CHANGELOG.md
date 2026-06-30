@@ -14,6 +14,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [0.3.0] — 2026-06-30
+
+### Added
+- **Deposit and Withdraw** features added to `AccountDetailPage` with responsive popup modals.
+- Backend API endpoints `POST /transactions/deposit` and `POST /transactions/withdraw` with TypeORM transaction blocks, pessimistic locking, and idempotency key validation.
+- Agent Guardrails: Added explicit project rules in `AGENTS.md` and `frontend-ui-guidelines` to enforce Clean Code/SRP and React Query Cache Invalidation.
+
+### Changed
+- Translated `TransferReviewModal` UI from Vietnamese to English to standardize language usage.
+- Refactored `AccountDetailPage` component by splitting monolithic code into isolated components (`AccountQuickActions`, `AccountSettingsForm`, `AccountTransactions`) following Clean Code and SRP principles.
+- Optimised network usage in frontend by aggressively utilizing `useQuery` caching (`DashboardPage`, `AccountsPage`, `AccountDetailPage`) to prevent redundant fetch calls.
+- Resolved layout thrashing issue by migrating inline styles from `Sidebar` to a global stylesheet `style.css`.
+- Fixed navigation logic in "Back" buttons within `AccountDetailPage` to use `navigate(-1)` instead of hardcoded paths.
+
+---
+
 ## [0.2.0] — 2026-06-30
 
 ### Added
