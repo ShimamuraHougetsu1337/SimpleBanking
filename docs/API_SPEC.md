@@ -185,24 +185,43 @@ Retrieve bank account information and balance of the currently authenticated use
 
 **Response `200 OK`:**
 ```json
-{
-  "id": "uuid",
-  "accountNumber": "VN17198234561234",
-  "balance": "1500000.00",
-  "currency": "VND",
-  "status": "active",
-  "createdAt": "2026-06-29T03:00:00Z",
-  "owner": {
+[
+  {
     "id": "uuid",
-    "fullName": "Nguyen Van A",
-    "email": "user@example.com"
+    "accountNumber": "VN17198234561234",
+    "name": "VN17198234561234",
+    "balance": "1500000.00",
+    "currency": "VND",
+    "status": "active",
+    "createdAt": "2026-06-29T03:00:00Z"
   }
-}
+]
 ```
 
 > **Note:** The `balance` is returned as a string to prevent precision loss in client-side JSON parsing.
 
 **Errors:** `401` (Unauthorized), `404` (No account found for user — anomaly case)
+
+---
+
+#### `GET /accounts/:id`
+
+Retrieve details of a specific bank account belonging to the authenticated user.
+
+**Response `200 OK`:**
+```json
+{
+  "id": "uuid",
+  "accountNumber": "VN17198234561234",
+  "name": "Savings Account",
+  "balance": "1500000.00",
+  "currency": "VND",
+  "status": "active",
+  "createdAt": "2026-06-29T03:00:00Z"
+}
+```
+
+**Errors:** `401` (Unauthorized), `403` (Forbidden — accessing another user's account), `404` (Account not found)
 
 ---
 
@@ -259,11 +278,13 @@ Retrieve transaction history of the current user account (paginated).
 
 | Param | Type | Default | Description |
 |---|---|---|---|
+| `accountId` | string | - | Filter by a specific account ID |
 | `page` | number | 1 | Current page |
 | `limit` | number | 10 | Records per page (max 50) |
 | `type` | string | all | Filter by: `transfer` / `deposit` / `withdraw` |
-| `fromDate` | ISO date | - | Filter transactions from date |
-| `toDate` | ISO date | - | Filter transactions to date |
+| `filter[search]` | string | - | Filter transactions by description content |
+| `filter[fromDate]` | ISO date | - | Filter transactions from date |
+| `filter[toDate]` | ISO date | - | Filter transactions to date |
 
 **Response `200 OK`:**
 ```json

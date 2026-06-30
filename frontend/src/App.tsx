@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
+import AccountsPage from './pages/AccountsPage';
 import TransferPage from './pages/TransferPage';
 import TransactionsPage from './pages/TransactionsPage';
 
@@ -33,6 +34,8 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'accounts', element: <AccountsPage /> },
+      { path: 'accounts/:id', element: <AccountDetailPage /> },
       { path: 'transfer', element: <TransferPage /> },
       { path: 'transactions', element: <TransactionsPage /> },
     ],
@@ -57,6 +60,7 @@ const router = createBrowserRouter([
 ]);
 
 import { App as AntApp } from 'antd';
+import AccountDetailPage from './pages/AccountDetailPage';
 
 export default function App() {
   return (

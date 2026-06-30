@@ -1,6 +1,7 @@
 import { Layout, Menu, Typography, Avatar, Dropdown } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useLogout } from '@/hooks/useAuth';
+import { useAuthStore } from '@/store/auth.store';
 import {
   TeamOutlined,
   TransactionOutlined,
@@ -17,6 +18,7 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const logoutMutation = useLogout();
+  const user = useAuthStore((s) => s.user);
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -91,7 +93,9 @@ export function AdminLayout() {
             placement="bottomRight"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', transition: 'background 0.3s' }} className="user-dropdown-trigger">
-              <span style={{ fontWeight: 500, color: '#334155' }}>Super Admin</span>
+              <span style={{ fontWeight: 500, color: '#334155' }}>
+                {user?.full_name || (user as any)?.fullName || 'Super Admin'}
+              </span>
               <Avatar style={{ backgroundColor: '#10B981' }} icon={<UserOutlined />} />
             </div>
           </Dropdown>

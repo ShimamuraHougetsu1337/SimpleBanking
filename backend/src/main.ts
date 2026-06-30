@@ -1,6 +1,7 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -18,6 +19,9 @@ async function bootstrap() {
 
   // --- Global exception filter — standardized error format per API_SPEC.md ---
   app.useGlobalFilters(new GlobalExceptionFilter());
+
+  // --- Cookie Parser ---
+  app.use(cookieParser());
 
   // --- Global validation pipe ---
   app.useGlobalPipes(

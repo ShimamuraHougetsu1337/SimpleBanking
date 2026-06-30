@@ -31,6 +31,9 @@ export class Account {
   @Column({ name: 'account_number', length: 20, unique: true })
   accountNumber: string;
 
+  @Column({ length: 100 })
+  name: string;
+
   @Column({ type: 'numeric', precision: 18, scale: 2, default: 0.0 })
   balance: string;
 

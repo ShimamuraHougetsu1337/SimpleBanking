@@ -67,7 +67,7 @@ api.interceptors.response.use(
       try {
         const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
 
-        const newAccessToken = data.access_token;
+        const newAccessToken = data.accessToken;
 
         // Save new authentication credentials to the Zustand store
         useAuthStore.getState().setAccessToken(newAccessToken);

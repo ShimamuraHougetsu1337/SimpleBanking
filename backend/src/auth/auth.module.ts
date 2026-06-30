@@ -8,6 +8,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from '@/users/users.module';
+import { AccountsModule } from '@/accounts/accounts.module';
 
 @Module({
   imports: [
@@ -25,9 +26,10 @@ import { UsersModule } from '@/users/users.module';
     }),
     TypeOrmModule.forFeature([RefreshToken]),
     UsersModule,
+    AccountsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
   exports: [AuthService],
 })
-export class AuthModule {}
+export class AuthModule { }

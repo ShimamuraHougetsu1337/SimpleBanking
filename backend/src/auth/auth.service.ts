@@ -12,6 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { User, UserStatus } from '@/users/entities/user.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { UsersService } from '@/users/users.service';
+import { AccountsService } from '@/accounts/accounts.service';
 import { RegisterDto } from './dto/register.dto';
 import ms, { StringValue } from 'ms';
 
@@ -20,6 +21,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly accountsService: AccountsService,
     private readonly configService: ConfigService,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
@@ -122,10 +124,12 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    // We pass registerDto directly to usersService.create
-    // because UsersService.create handles bcrypt hashing internally.
+    // UsersService.create handles bcrypt hashing internally.
     const user = await this.usersService.create(registerDto);
-    // Note: Account creation is omitted here as users can create accounts later
+    
+    // Automatically create a default account for the new user
+    await this.accountsService.createDefaultAccount(user);
+    
     return user;
   }
 }

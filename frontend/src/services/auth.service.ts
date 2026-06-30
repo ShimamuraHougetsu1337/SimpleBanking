@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/auth.store';
 export const authService = {
   async login(email: string, password: string) {
     const { data } = await api.post('/auth/login', { email, password });
-    return data; // returns: { access_token, user }
+    return data; // returns: { accessToken, user }
   },
 
   async register(fullName: string, email: string, password: string) {
