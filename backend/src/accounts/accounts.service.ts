@@ -36,10 +36,37 @@ export class AccountsService {
     });
   }
 
+  async findByAccountNumber(accountNumber: string): Promise<Account | null> {
+    return this.accountRepository.findOne({
+      where: { accountNumber },
+      relations: { user: true },
+    });
+  }
+
   async findById(id: string, userId: string): Promise<Account | null> {
     return this.accountRepository.findOne({
       where: { id, userId },
       relations: { user: true },
     });
+  }
+
+  async updateAccount(
+    id: string,
+    userId: string,
+    updateData: { name?: string; theme?: string },
+  ): Promise<Account> {
+    const account = await this.findById(id, userId);
+    if (!account) {
+      throw new Error('Account not found');
+    }
+
+    if (updateData.name !== undefined) {
+      account.name = updateData.name;
+    }
+    if (updateData.theme !== undefined) {
+      account.theme = updateData.theme;
+    }
+
+    return this.accountRepository.save(account);
   }
 }

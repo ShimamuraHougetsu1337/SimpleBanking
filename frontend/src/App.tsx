@@ -61,11 +61,14 @@ const router = createBrowserRouter([
 
 import { App as AntApp } from 'antd';
 import AccountDetailPage from './pages/AccountDetailPage';
+import { AuthProvider } from './components/AuthProvider';
 
 export default function App() {
   return (
     <AntApp>
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
     </AntApp>
   );
 }

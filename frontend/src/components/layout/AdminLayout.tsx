@@ -76,7 +76,7 @@ export function AdminLayout() {
       </Sider>
 
       <Layout style={{ marginLeft: 250 }}>
-        <Header style={{ background: '#fff', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', borderBottom: '1px solid #e2e8f0', height: 72 }}>
+        <Header style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', borderBottom: '1px solid #e2e8f0', height: 72 }}>
           <Dropdown
             menu={{
               items: [

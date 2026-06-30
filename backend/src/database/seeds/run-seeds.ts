@@ -78,6 +78,7 @@ async function run() {
     customerAccount1.user = savedCustomer;
     customerAccount1.accountNumber = 'VN10001000001001';
     customerAccount1.name = 'Main Checking Account';
+    customerAccount1.theme = 'linear-gradient(135deg, #0f172a 0%, #1e40af 100%)'; // Ocean Blue
     customerAccount1.balance = '10000000.00'; // 10,000,000.00 VND
     customerAccount1.currency = 'VND';
     customerAccount1.status = AccountStatus.ACTIVE;
@@ -94,6 +95,7 @@ async function run() {
     customerAccount2.user = savedCustomer;
     customerAccount2.accountNumber = 'VN10001000001002';
     customerAccount2.name = 'Savings Account';
+    customerAccount2.theme = 'linear-gradient(135deg, #064e3b 0%, #047857 100%)'; // Emerald Green
     customerAccount2.balance = '5000000.00'; // 5,000,000.00 VND
     customerAccount2.currency = 'VND';
     customerAccount2.status = AccountStatus.ACTIVE;

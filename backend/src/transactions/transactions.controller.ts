@@ -1,13 +1,31 @@
-import { Controller, Get, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { TransactionsService } from './transactions.service';
 import { User } from '@/users/entities/user.entity';
+import { TransferDto } from './dto/transfer.dto';
+import { DepositDto } from './dto/deposit.dto';
+import { WithdrawDto } from './dto/withdraw.dto';
 
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) { }
+
+  @Post('transfer')
+  async transfer(@CurrentUser() user: User, @Body() dto: TransferDto) {
+    return this.transactionsService.transfer(dto, user.id);
+  }
+
+  @Post('deposit')
+  async deposit(@CurrentUser() user: User, @Body() dto: DepositDto) {
+    return this.transactionsService.deposit(dto, user.id);
+  }
+
+  @Post('withdraw')
+  async withdraw(@CurrentUser() user: User, @Body() dto: WithdrawDto) {
+    return this.transactionsService.withdraw(dto, user.id);
+  }
 
   @Get()
   async getTransactions(

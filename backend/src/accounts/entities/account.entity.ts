@@ -34,6 +34,9 @@ export class Account {
   @Column({ length: 100 })
   name: string;
 
+  @Column({ length: 100, default: 'linear-gradient(135deg, #111827 0%, #000000 100%)' })
+  theme: string;
+
   @Column({ type: 'numeric', precision: 18, scale: 2, default: 0.0 })
   balance: string;
 

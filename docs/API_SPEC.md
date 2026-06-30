@@ -270,6 +270,80 @@ Perform an internal transfer. Processed within a single database transaction.
 
 ---
 
+#### `POST /transactions/deposit`
+
+Perform an account deposit. Processed within a single database transaction.
+
+**Request Body:**
+```json
+{
+  "accountId": "uuid",
+  "amount": "500000.00",
+  "description": "Salary deposit",
+  "idempotencyKey": "uuid-v4-generated-by-client"
+}
+```
+
+**Validation:**
+- `accountId`: Required, must exist, status must be active
+- `amount`: Required, positive decimal string or number, > 0, max 2 decimal places
+- `description`: Optional, max 255 characters
+- `idempotencyKey`: Required, valid UUID v4
+
+**Response `201 Created`:**
+```json
+{
+  "id": "uuid",
+  "toAccountId": "uuid",
+  "amount": "500000.00",
+  "description": "Salary deposit",
+  "status": "success",
+  "type": "deposit",
+  "createdAt": "2026-06-29T03:05:00Z"
+}
+```
+
+**Errors:** `400` (Validation failed), `401` (Unauthorized), `404` (Account not found), `409` (Duplicate idempotency key)
+
+---
+
+#### `POST /transactions/withdraw`
+
+Perform an account withdrawal. Processed within a single database transaction.
+
+**Request Body:**
+```json
+{
+  "accountId": "uuid",
+  "amount": "50000.00",
+  "description": "ATM withdrawal",
+  "idempotencyKey": "uuid-v4-generated-by-client"
+}
+```
+
+**Validation:**
+- `accountId`: Required, must exist, status must be active
+- `amount`: Required, positive decimal string or number, > 0, max 2 decimal places, must be ≤ available balance
+- `description`: Optional, max 255 characters
+- `idempotencyKey`: Required, valid UUID v4
+
+**Response `201 Created`:**
+```json
+{
+  "id": "uuid",
+  "fromAccountId": "uuid",
+  "amount": "50000.00",
+  "description": "ATM withdrawal",
+  "status": "success",
+  "type": "withdraw",
+  "createdAt": "2026-06-29T03:05:00Z"
+}
+```
+
+**Errors:** `400` (Validation failed), `401` (Unauthorized), `404` (Account not found), `409` (Duplicate idempotency key), `422` (Insufficient balance)
+
+---
+
 #### `GET /transactions`
 
 Retrieve transaction history of the current user account (paginated).

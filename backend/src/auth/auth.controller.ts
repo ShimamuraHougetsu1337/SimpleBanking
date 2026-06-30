@@ -68,7 +68,7 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token is missing from cookies');
     }
 
-    const { accessToken, refreshToken } =
+    const { accessToken, refreshToken, user } =
       await this.authService.refreshTokens(oldRefreshToken);
 
     res.cookie('refreshToken', refreshToken, {
@@ -80,6 +80,7 @@ export class AuthController {
 
     return {
       accessToken,
+      user,
       tokenType: 'Bearer',
       expiresIn: 900,
     };
