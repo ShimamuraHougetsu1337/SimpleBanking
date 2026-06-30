@@ -49,10 +49,13 @@ SimpleBankingApp/
 │   ├── src/
 │   │   ├── auth/                   # AuthModule
 │   │   │   ├── dto/
+│   │   │   ├── entities/
 │   │   │   ├── guards/
 │   │   │   ├── strategies/
+│   │   │   ├── auth.constants.ts
 │   │   │   ├── auth.controller.ts
 │   │   │   ├── auth.service.ts
+│   │   │   ├── auth.utils.ts
 │   │   │   └── auth.module.ts
 │   │   ├── users/                  # UserModule
 │   │   │   ├── dto/
@@ -104,8 +107,9 @@ SimpleBankingApp/
 │   │   │   ├── TransferPage.tsx
 │   │   │   ├── TransactionsPage.tsx
 │   │   │   └── admin/
-│   │   │       ├── AdminUsersPage.tsx
-│   │   │       └── AdminTransactionsPage.tsx
+│   │   │       ├── AdminSettingsPage.tsx
+│   │   │       ├── AdminTransactionsPage.tsx
+│   │   │       └── AdminUsersPage.tsx
 │   │   ├── components/
 │   │   │   ├── layout/
 │   │   │   │   ├── AppLayout.tsx
@@ -122,9 +126,12 @@ SimpleBankingApp/
 │   │   │   ├── auth.store.ts
 │   │   │   └── ui.store.ts
 │   │   ├── hooks/                  # React Query hooks
+│   │   │   ├── admin/
+│   │   │   │   ├── useAdminSettings.ts
+│   │   │   │   ├── useAdminTransactions.ts
+│   │   │   │   └── useAdminUsers.ts
 │   │   │   ├── useAccount.ts
-│   │   │   ├── useTransactions.ts
-│   │   │   └── useAdminUsers.ts
+│   │   │   └── useTransactions.ts
 │   │   ├── types/                  # TypeScript types/interfaces
 │   │   └── utils/
 │   ├── public/
@@ -288,6 +295,7 @@ TransactionService.transfer()
 /transactions → TransactionsPage (ProtectedRoute)
 /admin/users → AdminUsersPage (AdminRoute — role=admin only)
 /admin/transactions → AdminTransactionsPage (AdminRoute)
+/admin/settings → AdminSettingsPage (AdminRoute)
 ```
 
 ---
@@ -329,7 +337,7 @@ volumes:
 | ORM | TypeORM | v0.3+ |
 | Database | PostgreSQL | v16 |
 | Frontend Framework | React | v18+ |
-| Frontend Language | TypeScript | v5+ |
+| Frontend Language | TypeScript | v6+ |
 | UI Library | Ant Design | v5+ |
 | Server State | React Query (TanStack) | v5 |
 | Client State | Zustand | v4+ |
