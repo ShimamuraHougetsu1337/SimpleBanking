@@ -15,6 +15,11 @@ import type { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import {
+  ACCESS_TOKEN_EXPIRES_IN_SEC,
+  REFRESH_COOKIE_MAX_AGE_MS,
+  REFRESH_TOKEN_COOKIE_NAME,
+} from './auth.constants';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -40,18 +45,18 @@ export class AuthController {
       dto.password,
     );
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     });
 
     return {
       accessToken,
       user,
       tokenType: 'Bearer',
-      expiresIn: 900,
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN_SEC,
     };
   }
 
@@ -62,7 +67,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const oldRefreshToken = req.cookies?.refreshToken as string | undefined;
+    const oldRefreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME] as string | undefined;
 
     if (!oldRefreshToken) {
       throw new UnauthorizedException('Refresh token is missing from cookies');
@@ -71,18 +76,18 @@ export class AuthController {
     const { accessToken, refreshToken, user } =
       await this.authService.refreshTokens(oldRefreshToken);
 
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: REFRESH_COOKIE_MAX_AGE_MS,
     });
 
     return {
       accessToken,
       user,
       tokenType: 'Bearer',
-      expiresIn: 900,
+      expiresIn: ACCESS_TOKEN_EXPIRES_IN_SEC,
     };
   }
 
@@ -90,13 +95,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout user session' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const refreshToken = req.cookies?.refreshToken as string | undefined;
+    const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE_NAME] as string | undefined;
 
     if (refreshToken) {
       await this.authService.logout(refreshToken);
     }
 
-    res.clearCookie('refreshToken');
+    res.clearCookie(REFRESH_TOKEN_COOKIE_NAME);
     return { message: 'Logged out successfully' };
   }
 }
