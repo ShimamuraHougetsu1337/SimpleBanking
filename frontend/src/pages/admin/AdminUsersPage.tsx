@@ -1,8 +1,38 @@
-import { Card, Table, Typography, Tag, Space, Button, Input, Row, Col, Statistic, ConfigProvider } from 'antd';
-import { SearchOutlined, LockOutlined, UnlockOutlined, UsergroupAddOutlined, UserDeleteOutlined } from '@ant-design/icons';
+import {
+  Card,
+  Table,
+  Typography,
+  Tag,
+  Space,
+  Button,
+  Input,
+  Row,
+  Col,
+  Statistic,
+  ConfigProvider,
+  Modal,
+  Descriptions,
+} from 'antd';
+import {
+  SearchOutlined,
+  LockOutlined,
+  UnlockOutlined,
+  UsergroupAddOutlined,
+  UserDeleteOutlined,
+  EyeOutlined,
+} from '@ant-design/icons';
 import { useAdminUsers, type AdminUser } from '@/hooks/admin/useAdminUsers';
+import { useState } from 'react';
+import type { ChangeEvent } from 'react';
 
 const { Title, Text } = Typography;
+
+const CARD_SHADOW_STYLE = {
+  boxShadow: '0 2px 5px -1px rgba(50, 50, 93, 0.25), 0 1px 3px -1px rgba(0, 0, 0, 0.3)',
+  borderRadius: '12px',
+  border: 'none',
+  background: '#ffffff',
+};
 
 export default function AdminUsersPage() {
   const {
@@ -18,6 +48,8 @@ export default function AdminUsersPage() {
     stats,
   } = useAdminUsers();
 
+  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+
   const formatVND = (amount: string) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(amount));
   };
@@ -29,8 +61,8 @@ export default function AdminUsersPage() {
       align: 'left' as const,
       render: (record: AdminUser) => (
         <Space direction="vertical" size={0}>
-          <Text strong>{record.name}</Text>
-          <Text type="secondary" style={{ fontSize: 13 }}>{record.email}</Text>
+          <Text strong style={{ color: '#1e293b' }}>{record.name}</Text>
+          <Text type="secondary" style={{ fontSize: 13, color: '#64748b' }}>{record.email}</Text>
         </Space>
       ),
     },
@@ -62,7 +94,7 @@ export default function AdminUsersPage() {
       key: 'balance',
       align: 'right' as const,
       render: (balance: string, record: AdminUser) => (
-        <Text strong style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        <Text strong style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
           {record.role !== 'admin' ? formatVND(balance) : '-'}
         </Text>
       ),
@@ -72,35 +104,52 @@ export default function AdminUsersPage() {
       dataIndex: 'created_at',
       key: 'created_at',
       align: 'right' as const,
-      render: (date: string) => <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>{new Date(date).toLocaleDateString('vi-VN')}</Text>,
+      render: (date: string) => (
+        <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>
+          {new Date(date).toLocaleDateString('vi-VN')}
+        </Text>
+      ),
     },
     {
       title: 'Action',
       key: 'action',
-      align: 'right' as const,
-      render: (record: AdminUser) => {
-        if (record.role === 'admin') return <Text type="secondary" disabled>No actions</Text>;
-
-        return record.status === 'active' ? (
-          <Button
-            danger
-            type="text"
-            icon={<LockOutlined />}
-            onClick={() => handleLockUser(record.id)}
-          >
-            Lock
-          </Button>
-        ) : (
+      align: 'center' as const,
+      render: (record: AdminUser) => (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <Button
             type="text"
-            style={{ color: '#10B981' }}
-            icon={<UnlockOutlined />}
-            onClick={() => handleUnlockUser(record.id)}
+            icon={<EyeOutlined />}
+            onClick={() => setSelectedUser(record)}
+            style={{ color: '#3B82F6', marginRight: 8 }}
           >
-            Unlock
+            Details
           </Button>
-        );
-      },
+          {record.role !== 'admin' ? (
+            record.status === 'active' ? (
+              <Button
+                danger
+                type="text"
+                icon={<LockOutlined />}
+                onClick={() => handleLockUser(record.id)}
+                style={{ width: 90, textAlign: 'left', display: 'inline-flex', alignItems: 'center' }}
+              >
+                Lock
+              </Button>
+            ) : (
+              <Button
+                type="text"
+                style={{ color: '#10B981', width: 90, textAlign: 'left', display: 'inline-flex', alignItems: 'center' }}
+                icon={<UnlockOutlined />}
+                onClick={() => handleUnlockUser(record.id)}
+              >
+                Unlock
+              </Button>
+            )
+          ) : (
+            <div style={{ width: 90 }} />
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -111,34 +160,48 @@ export default function AdminUsersPage() {
         <Space>
           <Input
             placeholder="Search users by name or email..."
-            prefix={<SearchOutlined />}
-            style={{ width: 300, borderRadius: 8 }}
+            prefix={<SearchOutlined style={{ color: '#64748b' }} />}
+            style={{ width: 300, borderRadius: 8, height: 40 }}
             value={searchQuery}
-            onChange={(e) => handleSearchChange(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
           />
-          <Button type="primary" style={{ borderRadius: 8 }}>Export CSV</Button>
+          <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Export CSV</Button>
         </Space>
       </div>
 
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
-          <Card variant="borderless">
-            <Statistic title="Total Users" value={stats.totalUsers} prefix={<UsergroupAddOutlined />} />
+          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
+            <Statistic
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Total Users</span>}
+              value={stats.totalUsers}
+              prefix={<UsergroupAddOutlined style={{ color: '#3B82F6' }} />}
+              valueStyle={{ color: '#1e293b', fontWeight: 700 }}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card variant="borderless">
-            <Statistic title="Active Accounts" value={stats.activeAccounts} valueStyle={{ color: '#10B981' }} />
+          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
+            <Statistic
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Active Accounts</span>}
+              value={stats.activeAccounts}
+              valueStyle={{ color: '#10B981', fontWeight: 700 }}
+            />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
-          <Card variant="borderless">
-            <Statistic title="Locked Accounts" value={stats.lockedAccounts} valueStyle={{ color: '#EF4444' }} prefix={<UserDeleteOutlined />} />
+          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
+            <Statistic
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Locked Accounts</span>}
+              value={stats.lockedAccounts}
+              valueStyle={{ color: '#EF4444', fontWeight: 700 }}
+              prefix={<UserDeleteOutlined style={{ color: '#EF4444' }} />}
+            />
           </Card>
         </Col>
       </Row>
 
-      <Card variant="borderless" bodyStyle={{ padding: 0, overflow: 'hidden' }}>
+      <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: 0, overflow: 'hidden' }}>
         <ConfigProvider
           theme={{
             components: {
@@ -167,6 +230,41 @@ export default function AdminUsersPage() {
           />
         </ConfigProvider>
       </Card>
+
+      <Modal
+        open={!!selectedUser}
+        onCancel={() => setSelectedUser(null)}
+        title={<span style={{ fontSize: 18, fontWeight: 600, color: '#1e293b' }}>User Profile Details</span>}
+        footer={null}
+        width={600}
+        bodyStyle={{ paddingTop: 16 }}
+      >
+        {selectedUser && (
+          <Descriptions bordered column={1} size="small">
+            <Descriptions.Item label="User ID"><Text copyable>{selectedUser.id}</Text></Descriptions.Item>
+            <Descriptions.Item label="Full Name">{selectedUser.name}</Descriptions.Item>
+            <Descriptions.Item label="Email">{selectedUser.email}</Descriptions.Item>
+            <Descriptions.Item label="Role">
+              <Tag color={selectedUser.role === 'admin' ? 'purple' : 'blue'}>
+                {selectedUser.role.toUpperCase()}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Account Status">
+              <Tag color={selectedUser.status === 'active' ? 'success' : 'error'}>
+                {selectedUser.status.toUpperCase()}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="Current Balance">
+              <span style={{ fontWeight: 600, color: '#1e293b' }}>
+                {selectedUser.role !== 'admin' ? formatVND(selectedUser.balance) : '-'}
+              </span>
+            </Descriptions.Item>
+            <Descriptions.Item label="Created At">
+              {new Date(selectedUser.created_at).toLocaleString('vi-VN')}
+            </Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
     </div>
   );
 }

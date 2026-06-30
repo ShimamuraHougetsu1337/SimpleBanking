@@ -10,8 +10,8 @@ export interface AdminUser {
   created_at: string;
 }
 
-// Mock Data
-const mockUsers: AdminUser[] = [
+// Initial mock data
+const INITIAL_MOCK_USERS: AdminUser[] = [
   {
     id: 'u-1',
     name: 'John Doe',
@@ -51,23 +51,34 @@ const mockUsers: AdminUser[] = [
 ];
 
 export function useAdminUsers() {
+  const [users, setUsers] = useState<AdminUser[]>(INITIAL_MOCK_USERS);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  // Filtered users list based on search query
   const filteredUsers = useMemo(() => {
-    if (!searchQuery) return mockUsers;
+    if (!searchQuery) return users;
     const lowerQuery = searchQuery.toLowerCase();
-    return mockUsers.filter(
+    return users.filter(
       (user) =>
         user.name.toLowerCase().includes(lowerQuery) ||
         user.email.toLowerCase().includes(lowerQuery)
     );
-  }, [searchQuery]);
+  }, [users, searchQuery]);
+
+  // Dynamically calculate statistics from active state
+  const stats = useMemo(() => {
+    return {
+      totalUsers: users.length,
+      activeAccounts: users.filter((u) => u.status === 'active').length,
+      lockedAccounts: users.filter((u) => u.status === 'locked').length,
+    };
+  }, [users]);
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setPage(1); // Reset to first page on new search
+    setPage(1); // Reset to first page on search change
   };
 
   const handlePageChange = (newPage: number, newPageSize?: number) => {
@@ -78,11 +89,19 @@ export function useAdminUsers() {
   };
 
   const handleLockUser = (userId: string) => {
-    console.log('Lock user', userId);
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === userId ? { ...user, status: 'locked' } : user
+      )
+    );
   };
 
   const handleUnlockUser = (userId: string) => {
-    console.log('Unlock user', userId);
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
+        user.id === userId ? { ...user, status: 'active' } : user
+      )
+    );
   };
 
   return {
@@ -95,10 +114,6 @@ export function useAdminUsers() {
     handlePageChange,
     handleLockUser,
     handleUnlockUser,
-    stats: {
-      totalUsers: 1254,
-      activeAccounts: 1180,
-      lockedAccounts: 74,
-    },
+    stats,
   };
 }

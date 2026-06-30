@@ -6,7 +6,7 @@ description: Trigger this skill to analyze local git changes (unstaged and stage
 # Skill: Commit Message Generator & Git Best Practices
 
 ## When to Use This Skill
-Use this skill when the user triggers the `/commit_message` command. This skill analyzes git differences and prepares standard commit recommendations.
+Use this skill when the user triggers the `/commit_message` command or asks you to commit their changes. This skill analyzes git differences and prepares standard commit recommendations following the Conventional Commits specification.
 
 ## Execution Flow
 
@@ -18,22 +18,42 @@ Use this skill when the user triggers the `/commit_message` command. This skill 
    - Run `git branch --show-current` to check the current branch name.
    - Suggest a **meaningful branch name** if the current one is too generic (like `main`, `master`, `dev`) and the changes represent a specific task. Use patterns like `feature/feature-name`, `bugfix/issue-name`, or `refactor/refactor-name`.
 
-3. **Analyze and Suggest Commit Messages**:
+3. **Analyze and Split Commits**:
    - Group changes logically.
-   - If changes are large and cover multiple unrelated areas (e.g., modifying both Backend Auth and Frontend UI styling), suggest **splitting into small, focused commits** instead of one giant commit.
-   - For each logical group, generate a commit message following the **Conventional Commits** specification:
-     ```
-     <type>(<scope>): <short description in imperative mood>
+   - If changes are large and cover multiple unrelated areas, suggest **splitting into small, focused commits** instead of one giant commit.
 
-     [optional body explaining 'why' the changes were made]
+4. **Construct Commit Messages**:
+   - For each logical group, generate a commit message following the **Conventional Commits** specification.
+   - Follow this structure:
+     ```xml
+     <commit-message>
+       <type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert</type>
+       <scope>(optional: component or feature name)</scope>
+       <description>A short, imperative summary of the change</description>
+       <body>(optional: more detailed explanation)</body>
+       <footer>(optional: e.g. BREAKING CHANGE: details, or issue references)</footer>
+     </commit-message>
      ```
-     - **Types**: `feat`, `fix`, `refactor`, `style`, `docs`, `test`, `chore`.
-     - **Scope**: e.g., `auth`, `transactions`, `accounts`, `ui`, `config`.
-     - **imperative mood**: e.g., *"add deposit modal"* instead of *"added deposit modal"*.
 
-4. **Output Recommendation**:
-   - Provide the git commands for the user to easily copy and run, for example:
+   - **Validation Rules**:
+     - `type`: Must be one of the allowed types.
+     - `scope`: Optional, but recommended for clarity.
+     - `description`: Required. Use the imperative mood (e.g., "add", not "added").
+     - `body`: Optional. Use for additional context or answering "why".
+     - `footer`: Use for breaking changes or issue references.
+
+   - **Examples**:
+     - `feat(parser): add ability to parse arrays`
+     - `fix(ui): correct button alignment`
+     - `docs: update README with usage instructions`
+     - `refactor: improve performance of data processing`
+     - `chore: update dependencies`
+     - `feat!: send email on registration (BREAKING CHANGE: email service required)`
+
+5. **Final Execution**:
+   - Provide the git commands for the user to easily copy and run, OR proactively run them using the `run_command` tool (if they are straightforward and you have confirmed what to commit).
+   - Example command:
      ```bash
      git add <files>
-     git commit -m "feat(transactions): add deposit and withdraw endpoints"
+     git commit -m "type(scope): description"
      ```
