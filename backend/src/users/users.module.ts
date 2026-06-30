@@ -12,4 +12,4 @@ import { UsersService } from './users.service';
   // Export UsersService so AuthModule and AdminModule can inject it
   exports: [UsersService],
 })
-export class UsersModule {}
+export class UsersModule { }

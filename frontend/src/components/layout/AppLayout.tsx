@@ -1,100 +1,28 @@
-import { Layout, Menu, Typography, Avatar, Dropdown } from 'antd';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useLogout } from '@/hooks/useAuth';
-import {
-  DashboardOutlined,
-  SwapOutlined,
-  HistoryOutlined,
-  LogoutOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { Layout, Avatar } from 'antd';
+import { Outlet } from 'react-router-dom';
+import { UserOutlined } from '@ant-design/icons';
+import { Sidebar } from './Sidebar';
+import { useAuthStore } from '@/store/auth.store';
 
-const { Header, Sider, Content } = Layout;
-const { Title } = Typography;
+const { Header, Content } = Layout;
 
 export function AppLayout() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const logoutMutation = useLogout();
-
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
-
-  const menuItems = [
-    {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard',
-    },
-    {
-      key: '/transfer',
-      icon: <SwapOutlined />,
-      label: 'Transfer Money',
-    },
-    {
-      key: '/transactions',
-      icon: <HistoryOutlined />,
-      label: 'Transactions',
-    },
-  ];
-
+  const user = useAuthStore((s) => s.user);
+  
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider
-        width={250}
-        theme="light"
-        style={{
-          background: '#fff',
-          borderRight: '1px solid #e2e8f0',
-          position: 'fixed',
-          height: '100vh',
-          left: 0,
-          top: 0,
-          bottom: 0,
-        }}
-      >
-        <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-            SB
-          </div>
-          <Title level={4} style={{ margin: 0, color: '#1e293b' }}>Simple Bank</Title>
-        </div>
+      <Sidebar />
 
-        <Menu
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-          style={{ borderRight: 0, padding: '0 12px' }}
-          theme="light"
-        />
-
-      </Sider>
-
-      <Layout style={{ marginLeft: 250 }}>
+      <Layout style={{ marginLeft: 260 }}>
         <Header style={{ background: '#fff', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', borderBottom: '1px solid #e2e8f0', height: 72 }}>
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: 'logout',
-                  icon: <LogoutOutlined />,
-                  label: 'Logout',
-                  onClick: handleLogout,
-                  danger: true,
-                },
-              ],
-            }}
-            trigger={['click']}
-            placement="bottomRight"
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', transition: 'background 0.3s' }} className="user-dropdown-trigger">
-              <span style={{ fontWeight: 500, color: '#334155' }}>John Doe</span>
-              <Avatar style={{ backgroundColor: '#3B82F6' }} icon={<UserOutlined />} />
-            </div>
-          </Dropdown>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 8px', borderRadius: '8px' }}>
+            <span style={{ fontWeight: 500, color: '#334155' }}>
+              {user?.full_name || (user as any)?.fullName || 'User'}
+            </span>
+            <Avatar style={{ backgroundColor: '#3B82F6' }} icon={<UserOutlined />} />
+          </div>
         </Header>
+
         <Content style={{ padding: '32px', background: '#F8FAFC' }}>
           <div style={{ maxWidth: 1200, margin: '0 auto' }}>
             <Outlet />
@@ -104,3 +32,4 @@ export function AppLayout() {
     </Layout>
   );
 }
+

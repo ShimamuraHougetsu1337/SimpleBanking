@@ -28,7 +28,7 @@ async function run() {
     console.log('Truncating existing database tables (cascade)...');
     // Truncate tables in order to avoid foreign key constraint violations
     await queryRunner.query('TRUNCATE TABLE transactions CASCADE;');
-    await queryRunner.query('TRUNCATE TABLE refreshTokens CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE refresh_tokens CASCADE;');
     await queryRunner.query('TRUNCATE TABLE accounts CASCADE;');
     await queryRunner.query('TRUNCATE TABLE users CASCADE;');
 
@@ -63,6 +63,7 @@ async function run() {
     const adminAccount = new Account();
     adminAccount.user = savedAdmin;
     adminAccount.accountNumber = 'VN10001000000001';
+    adminAccount.name = 'VN10001000000001';
     adminAccount.balance = '0.00';
     adminAccount.currency = 'VND';
     adminAccount.status = AccountStatus.ACTIVE;
@@ -76,6 +77,7 @@ async function run() {
     const customerAccount1 = new Account();
     customerAccount1.user = savedCustomer;
     customerAccount1.accountNumber = 'VN10001000001001';
+    customerAccount1.name = 'Main Checking Account';
     customerAccount1.balance = '10000000.00'; // 10,000,000.00 VND
     customerAccount1.currency = 'VND';
     customerAccount1.status = AccountStatus.ACTIVE;
@@ -91,6 +93,7 @@ async function run() {
     const customerAccount2 = new Account();
     customerAccount2.user = savedCustomer;
     customerAccount2.accountNumber = 'VN10001000001002';
+    customerAccount2.name = 'Savings Account';
     customerAccount2.balance = '5000000.00'; // 5,000,000.00 VND
     customerAccount2.currency = 'VND';
     customerAccount2.status = AccountStatus.ACTIVE;

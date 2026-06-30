@@ -52,6 +52,7 @@ users
 | `id`             | `uuid`                     | PRIMARY KEY             |                                                |
 | `user_id`        | `uuid`                     | FK → users.id, NOT NULL | Account owner. ON DELETE RESTRICT              |
 | `account_number` | `varchar(20)`              | NOT NULL, UNIQUE        | Auto-generated (see strategy below)            |
+| `name`           | `varchar(100)`             | NOT NULL                | Account display name (e.g., Savings Account)   |
 | `balance`        | `numeric(18,2)`            | NOT NULL, DEFAULT 0.00  | **Never use float**                            |
 | `currency`       | `varchar(3)`               | NOT NULL, DEFAULT 'VND' | ISO 4217 currency code                         |
 | `status`         | `enum('active','locked')`  | NOT NULL, DEFAULT 'active' | Locked accounts cannot perform transactions |

@@ -9,10 +9,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Planned
-- Implement backend NestJS (Auth, User, Account, Transaction, Admin modules)
-- Implement frontend React (Login, Register, Dashboard, Transfer, Transactions, Admin pages)
 - Docker Compose configurations
 - Database migrations and seed datasets setup
+
+---
+
+## [0.2.0] — 2026-06-30
+
+### Added
+- `AccountsPage` and `AccountDetailPage` to view user accounts and filter specific transaction history.`
+- Dynamic layout updates to display authenticated user information in `Sidebar`, `AppLayout`, and `AdminLayout`.
+- Backend endpoints `GET /accounts/me` and `GET /accounts/:id`.
+- Advanced query filters for `GET /transactions` supporting `accountId`, `search`, `fromDate`, and `toDate`.
+- Added `name` field to `accounts` table in the data model.
+
+### Changed
+- Refactored `DashboardPage` layout to a vertical list of accounts and their recent transactions (removed carousel and transfer button).
+- Transitioned transaction filtering logic to support granular search within specific accounts.
+- Removed partially completed frontend boilerplate tasks from Planned.
 
 ---
 

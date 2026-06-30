@@ -14,7 +14,7 @@ export default registerAs('database', (): TypeOrmModuleOptions => ({
   password: process.env.DB_PASSWORD ?? '',
   // Auto-sync entity schema — enabled only in development, NEVER in production
   synchronize: process.env.NODE_ENV !== 'production',
-  logging: process.env.NODE_ENV === 'development',
+  logging: process.env.NODE_ENV !== 'production' ? ['error', 'warn'] : false,
   // Load entities compiled to dist — avoids having to enumerate them manually
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
   autoLoadEntities: true,
