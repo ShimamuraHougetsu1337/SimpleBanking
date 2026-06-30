@@ -16,7 +16,11 @@ Use this skill when the user explicitly triggers `/clean-code` to review, analyz
 ## Core Guidelines to Enforce
 
 1. **Constants Over Magic Numbers**
-   - Replace hard-coded values with named constants at the top of the file or in a dedicated constants file.
+   - Replace hard-coded values with named constants.
+   - Determine constant placement based on its usage scope:
+     - **Global Scope**: If a constant is used across multiple modules (like system roles or date formats), isolate it in a dedicated global `constants/` directory at the root level.
+     - **Feature Scope**: If it is shared only among files within the same feature (like between a controller and service), place it in a separate feature-specific constant file inside that feature's folder (e.g., `constants.ts` or `<feature>.constants.ts`).
+     - **Local Scope**: If a constant is strictly local and only used within a single file, define it directly at the very top of that file using UPPER_SNAKE_CASE to keep controllers and services clean from global clutter.
    - Use descriptive constant names that explain the value's purpose.
 
 2. **Meaningful Naming**

@@ -11,9 +11,11 @@
 Before starting to code, evaluate if your task falls into any of the specialized categories below. If it does, you **MUST** use the `view_file` tool to read the corresponding `SKILL.md` file before taking any action.
 
 - **Refactoring, Code Quality, or Code Review** ➜ Read `.agents/skills/clean-code/SKILL.md`
+- **React clean code, separating logic from UI, custom hooks, or component refactoring** ➜ Read `.agents/skills/clean-react-components/SKILL.md`
 - **User uses commands: /explain, /walkthrough, /review, /optimize** ➜ Read `.agents/skills/code-assistant-commands/SKILL.md`
 - **Docker Compose, Containerization, or Deployment** ➜ Read `.agents/skills/docker-compose-setup/SKILL.md`
 - **Frontend UI, Styling, Layouts, or Ant Design components** ➜ Read `.agents/skills/frontend-ui-guidelines/SKILL.md`
+- **Table design, lists, Stripe-style tables, or data tables** ➜ Read `.agents/skills/stripe-table-design/SKILL.md`
 - **Authentication, JWT, Login/Logout, or Refresh Tokens** ➜ Read `.agents/skills/jwt-refresh-rotation/SKILL.md`
 - **Creating new NestJS Features, Modules, or Entities** ➜ Read `.agents/skills/nestjs-module-scaffold/SKILL.md`
 - **Frontend API Integration, Axios, or React Query hooks** ➜ Read `.agents/skills/react-api-layer/SKILL.md`
