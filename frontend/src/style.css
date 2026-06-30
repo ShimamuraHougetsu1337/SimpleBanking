@@ -293,3 +293,49 @@ code {
     border-right-color: var(--border);
   }
 }
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s ease;
+  margin-bottom: 4px;
+}
+.sidebar-item:hover {
+  background-color: #F8FAFC;
+  color: #1e293b;
+}
+.sidebar-item.active {
+  background-color: #EFF6FF;
+  color: #2563EB;
+  font-weight: 600;
+}
+.sidebar-item-danger {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s ease;
+  margin-bottom: 4px;
+}
+.sidebar-item-danger:hover {
+  background-color: #FEF2F2;
+  color: #EF4444;
+}
+/* Custom scrollbar for webkit browsers */
+.sidebar-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+.sidebar-scrollable::-webkit-scrollbar-thumb {
+  background-color: #E2E8F0;
+  border-radius: 4px;
+}

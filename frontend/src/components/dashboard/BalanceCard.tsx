@@ -53,7 +53,15 @@ export function BalanceCard({ accountNumber, name, balance, owner, currency = 'V
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Account Number</Text>
-            <Text style={{ color: '#E5E7EB', fontSize: 18, fontWeight: 600, letterSpacing: 3, fontFamily: 'monospace' }}>{accountNumber}</Text>
+            <Text 
+              copyable={{ 
+                text: accountNumber, 
+                tooltips: ['Copy account number', 'Copied!']
+              }}
+              style={{ color: '#E5E7EB', fontSize: 18, fontWeight: 600, letterSpacing: 3, fontFamily: 'monospace' }}
+            >
+              {accountNumber}
+            </Text>
           </div>
           <div style={{ textAlign: 'right' }}>
             <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Card Holder</Text>

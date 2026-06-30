@@ -1,8 +1,8 @@
-import { Typography, Button, Spin, Empty } from 'antd';
+import { Typography, Button, Spin, Empty, Alert } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 
 const { Title } = Typography;
@@ -13,35 +13,32 @@ interface Account {
   name: string;
   balance: string;
   currency: string;
+  theme?: string;
   user?: {
     fullName: string;
   };
 }
 
-const MOCK_THEMES = [
-  'linear-gradient(135deg, #111827 0%, #000000 100%)', // Default Black Metallic
-  'linear-gradient(135deg, #0f172a 0%, #1e40af 100%)', // Ocean Blue
-  'linear-gradient(135deg, #064e3b 0%, #047857 100%)', // Emerald Green
-  'linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)', // Royal Purple
-];
-
 export default function AccountsPage() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    api.get('/accounts/me')
-      .then(res => {
-        setAccounts(res.data);
-      })
-      .catch(err => console.error(err))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: accounts, isLoading, error } = useQuery<Account[]>({
+    queryKey: ['accounts', 'me'],
+    queryFn: async () => {
+      const res = await api.get('/accounts/me');
+      return res.data;
+    },
+  });
 
-  if (loading) {
+  if (isLoading) {
     return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" /></div>;
   }
+
+  if (error) {
+    return <Alert message="Error loading accounts" type="error" showIcon style={{ margin: '20px' }} />;
+  }
+
+  const accountList = accounts || [];
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', paddingBottom: 60 }}>
@@ -57,12 +54,12 @@ export default function AccountsPage() {
         </Button>
       </div>
 
-      {accounts.length === 0 ? (
+      {accountList.length === 0 ? (
         <Empty description="You don't have any accounts yet." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 20 }}>
-          {accounts.map((account, index) => {
-            const themeGradient = MOCK_THEMES[index % MOCK_THEMES.length];
+          {accountList.map((account) => {
+            const themeGradient = account.theme || 'linear-gradient(135deg, #111827 0%, #000000 100%)';
             return (
               <div key={account.id}>
                 <div
