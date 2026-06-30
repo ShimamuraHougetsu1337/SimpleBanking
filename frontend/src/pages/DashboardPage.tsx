@@ -1,69 +1,26 @@
 import { Typography, Spin, Alert } from 'antd';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
-import { RecentTransactions, type Transaction } from '@/components/dashboard/RecentTransactions';
+import { RecentTransactions } from '@/components/dashboard/RecentTransactions';
+import { useDashboardData, type Account } from '@/hooks/useDashboardData';
 
 const { Title } = Typography;
 
-interface Account {
-  id: string;
-  accountNumber: string;
-  name: string;
-  balance: string;
-  currency: string;
-  theme?: string;
-  user?: {
-    fullName: string;
-  };
-}
-
 export default function DashboardPage() {
-  const { data: accountsData, isLoading: loadingAccounts, error: errorAccounts } = useQuery({
-    queryKey: ['accounts', 'me'],
-    queryFn: async () => {
-      const { data } = await api.get('/accounts/me');
-      return data;
-    },
-  });
+  const {
+    accounts,
+    transactionsByAccount,
+    loading,
+    error,
+    hasAccountsLoaded,
+  } = useDashboardData();
 
-  const { data: txByAccountData, isLoading: loadingTx, error: errorTx } = useQuery({
-    queryKey: ['dashboard', 'transactions', accountsData?.map((a: Account) => a.id)],
-    queryFn: async () => {
-      if (!accountsData || accountsData.length === 0) return {};
-
-      const txPromises = accountsData.map((acc: Account) =>
-        api.get(`/transactions`, { params: { accountId: acc.id, limit: 5 } })
-      );
-
-      const txResArray = await Promise.all(txPromises);
-
-      const newTxByAccount: Record<string, Transaction[]> = {};
-      accountsData.forEach((acc: Account, idx: number) => {
-        if (txResArray[idx].data && txResArray[idx].data.data) {
-          newTxByAccount[acc.id] = txResArray[idx].data.data;
-        } else {
-          newTxByAccount[acc.id] = [];
-        }
-      });
-      return newTxByAccount;
-    },
-    enabled: !!accountsData && accountsData.length > 0,
-  });
-
-  const loading = loadingAccounts || loadingTx;
-  const error = errorAccounts || errorTx;
-
-  if (loading && !accountsData) {
+  if (loading && !hasAccountsLoaded) {
     return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" /></div>;
   }
 
   if (error) {
     return <Alert message="Error" description="Failed to load dashboard data." type="error" showIcon style={{ margin: '20px' }} />;
   }
-
-  const accounts = accountsData || [];
-  const transactionsByAccount = txByAccountData || {};
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', paddingBottom: 60 }}>

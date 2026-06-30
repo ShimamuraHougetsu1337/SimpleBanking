@@ -52,7 +52,6 @@ export default function TransferPage() {
 
   const handleConfirm = () => {
     if (!pendingValues) return;
-
     transfer({
       from_accountId: pendingValues.from_accountId,
       to_accountNumber: pendingValues.to_accountNumber,
