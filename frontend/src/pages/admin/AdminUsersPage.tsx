@@ -1,49 +1,23 @@
 import { Card, Table, Typography, Tag, Space, Button, Input, Row, Col, Statistic, ConfigProvider } from 'antd';
 import { SearchOutlined, LockOutlined, UnlockOutlined, UsergroupAddOutlined, UserDeleteOutlined } from '@ant-design/icons';
+import { useAdminUsers, type AdminUser } from '@/hooks/admin/useAdminUsers';
 
 const { Title, Text } = Typography;
 
-// Mock Data
-const mockUsers = [
-  {
-    id: 'u-1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'customer',
-    status: 'active',
-    balance: '24500000',
-    created_at: '2026-01-15T10:30:00Z',
-  },
-  {
-    id: 'u-2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'customer',
-    status: 'active',
-    balance: '1500000',
-    created_at: '2026-03-22T14:15:00Z',
-  },
-  {
-    id: 'u-3',
-    name: 'Bob Johnson',
-    email: 'bob@example.com',
-    role: 'customer',
-    status: 'locked',
-    balance: '500000',
-    created_at: '2026-05-10T09:45:00Z',
-  },
-  {
-    id: 'u-4',
-    name: 'Admin System',
-    email: 'admin@simplebank.com',
-    role: 'admin',
-    status: 'active',
-    balance: '0',
-    created_at: '2025-12-01T08:00:00Z',
-  },
-];
-
 export default function AdminUsersPage() {
+  const {
+    users,
+    total,
+    page,
+    pageSize,
+    searchQuery,
+    handleSearchChange,
+    handlePageChange,
+    handleLockUser,
+    handleUnlockUser,
+    stats,
+  } = useAdminUsers();
+
   const formatVND = (amount: string) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(amount));
   };
@@ -52,8 +26,8 @@ export default function AdminUsersPage() {
     {
       title: 'Name & Email',
       key: 'user',
-      // Left-align textual content
-      render: (record: any) => (
+      align: 'left' as const,
+      render: (record: AdminUser) => (
         <Space direction="vertical" size={0}>
           <Text strong>{record.name}</Text>
           <Text type="secondary" style={{ fontSize: 13 }}>{record.email}</Text>
@@ -86,8 +60,8 @@ export default function AdminUsersPage() {
       title: 'Balance',
       dataIndex: 'balance',
       key: 'balance',
-      align: 'right' as const, // Right-align numeric/monetary values
-      render: (balance: string, record: any) => (
+      align: 'right' as const,
+      render: (balance: string, record: AdminUser) => (
         <Text strong style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
           {record.role !== 'admin' ? formatVND(balance) : '-'}
         </Text>
@@ -97,20 +71,34 @@ export default function AdminUsersPage() {
       title: 'Joined',
       dataIndex: 'created_at',
       key: 'created_at',
-      align: 'right' as const, // Right-align dates
+      align: 'right' as const,
       render: (date: string) => <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>{new Date(date).toLocaleDateString('vi-VN')}</Text>,
     },
     {
       title: 'Action',
       key: 'action',
-      align: 'right' as const, // Right-align action buttons
-      render: (record: any) => {
+      align: 'right' as const,
+      render: (record: AdminUser) => {
         if (record.role === 'admin') return <Text type="secondary" disabled>No actions</Text>;
 
         return record.status === 'active' ? (
-          <Button danger type="text" icon={<LockOutlined />}>Lock</Button>
+          <Button
+            danger
+            type="text"
+            icon={<LockOutlined />}
+            onClick={() => handleLockUser(record.id)}
+          >
+            Lock
+          </Button>
         ) : (
-          <Button type="text" style={{ color: '#10B981' }} icon={<UnlockOutlined />}>Unlock</Button>
+          <Button
+            type="text"
+            style={{ color: '#10B981' }}
+            icon={<UnlockOutlined />}
+            onClick={() => handleUnlockUser(record.id)}
+          >
+            Unlock
+          </Button>
         );
       },
     },
@@ -125,6 +113,8 @@ export default function AdminUsersPage() {
             placeholder="Search users by name or email..."
             prefix={<SearchOutlined />}
             style={{ width: 300, borderRadius: 8 }}
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
           />
           <Button type="primary" style={{ borderRadius: 8 }}>Export CSV</Button>
         </Space>
@@ -133,17 +123,17 @@ export default function AdminUsersPage() {
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
           <Card variant="borderless">
-            <Statistic title="Total Users" value={1254} prefix={<UsergroupAddOutlined />} />
+            <Statistic title="Total Users" value={stats.totalUsers} prefix={<UsergroupAddOutlined />} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card variant="borderless">
-            <Statistic title="Active Accounts" value={1180} valueStyle={{ color: '#10B981' }} />
+            <Statistic title="Active Accounts" value={stats.activeAccounts} valueStyle={{ color: '#10B981' }} />
           </Card>
         </Col>
         <Col xs={24} sm={8}>
           <Card variant="borderless">
-            <Statistic title="Locked Accounts" value={74} valueStyle={{ color: '#EF4444' }} prefix={<UserDeleteOutlined />} />
+            <Statistic title="Locked Accounts" value={stats.lockedAccounts} valueStyle={{ color: '#EF4444' }} prefix={<UserDeleteOutlined />} />
           </Card>
         </Col>
       </Row>
@@ -165,9 +155,15 @@ export default function AdminUsersPage() {
         >
           <Table
             columns={columns}
-            dataSource={mockUsers}
+            dataSource={users}
             rowKey="id"
-            pagination={{ pageSize: 10, showSizeChanger: false }}
+            pagination={{
+              current: page,
+              pageSize: pageSize,
+              total: total,
+              showSizeChanger: true,
+              onChange: handlePageChange,
+            }}
           />
         </ConfigProvider>
       </Card>

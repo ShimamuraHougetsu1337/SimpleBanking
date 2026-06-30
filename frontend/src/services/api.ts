@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import { useAuthStore } from '@/store/auth.store';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -81,15 +81,15 @@ api.interceptors.response.use(
 
       } catch (refreshError) {
         processQueue(refreshError, null);
-        
+
         // Handle invalid token (401) scenario exactly as requested
         // 1. Clear State: Immediately wipe all global state and sensitive data from memory
         clearAuth();
-        
+
         // 2. Instant Redirect: Redirect instantly without alerts/modals
         // 3. Login Message: Pass query param to display session expired message on login page
         window.location.href = '/login?expired=true';
-        
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
