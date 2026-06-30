@@ -23,10 +23,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             colorPrimary: '#3B82F6',
             colorSuccess: '#10B981',
             colorError: '#EF4444',
+            colorWarning: '#F59E0B',
+            colorTextBase: '#1e293b',
             colorBgBase: '#F8FAFC',
-            borderRadius: 12,
-            fontFamily: '"Inter", "Roboto", sans-serif',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            borderRadius: 8,
+            fontFamily: '"Inter", system-ui, sans-serif',
+            boxShadow: '0 2px 5px -1px rgba(50, 50, 93, 0.25), 0 1px 3px -1px rgba(0, 0, 0, 0.3)',
           },
           components: {
             Layout: {
@@ -35,7 +37,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               siderBg: '#FFFFFF',
             },
             Card: {
-              boxShadowTertiary: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
+              boxShadowTertiary: '0 2px 5px -1px rgba(50, 50, 93, 0.15), 0 1px 3px -1px rgba(0, 0, 0, 0.2)',
             },
             Menu: {
               itemHeight: 56,

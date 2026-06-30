@@ -1,17 +1,18 @@
 import { Layout, Menu, Typography, Avatar, Dropdown } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
-  DashboardOutlined,
-  SwapOutlined,
-  HistoryOutlined,
+  TeamOutlined,
+  TransactionOutlined,
   LogoutOutlined,
   UserOutlined,
+  SettingOutlined,
+  SafetyCertificateOutlined
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
-export function AppLayout() {
+export function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,19 +23,19 @@ export function AppLayout() {
 
   const menuItems = [
     {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      key: '/admin/users',
+      icon: <TeamOutlined />,
+      label: 'User Management',
     },
     {
-      key: '/transfer',
-      icon: <SwapOutlined />,
-      label: 'Transfer Money',
+      key: '/admin/transactions',
+      icon: <TransactionOutlined />,
+      label: 'All Transactions',
     },
     {
-      key: '/transactions',
-      icon: <HistoryOutlined />,
-      label: 'Transactions',
+      key: '/admin/settings',
+      icon: <SettingOutlined />,
+      label: 'System Settings',
     },
   ];
 
@@ -54,10 +55,10 @@ export function AppLayout() {
         }}
       >
         <div style={{ padding: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
-            SB
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
+            <SafetyCertificateOutlined />
           </div>
-          <Title level={4} style={{ margin: 0, color: '#1e293b' }}>Simple Bank</Title>
+          <Title level={4} style={{ margin: 0, color: '#1e293b' }}>Admin Panel</Title>
         </div>
 
         <Menu
@@ -89,8 +90,8 @@ export function AppLayout() {
             placement="bottomRight"
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', padding: '4px 8px', borderRadius: '8px', transition: 'background 0.3s' }} className="user-dropdown-trigger">
-              <span style={{ fontWeight: 500, color: '#334155' }}>John Doe</span>
-              <Avatar style={{ backgroundColor: '#3B82F6' }} icon={<UserOutlined />} />
+              <span style={{ fontWeight: 500, color: '#334155' }}>Super Admin</span>
+              <Avatar style={{ backgroundColor: '#10B981' }} icon={<UserOutlined />} />
             </div>
           </Dropdown>
         </Header>
