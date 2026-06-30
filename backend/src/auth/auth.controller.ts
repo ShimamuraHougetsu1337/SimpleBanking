@@ -29,13 +29,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
   async login(@Body() dto: LoginDto) {
-    const { accessToken, refreshToken } = await this.authService.login(
+    const { accessToken, refreshToken, user } = await this.authService.login(
       dto.email,
       dto.password,
     );
     return {
       accessToken: accessToken,
       refreshToken: refreshToken,
+      user: user,
       tokenType: 'Bearer',
       expiresIn: 900,
     };

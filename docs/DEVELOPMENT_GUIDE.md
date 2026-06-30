@@ -14,6 +14,18 @@ Ensure the following tools are installed on your machine:
 
 ---
 
+## Clean Code & Software Craftsmanship
+
+To ensure our application is readable, maintainable, and highly scalable for both backend and frontend development, we strictly follow these core practices:
+
+- **Meaningful Naming:** Use descriptive, intention-revealing names for variables, functions, and classes. Code should be written for humans to understand first.
+- **Single Responsibility Principle (SRP):** Ensure each function, NestJS module, or React component does exactly one thing.
+- **DRY (Don't Repeat Yourself):** Abstract repetitive logic into shared utility functions, NestJS services, or React custom hooks to keep the codebase lean.
+- **Robust Error Handling:** Always implement clean `try/catch` blocks, centralized API exception filters, and graceful UI degradation (Error Boundaries).
+- **Separation of Concerns:** Keep business logic isolated from presentation layers (React components) or network layers (NestJS controllers).
+
+---
+
 ## 1. Clone & Setup
 
 ```bash

@@ -57,7 +57,7 @@ export class AuthService {
       isRevoked: false,
     });
 
-    return { accessToken, refreshToken: rawRefreshToken };
+    return { accessToken, refreshToken: rawRefreshToken, user };
   }
 
   async login(email: string, password: string) {

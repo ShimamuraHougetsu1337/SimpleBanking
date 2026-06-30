@@ -44,8 +44,7 @@ interface User {
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
-  setAuth: (user: User, accessToken: string, refreshToken: string) => void;
+  setAuth: (user: User, accessToken: string) => void;
   setAccessToken: (token: string) => void;
   clearAuth: () => void;
   isAuthenticated: () => boolean;
@@ -55,18 +54,15 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
-  refreshToken: localStorage.getItem('refreshToken'), // Persistent refresh token storage
 
-  setAuth: (user, accessToken, refreshToken) => {
-    localStorage.setItem('refreshToken', refreshToken);
-    set({ user, accessToken, refreshToken });
+  setAuth: (user, accessToken) => {
+    set({ user, accessToken });
   },
 
   setAccessToken: (token) => set({ accessToken: token }),
 
   clearAuth: () => {
-    localStorage.removeItem('refreshToken');
-    set({ user: null, accessToken: null, refreshToken: null });
+    set({ user: null, accessToken: null });
   },
 
   isAuthenticated: () => !!get().accessToken,
@@ -86,6 +82,7 @@ const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api
 const api: AxiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // Crucial for sending HttpOnly cookies automatically
   timeout: 10000,
 });
 
@@ -142,28 +139,16 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const { refreshToken, setAccessToken, clearAuth } = useAuthStore.getState();
-
-      if (!refreshToken) {
-        clearAuth();
-        window.location.href = '/login';
-        return Promise.reject(error);
-      }
+      const { clearAuth } = useAuthStore.getState();
 
       try {
-        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {
-          refresh_token: refreshToken,
-        });
+        // The HttpOnly cookie containing the refresh token is sent automatically because of withCredentials: true
+        const { data } = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
 
         const newAccessToken = data.access_token;
-        const newRefreshToken = data.refresh_token;
 
         // Save new authentication credentials to the Zustand store
-        useAuthStore.getState().setAuth(
-          useAuthStore.getState().user!,
-          newAccessToken,
-          newRefreshToken,
-        );
+        useAuthStore.getState().setAccessToken(newAccessToken);
 
         processQueue(null, newAccessToken);
 
@@ -174,7 +159,8 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         clearAuth();
-        window.location.href = '/login';
+        // Redirect the user to /login instantly, without modals, and pass a state to show message
+        window.location.href = '/login?expired=true';
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
@@ -198,11 +184,11 @@ import { useAuthStore } from '@/store/auth.store';
 export const authService = {
   async login(email: string, password: string) {
     const { data } = await api.post('/auth/login', { email, password });
-    return data; // returns: { access_token, refresh_token, ... }
+    return data; // returns: { access_token, user }
   },
 
-  async logout(refreshToken: string) {
-    await api.post('/auth/logout', { refresh_token: refreshToken });
+  async logout() {
+    await api.post('/auth/logout');
     useAuthStore.getState().clearAuth();
   },
 
@@ -372,7 +358,7 @@ export function getErrorMessage(error: unknown): string {
 - [ ] Verify Axios requests are intercepting and appending Bearer tokens to headers.
 - [ ] Verify Axios responses are handling 401 exceptions via refresh token calls.
 - [ ] Enforce locking checks so multiple concurrent token refresh invocations queue requests.
-- [ ] Persist the Opaque refresh token to `localStorage`, while keeping the access token in memory.
+- [ ] Make sure Axios uses `withCredentials: true` to automatically pass HttpOnly refresh token cookies.
 - [ ] Wrap the main application entry point inside the QueryClientProvider.
 - [ ] Ensure all query requests use React Query `useQuery`, and operations use `useMutation`.
 - [ ] Invalidate relevant query keys on successful mutations to trigger background updates.

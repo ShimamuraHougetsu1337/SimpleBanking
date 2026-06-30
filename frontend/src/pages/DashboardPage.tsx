@@ -103,7 +103,7 @@ export default function DashboardPage() {
 
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} md={8}>
-          <Card bordered={false} style={{ height: '100%' }}>
+          <Card variant="borderless" style={{ height: '100%' }}>
             <Statistic
               title={<Text type="secondary" style={{ fontSize: 16 }}>Available Balance</Text>}
               value={mockBalance}
@@ -113,7 +113,7 @@ export default function DashboardPage() {
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card bordered={false} style={{ height: '100%' }}>
+          <Card variant="borderless" style={{ height: '100%' }}>
             <Statistic
               title={<Text type="secondary" style={{ fontSize: 16 }}>Total Income</Text>}
               value={mockIncome}
@@ -123,7 +123,7 @@ export default function DashboardPage() {
           </Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card bordered={false} style={{ height: '100%' }}>
+          <Card variant="borderless" style={{ height: '100%' }}>
             <Statistic
               title={<Text type="secondary" style={{ fontSize: 16 }}>Total Expense</Text>}
               value={mockExpense}
@@ -136,7 +136,7 @@ export default function DashboardPage() {
 
       <Card 
         title={<Title level={4} style={{ margin: 0 }}>Recent Transactions</Title>} 
-        bordered={false}
+        variant="borderless"
         extra={<Button type="link" onClick={() => navigate('/transactions')}>View All</Button>}
       >
         <Table

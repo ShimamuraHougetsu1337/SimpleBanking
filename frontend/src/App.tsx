@@ -56,6 +56,12 @@ const router = createBrowserRouter([
   }
 ]);
 
+import { App as AntApp } from 'antd';
+
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <AntApp>
+      <RouterProvider router={router} />
+    </AntApp>
+  );
 }

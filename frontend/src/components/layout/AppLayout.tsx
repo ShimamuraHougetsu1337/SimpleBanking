@@ -1,5 +1,6 @@
 import { Layout, Menu, Typography, Avatar, Dropdown } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useLogout } from '@/hooks/useAuth';
 import {
   DashboardOutlined,
   SwapOutlined,
@@ -14,10 +15,10 @@ const { Title } = Typography;
 export function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
+  const logoutMutation = useLogout();
 
   const handleLogout = () => {
-    // Mock logout
-    navigate('/login');
+    logoutMutation.mutate();
   };
 
   const menuItems = [
