@@ -9,7 +9,7 @@ export class AccountsService {
   constructor(
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
-  ) {}
+  ) { }
 
   async createDefaultAccount(user: User): Promise<Account> {
     const timestamp = Date.now().toString().slice(-10);
@@ -32,7 +32,7 @@ export class AccountsService {
     return this.accountRepository.find({
       where: { userId },
       relations: { user: true },
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'ASC', id: 'ASC' },
     });
   }
 
