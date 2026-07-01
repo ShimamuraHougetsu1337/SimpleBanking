@@ -1,5 +1,5 @@
 import { Card, Typography, Tag, Button, Space, Descriptions } from 'antd';
-import { SwapOutlined, HistoryOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { SwapOutlined, HistoryOutlined, SafetyCertificateOutlined, MinusCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { Account } from '@/hooks/client/useDashboardData';
 
@@ -7,9 +7,11 @@ const { Title, Text } = Typography;
 
 interface AccountDetailsCardProps {
   account: Account;
+  onWithdraw?: (account: Account) => void;
+  onSettings?: (account: Account) => void;
 }
 
-export function AccountDetailsCard({ account }: AccountDetailsCardProps) {
+export function AccountDetailsCard({ account, onWithdraw, onSettings }: AccountDetailsCardProps) {
   const navigate = useNavigate();
 
   const formatDate = (dateString: string) => {
@@ -89,6 +91,18 @@ export function AccountDetailsCard({ account }: AccountDetailsCardProps) {
               Chuyển tiền
             </Button>
             <Button
+              danger
+              icon={<MinusCircleOutlined />}
+              onClick={() => onWithdraw?.(account)}
+              disabled={isLocked}
+              style={{
+                borderRadius: 6,
+                fontWeight: 500,
+              }}
+            >
+              Rút tiền
+            </Button>
+            <Button
               icon={<HistoryOutlined />}
               onClick={() => navigate(`/accounts/${account.id}`)}
               style={{
@@ -99,6 +113,18 @@ export function AccountDetailsCard({ account }: AccountDetailsCardProps) {
               }}
             >
               Xem lịch sử
+            </Button>
+            <Button
+              icon={<SettingOutlined />}
+              onClick={() => onSettings?.(account)}
+              style={{
+                borderRadius: 6,
+                fontWeight: 500,
+                color: '#475569',
+                borderColor: '#cbd5e1',
+              }}
+            >
+              Cài đặt
             </Button>
           </Space>
         </div>

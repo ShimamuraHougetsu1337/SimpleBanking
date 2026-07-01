@@ -7,6 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 import { TransferForm } from '../components/transfer/TransferForm';
 import { TransferReviewModal } from '../components/transfer/TransferReviewModal';
+import { TransactionResultModal } from '@/components/transactions/TransactionResultModal';
 
 const { Title } = Typography;
 
@@ -17,6 +18,11 @@ export default function TransferPage() {
   const [pendingValues, setPendingValues] = useState<any>(null);
   const [receiver, setReceiver] = useState<any>(null);
   const [isResolving, setIsResolving] = useState(false);
+  const [resultTx, setResultTx] = useState<{
+    status: 'success' | 'failed';
+    errorMsg?: string;
+    txData?: any;
+  } | null>(null);
 
   const { data: accounts, isLoading: isLoadingAccounts } = useQuery({
     queryKey: ['accounts', 'me'],
@@ -59,15 +65,30 @@ export default function TransferPage() {
       description: pendingValues.description,
       idempotencyKey: uuidv4(),
     }, {
-      onSuccess: () => {
-        message.success('Chuyển tiền thành công');
-        form.resetFields(['to_accountNumber', 'amount', 'description']);
+      onSuccess: (data) => {
         setIsModalVisible(false);
+        setResultTx({
+          status: 'success',
+          txData: {
+            id: data.id,
+            type: 'transfer',
+            amount: data.amount,
+            fromAccount: selectedAccount?.accountNumber,
+            toAccount: pendingValues.to_accountNumber,
+            description: data.description,
+            createdAt: data.createdAt,
+          }
+        });
+        form.resetFields(['to_accountNumber', 'amount', 'description']);
         setPendingValues(null);
         setReceiver(null);
       },
       onError: (err) => {
-        message.error(getErrorMessage(err));
+        setIsModalVisible(false);
+        setResultTx({
+          status: 'failed',
+          errorMsg: getErrorMessage(err),
+        });
       }
     });
   };
@@ -98,6 +119,18 @@ export default function TransferPage() {
         pendingValues={pendingValues}
         selectedAccount={selectedAccount}
         receiver={receiver}
+      />
+
+      <TransactionResultModal
+        visible={!!resultTx}
+        status={resultTx?.status || 'success'}
+        errorMsg={resultTx?.errorMsg}
+        txData={resultTx?.txData}
+        onClose={() => setResultTx(null)}
+        onRetry={() => {
+          setResultTx(null);
+          setIsModalVisible(true);
+        }}
       />
     </div>
   );

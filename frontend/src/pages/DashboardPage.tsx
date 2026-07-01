@@ -1,11 +1,23 @@
-import { Typography, Spin, Alert } from 'antd';
+import { useState } from 'react';
+import { Typography, Spin, Alert, Modal } from 'antd';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { AccountDetailsCard } from '@/components/dashboard/AccountDetailsCard';
 import { useDashboardData, type Account } from '@/hooks/client/useDashboardData';
+import { WithdrawModal } from '@/components/transactions/TransactionModals';
+import { AccountSettingsForm } from '@/components/account/AccountSettingsForm';
+import { TransactionResultModal } from '@/components/transactions/TransactionResultModal';
 
 const { Title } = Typography;
 
 export default function DashboardPage() {
+  const [withdrawAccount, setWithdrawAccount] = useState<Account | null>(null);
+  const [settingsAccount, setSettingsAccount] = useState<Account | null>(null);
+  const [resultTx, setResultTx] = useState<{
+    status: 'success' | 'failed';
+    errorMsg?: string;
+    txData?: any;
+  } | null>(null);
+
   const {
     accounts,
     loading,
@@ -45,7 +57,11 @@ export default function DashboardPage() {
                       themeGradient={themeGradient}
                     />
                   </div>
-                  <AccountDetailsCard account={account} />
+                  <AccountDetailsCard
+                    account={account}
+                    onWithdraw={(acc) => setWithdrawAccount(acc)}
+                    onSettings={(acc) => setSettingsAccount(acc)}
+                  />
                 </div>
               );
             })}
@@ -54,6 +70,53 @@ export default function DashboardPage() {
           <div>Không tìm thấy tài khoản nào.</div>
         )}
       </div>
+
+      <WithdrawModal
+        isOpen={!!withdrawAccount}
+        onClose={() => setWithdrawAccount(null)}
+        accountId={withdrawAccount?.id || ''}
+        onSuccess={(tx) => {
+          setResultTx({
+            status: 'success',
+            txData: {
+              id: tx.id,
+              type: 'withdraw',
+              amount: tx.amount,
+              fromAccount: withdrawAccount?.accountNumber,
+              description: tx.description,
+              createdAt: tx.createdAt,
+            }
+          });
+        }}
+      />
+
+      <TransactionResultModal
+        visible={!!resultTx}
+        status={resultTx?.status || 'success'}
+        errorMsg={resultTx?.errorMsg}
+        txData={resultTx?.txData}
+        onClose={() => setResultTx(null)}
+      />
+
+      <Modal
+        title="Cài đặt tài khoản"
+        open={!!settingsAccount}
+        onCancel={() => setSettingsAccount(null)}
+        footer={null}
+        centered
+        destroyOnClose
+      >
+        {settingsAccount && (
+          <AccountSettingsForm
+            accountId={settingsAccount.id}
+            initialValues={{
+              name: settingsAccount.name,
+              theme: settingsAccount.theme || 'linear-gradient(135deg, #111827 0%, #000000 100%)',
+            }}
+            onSuccess={() => setSettingsAccount(null)}
+          />
+        )}
+      </Modal>
     </div>
   );
 }

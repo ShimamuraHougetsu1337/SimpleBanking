@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
-import { message } from 'antd';
 import { v4 as uuidv4 } from 'uuid';
 
 interface DepositVariables {
@@ -22,15 +21,10 @@ export function useDeposit() {
       return res.data;
     },
     onSuccess: (_, variables) => {
-      message.success('Deposit successful!');
       queryClient.invalidateQueries({ queryKey: ['accounts', 'me'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['account', variables.accountId] });
       queryClient.invalidateQueries({ queryKey: ['dashboard', 'transactions'] });
-    },
-    onError: (error: any) => {
-      const msg = error.response?.data?.message || 'Failed to deposit money';
-      message.error(typeof msg === 'string' ? msg : msg[0]);
     },
   });
 }
