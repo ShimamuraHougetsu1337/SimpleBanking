@@ -14,7 +14,7 @@ export class TransactionsService {
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     @InjectDataSource() private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async getTransactionsForUser(
     userId: string,
@@ -64,30 +64,33 @@ export class TransactionsService {
       .take(limit)
       .getMany();
 
-    return transactions.map((tx) => {
-      let direction = 'debit';
-      let counterpartName = 'System';
-      
-      // Determine direction and counterpart based on which account belongs to the user
-      if (tx.fromAccount?.userId === userId) {
-        direction = 'debit';
-        counterpartName = tx.toAccount?.user?.fullName || tx.toAccount?.name || tx.toAccountId || 'Unknown';
-      } else if (tx.toAccount?.userId === userId) {
-        direction = 'credit';
-        counterpartName = tx.fromAccount?.user?.fullName || tx.fromAccount?.name || tx.fromAccountId || 'System Deposit';
+    return transactions.flatMap((tx) => {
+      if (accountId) {
+        if (tx.fromAccountId === accountId) {
+          return this.mapToResult(tx, 'debit', tx.toAccount);
+        }
+        if (tx.toAccountId === accountId) {
+          return this.mapToResult(tx, 'credit', tx.fromAccount);
+        }
+        return [];
       }
 
-      return {
-        id: tx.id,
-        type: tx.type,
-        direction,
-        amount: tx.amount,
-        counterpartAccount: direction === 'debit' ? tx.toAccount?.accountNumber : tx.fromAccount?.accountNumber,
-        counterpartName,
-        description: tx.description,
-        status: tx.status,
-        createdAt: tx.createdAt,
-      };
+      const isFromUser = tx.fromAccount?.userId === userId;
+      const isToUser = tx.toAccount?.userId === userId;
+
+      if (isFromUser && isToUser) {
+        return [
+          this.mapToResult(tx, 'debit', tx.toAccount, 'debit'),
+          this.mapToResult(tx, 'credit', tx.fromAccount, 'credit'),
+        ];
+      }
+      if (isFromUser) {
+        return this.mapToResult(tx, 'debit', tx.toAccount);
+      }
+      if (isToUser) {
+        return this.mapToResult(tx, 'credit', tx.fromAccount);
+      }
+      return [];
     });
   }
 
@@ -297,5 +300,28 @@ export class TransactionsService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private mapToResult(
+    tx: Transaction,
+    direction: 'credit' | 'debit',
+    counterpartAccount: Account | null | undefined,
+    suffix?: string,
+  ) {
+    const defaultName = direction === 'credit' ? 'System Deposit' : 'Unknown';
+    const counterpartName =
+      counterpartAccount?.user?.fullName || counterpartAccount?.name || defaultName;
+
+    return {
+      id: suffix ? `${tx.id}-${suffix}` : tx.id,
+      type: tx.type,
+      direction,
+      amount: tx.amount,
+      counterpartAccount: counterpartAccount?.accountNumber,
+      counterpartName,
+      description: tx.description,
+      status: tx.status,
+      createdAt: tx.createdAt,
+    };
   }
 }
