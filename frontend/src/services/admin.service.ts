@@ -25,13 +25,69 @@ export interface GetUsersResponse {
     limit: number;
     total: number;
     totalPages: number;
-    totalUsers: number;
-    activeAccounts: number;
-    lockedAccounts: number;
   };
 }
 
+export interface AdminAccount {
+  id: string;
+  accountNumber: string;
+  balance: string;
+  currency: string;
+  status: string;
+  ownerName: string;
+  ownerEmail: string;
+  createdAt: string;
+}
+
+export interface GetAccountsResponse {
+  data: AdminAccount[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AdminTransaction {
+  id: string;
+  type: string;
+  amount: string;
+  status: string;
+  description: string;
+  fromAccount: string | null;
+  fromUserName: string | null;
+  toAccount: string | null;
+  toUserName: string | null;
+  createdAt: string;
+}
+
+export interface GetTransactionsResponse {
+  data: AdminTransaction[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    totalVolume: string;
+    successfulCount: number;
+    failedCount: number;
+  };
+}
+
+export interface DashboardStats {
+  totalUsers: number;
+  totalAccounts: number;
+  totalBalance: string;
+  weeklyVolume: { date: string; volume: string }[];
+}
+
 export const adminService = {
+  async getDashboardStats(): Promise<DashboardStats> {
+    const { data } = await api.get('/admin/dashboard-stats');
+    return data;
+  },
+
   async getUsers(params?: GetUsersParams): Promise<GetUsersResponse> {
     const { data } = await api.get('/admin/users', { params });
     return data;
@@ -41,4 +97,24 @@ export const adminService = {
     const { data } = await api.patch(`/admin/users/${id}/status`, { status });
     return data;
   },
+
+  async getAccounts(params?: { page?: number; limit?: number; search?: string; status?: string }): Promise<GetAccountsResponse> {
+    const { data } = await api.get('/admin/accounts', { params });
+    return data;
+  },
+
+  async updateAccountStatus(id: string, status: 'active' | 'locked'): Promise<AdminAccount> {
+    const { data } = await api.patch(`/admin/accounts/${id}/status`, { status });
+    return data;
+  },
+
+  async depositToAccount(id: string, amount: string, description?: string): Promise<any> {
+    const { data } = await api.post(`/admin/accounts/${id}/deposit`, { amount, description });
+    return data;
+  },
+
+  async getTransactions(params?: { page?: number; limit?: number; search?: string; startDate?: string; endDate?: string; type?: string }): Promise<GetTransactionsResponse> {
+    const { data } = await api.get('/admin/transactions', { params });
+    return data;
+  }
 };

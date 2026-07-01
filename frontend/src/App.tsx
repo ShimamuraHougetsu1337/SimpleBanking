@@ -6,6 +6,8 @@ import AccountsPage from './pages/AccountsPage';
 import TransferPage from './pages/TransferPage';
 import TransactionsPage from './pages/TransactionsPage';
 
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminAccountsPage from './pages/admin/AdminAccountsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
@@ -50,8 +52,10 @@ const router = createBrowserRouter([
       </AdminRoute>
     ),
     children: [
-      { index: true, element: <Navigate to="/admin/users" replace /> },
+      { index: true, element: <Navigate to="/admin/dashboard" replace /> },
+      { path: 'dashboard', element: <AdminDashboardPage /> },
       { path: 'users', element: <AdminUsersPage /> },
+      { path: 'accounts', element: <AdminAccountsPage /> },
       { path: 'transactions', element: <AdminTransactionsPage /> },
       { path: 'settings', element: <AdminSettingsPage /> },
     ],

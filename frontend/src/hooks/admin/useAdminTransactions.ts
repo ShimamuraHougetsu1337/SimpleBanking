@@ -1,105 +1,33 @@
-import { useState, useMemo } from 'react';
-
-export interface AdminTransaction {
-  id: string;
-  created_at: string;
-  sender_name: string;
-  receiver_name: string;
-  amount: string;
-  status: string;
-  type: string;
-}
-
-const INITIAL_MOCK_TRANSACTIONS: AdminTransaction[] = [
-  {
-    id: 'tx-1001',
-    created_at: '2026-06-29T10:30:00Z',
-    sender_name: 'System',
-    receiver_name: 'John Doe',
-    amount: '1500000',
-    status: 'completed',
-    type: 'deposit',
-  },
-  {
-    id: 'tx-1002',
-    created_at: '2026-06-28T15:45:00Z',
-    sender_name: 'John Doe',
-    receiver_name: 'Starbucks (Merchant)',
-    amount: '350000',
-    status: 'completed',
-    type: 'transfer',
-  },
-  {
-    id: 'tx-1003',
-    created_at: '2026-06-27T09:15:00Z',
-    sender_name: 'Jane Smith',
-    receiver_name: 'John Doe',
-    amount: '500000',
-    status: 'failed',
-    type: 'transfer',
-  },
-  {
-    id: 'tx-1004',
-    created_at: '2026-06-26T11:20:00Z',
-    sender_name: 'John Doe',
-    receiver_name: 'Jane Smith',
-    amount: '2000000',
-    status: 'completed',
-    type: 'transfer',
-  },
-];
+import { useState, useDeferredValue } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { adminService, type AdminTransaction } from '@/services/admin.service';
 
 export function useAdminTransactions() {
-  const [transactions] = useState<AdminTransaction[]>(INITIAL_MOCK_TRANSACTIONS);
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   const [dateRange, setDateRange] = useState<[Date | null, Date | null] | null>(null);
+  const [typeFilter, setTypeFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Filter transactions based on inputs
-  const filteredTransactions = useMemo(() => {
-    return transactions.filter((tx) => {
-      // 1. Search Query
-      const lowerQuery = searchQuery.toLowerCase();
-      const matchesSearch =
-        !searchQuery ||
-        tx.id.toLowerCase().includes(lowerQuery) ||
-        tx.sender_name.toLowerCase().includes(lowerQuery) ||
-        tx.receiver_name.toLowerCase().includes(lowerQuery);
+  const startDateStr = dateRange?.[0] ? dateRange[0].toISOString() : undefined;
+  const endDateStr = dateRange?.[1] ? dateRange[1].toISOString() : undefined;
 
-      // 2. Type Filter
-      const matchesType = typeFilter === 'all' || tx.type === typeFilter;
-
-      // 3. Date Range Filter
-      let matchesDate = true;
-      if (dateRange && dateRange[0] && dateRange[1]) {
-        const txDate = new Date(tx.created_at);
-        const startDate = dateRange[0];
-        const endDate = dateRange[1];
-        // Set times to cover full day bounds
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
-        matchesDate = txDate >= startDate && txDate <= endDate;
-      }
-
-      return matchesSearch && matchesType && matchesDate;
-    });
-  }, [transactions, searchQuery, typeFilter, dateRange]);
-
-  // Dynamically calculate metrics
-  const stats = useMemo(() => {
-    const completedTxs = transactions.filter((tx) => tx.status === 'completed');
-    const totalVolume = completedTxs.reduce((sum, tx) => sum + Number(tx.amount), 0);
-    const successfulCount = completedTxs.length;
-    const failedCount = transactions.filter((tx) => tx.status === 'failed').length;
-
-    return {
-      totalVolume,
-      successfulCount,
-      failedCount,
-    };
-  }, [transactions]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['adminTransactions', { page, limit: pageSize, search: deferredSearchQuery, startDate: startDateStr, endDate: endDateStr, type: typeFilter }],
+    queryFn: () =>
+      adminService.getTransactions({
+        page,
+        limit: pageSize,
+        search: deferredSearchQuery || undefined,
+        startDate: startDateStr,
+        endDate: endDateStr,
+        type: typeFilter === 'all' ? undefined : typeFilter,
+      }),
+    placeholderData: (previousData) => previousData,
+    staleTime: 10000,
+  });
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
@@ -127,9 +55,11 @@ export function useAdminTransactions() {
     }
   };
 
+  const transactions = data?.data ?? [];
+
   return {
-    transactions: filteredTransactions,
-    total: filteredTransactions.length,
+    transactions,
+    total: data?.meta?.total ?? 0,
     page,
     pageSize,
     searchQuery,
@@ -139,6 +69,13 @@ export function useAdminTransactions() {
     handleTypeFilterChange,
     handleDateRangeChange,
     handlePageChange,
-    stats,
+    stats: {
+      totalVolume: data?.meta?.totalVolume ?? '0',
+      successfulCount: data?.meta?.successfulCount ?? 0,
+      failedCount: data?.meta?.failedCount ?? 0,
+    },
+    isLoading,
+    error,
   };
 }
+export type { AdminTransaction };

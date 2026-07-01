@@ -45,7 +45,6 @@ export default function AdminUsersPage() {
     handlePageChange,
     handleLockUser,
     handleUnlockUser,
-    stats,
     isLoading,
   } = useAdminUsers();
 
@@ -169,38 +168,6 @@ export default function AdminUsersPage() {
           <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Export CSV</Button>
         </Space>
       </div>
-
-      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={8}>
-          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
-            <Statistic
-              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Total Users</span>}
-              value={stats.totalUsers}
-              prefix={<UsergroupAddOutlined style={{ color: '#3B82F6' }} />}
-              valueStyle={{ color: '#1e293b', fontWeight: 700 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
-            <Statistic
-              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Active Accounts</span>}
-              value={stats.activeAccounts}
-              valueStyle={{ color: '#10B981', fontWeight: 700 }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={8}>
-          <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
-            <Statistic
-              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Locked Accounts</span>}
-              value={stats.lockedAccounts}
-              valueStyle={{ color: '#EF4444', fontWeight: 700 }}
-              prefix={<UserDeleteOutlined style={{ color: '#EF4444' }} />}
-            />
-          </Card>
-        </Col>
-      </Row>
 
       <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: 0, overflow: 'hidden' }}>
         <ConfigProvider
