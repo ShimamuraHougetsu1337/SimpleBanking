@@ -1,84 +1,58 @@
-import { useState, useMemo } from 'react';
-
-export interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-  balance: string;
-  created_at: string;
-}
-
-// Initial mock data
-const INITIAL_MOCK_USERS: AdminUser[] = [
-  {
-    id: 'u-1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    role: 'customer',
-    status: 'active',
-    balance: '24500000',
-    created_at: '2026-01-15T10:30:00Z',
-  },
-  {
-    id: 'u-2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    role: 'customer',
-    status: 'active',
-    balance: '1500000',
-    created_at: '2026-03-22T14:15:00Z',
-  },
-  {
-    id: 'u-3',
-    name: 'Bob Johnson',
-    email: 'bob@example.com',
-    role: 'customer',
-    status: 'locked',
-    balance: '500000',
-    created_at: '2026-05-10T09:45:00Z',
-  },
-  {
-    id: 'u-4',
-    name: 'Admin System',
-    email: 'admin@simplebank.com',
-    role: 'admin',
-    status: 'active',
-    balance: '0',
-    created_at: '2025-12-01T08:00:00Z',
-  },
-];
+import { useState, useDeferredValue } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { adminService, type AdminUser } from '@/services/admin.service';
+import { message } from 'antd';
 
 export function useAdminUsers() {
-  const [users, setUsers] = useState<AdminUser[]>(INITIAL_MOCK_USERS);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Filtered users list based on search query
-  const filteredUsers = useMemo(() => {
-    if (!searchQuery) return users;
-    const lowerQuery = searchQuery.toLowerCase();
-    return users.filter(
-      (user) =>
-        user.name.toLowerCase().includes(lowerQuery) ||
-        user.email.toLowerCase().includes(lowerQuery)
-    );
-  }, [users, searchQuery]);
+  // Fetch paginated users from the admin API
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['adminUsers', { page, limit: pageSize, search: deferredSearchQuery }],
+    queryFn: () =>
+      adminService.getUsers({
+        page,
+        limit: pageSize,
+        search: deferredSearchQuery || undefined,
+      }),
+    placeholderData: (previousData) => previousData,
+    staleTime: 10000,
+  });
 
-  // Dynamically calculate statistics from active state
-  const stats = useMemo(() => {
-    return {
-      totalUsers: users.length,
-      activeAccounts: users.filter((u) => u.status === 'active').length,
-      lockedAccounts: users.filter((u) => u.status === 'locked').length,
-    };
-  }, [users]);
+  // Mutation to lock user status
+  const lockMutation = useMutation({
+    mutationFn: (userId: string) => adminService.updateUserStatus(userId, 'locked'),
+    onSuccess: () => {
+      message.success('User locked successfully');
+      void queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+    onError: (err: any) => {
+      const errMsg = err.response?.data?.message || 'Failed to lock user';
+      message.error(errMsg);
+    },
+  });
+
+  // Mutation to unlock user status
+  const unlockMutation = useMutation({
+    mutationFn: (userId: string) => adminService.updateUserStatus(userId, 'active'),
+    onSuccess: () => {
+      message.success('User unlocked successfully');
+      void queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+    },
+    onError: (err: any) => {
+      const errMsg = err.response?.data?.message || 'Failed to unlock user';
+      message.error(errMsg);
+    },
+  });
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    setPage(1); // Reset to first page on search change
+    setPage(1);
   };
 
   const handlePageChange = (newPage: number, newPageSize?: number) => {
@@ -89,24 +63,22 @@ export function useAdminUsers() {
   };
 
   const handleLockUser = (userId: string) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId ? { ...user, status: 'locked' } : user
-      )
-    );
+    lockMutation.mutate(userId);
   };
 
   const handleUnlockUser = (userId: string) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.id === userId ? { ...user, status: 'active' } : user
-      )
-    );
+    unlockMutation.mutate(userId);
+  };
+
+  const stats = {
+    totalUsers: data?.meta?.totalUsers ?? 0,
+    activeAccounts: data?.meta?.activeAccounts ?? 0,
+    lockedAccounts: data?.meta?.lockedAccounts ?? 0,
   };
 
   return {
-    users: filteredUsers,
-    total: filteredUsers.length,
+    users: data?.data ?? [],
+    total: data?.meta?.total ?? 0,
     page,
     pageSize,
     searchQuery,
@@ -115,5 +87,8 @@ export function useAdminUsers() {
     handleLockUser,
     handleUnlockUser,
     stats,
+    isLoading,
+    error,
   };
 }
+export type { AdminUser };
