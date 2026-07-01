@@ -46,6 +46,7 @@ export default function AdminUsersPage() {
     handleLockUser,
     handleUnlockUser,
     stats,
+    isLoading,
   } = useAdminUsers();
 
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -61,7 +62,7 @@ export default function AdminUsersPage() {
       align: 'left' as const,
       render: (record: AdminUser) => (
         <Space direction="vertical" size={0}>
-          <Text strong style={{ color: '#1e293b' }}>{record.name}</Text>
+          <Text strong style={{ color: '#1e293b' }}>{record.fullName}</Text>
           <Text type="secondary" style={{ fontSize: 13, color: '#64748b' }}>{record.email}</Text>
         </Space>
       ),
@@ -101,8 +102,8 @@ export default function AdminUsersPage() {
     },
     {
       title: 'Joined',
-      dataIndex: 'created_at',
-      key: 'created_at',
+      dataIndex: 'createdAt',
+      key: 'createdAt',
       align: 'right' as const,
       render: (date: string) => (
         <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>
@@ -220,6 +221,7 @@ export default function AdminUsersPage() {
             columns={columns}
             dataSource={users}
             rowKey="id"
+            loading={isLoading}
             pagination={{
               current: page,
               pageSize: pageSize,
@@ -242,7 +244,7 @@ export default function AdminUsersPage() {
         {selectedUser && (
           <Descriptions bordered column={1} size="small">
             <Descriptions.Item label="User ID"><Text copyable>{selectedUser.id}</Text></Descriptions.Item>
-            <Descriptions.Item label="Full Name">{selectedUser.name}</Descriptions.Item>
+            <Descriptions.Item label="Full Name">{selectedUser.fullName}</Descriptions.Item>
             <Descriptions.Item label="Email">{selectedUser.email}</Descriptions.Item>
             <Descriptions.Item label="Role">
               <Tag color={selectedUser.role === 'admin' ? 'purple' : 'blue'}>
@@ -260,7 +262,7 @@ export default function AdminUsersPage() {
               </span>
             </Descriptions.Item>
             <Descriptions.Item label="Created At">
-              {new Date(selectedUser.created_at).toLocaleString('vi-VN')}
+              {new Date(selectedUser.createdAt).toLocaleString('vi-VN')}
             </Descriptions.Item>
           </Descriptions>
         )}

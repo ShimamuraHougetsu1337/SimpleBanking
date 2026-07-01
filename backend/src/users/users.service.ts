@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, FindOptionsRelations } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserStatus } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -22,7 +22,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   /**
    * Creates a new user, hashing the plain-text password before persisting.
@@ -47,12 +47,8 @@ export class UsersService {
     return this.userRepository.save(user);
   }
 
-  /**
-   * Finds a user by their UUID primary key.
-   * Returns null if no user is found (callers decide how to handle absence).
-   */
-  async findById(id: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { id } });
+  async findById(id: string, relations?: FindOptionsRelations<User>): Promise<User | null> {
+    return this.userRepository.findOne({ where: { id }, relations });
   }
 
   /**
@@ -80,18 +76,44 @@ export class UsersService {
   }
 
   /**
-   * Returns a paginated list of all users.
+   * Returns a paginated list of all users, with optional search and status filtering.
    * Intended for AdminModule — never exposed to customer-role callers.
    */
   async findAll(
     page: number,
     limit: number,
+    search?: string,
+    status?: UserStatus,
   ): Promise<{ data: User[]; total: number }> {
-    const [data, total] = await this.userRepository.findAndCount({
-      order: { createdAt: 'DESC' },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.accounts', 'account')
+      .orderBy('user.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    if (status) {
+      queryBuilder.andWhere('user.status = :status', { status });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(user.fullName ILIKE :search OR user.email ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    const [data, total] = await queryBuilder.getManyAndCount();
     return { data, total };
   }
+
+  async countAll(): Promise<number> {
+    return this.userRepository.count();
+  }
+
+  async countStatus(status: UserStatus): Promise<number> {
+    return this.userRepository.count({ where: { status } });
+  }
 }
+
+
