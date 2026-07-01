@@ -1,6 +1,6 @@
 import { Modal, Form, InputNumber, Input } from 'antd';
-import { useDeposit } from '@/hooks/useDeposit';
-import { useWithdraw } from '@/hooks/useWithdraw';
+import { useDeposit } from '@/hooks/client/useDeposit';
+import { useWithdraw } from '@/hooks/client/useWithdraw';
 
 interface ModalProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ export function DepositModal({ isOpen, onClose, accountId }: ModalProps) {
 
   return (
     <Modal
-      title="Deposit Money"
+      title="Nạp tiền"
       open={isOpen}
       onOk={handleOk}
       onCancel={() => {
@@ -36,16 +36,16 @@ export function DepositModal({ isOpen, onClose, accountId }: ModalProps) {
         onClose();
       }}
       confirmLoading={isPending}
-      okText="Deposit"
+      okText="Nạp tiền"
       centered
     >
       <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
         <Form.Item
           name="amount"
-          label="Amount (VND)"
+          label="Số tiền (VND)"
           rules={[
-            { required: true, message: 'Please enter amount' },
-            { type: 'number', min: 1, message: 'Amount must be greater than 0' }
+            { required: true, message: 'Vui lòng nhập số tiền' },
+            { type: 'number', min: 1, message: 'Số tiền phải lớn hơn 0' }
           ]}
         >
           <InputNumber
@@ -56,8 +56,8 @@ export function DepositModal({ isOpen, onClose, accountId }: ModalProps) {
             placeholder="0"
           />
         </Form.Item>
-        <Form.Item name="description" label="Description (Optional)">
-          <Input.TextArea placeholder="E.g., Salary, Gift..." rows={2} />
+        <Form.Item name="description" label="Mô tả (Tùy chọn)">
+          <Input.TextArea placeholder="Ví dụ: Lương, Quà tặng..." rows={2} />
         </Form.Item>
       </Form>
     </Modal>
@@ -84,7 +84,7 @@ export function WithdrawModal({ isOpen, onClose, accountId }: ModalProps) {
 
   return (
     <Modal
-      title="Withdraw Money"
+      title="Rút tiền"
       open={isOpen}
       onOk={handleOk}
       onCancel={() => {
@@ -92,17 +92,17 @@ export function WithdrawModal({ isOpen, onClose, accountId }: ModalProps) {
         onClose();
       }}
       confirmLoading={isPending}
-      okText="Withdraw"
+      okText="Rút tiền"
       okButtonProps={{ danger: true }}
       centered
     >
       <Form form={form} layout="vertical" style={{ marginTop: 24 }}>
         <Form.Item
           name="amount"
-          label="Amount (VND)"
+          label="Số tiền (VND)"
           rules={[
-            { required: true, message: 'Please enter amount' },
-            { type: 'number', min: 1, message: 'Amount must be greater than 0' }
+            { required: true, message: 'Vui lòng nhập số tiền' },
+            { type: 'number', min: 1, message: 'Số tiền phải lớn hơn 0' }
           ]}
         >
           <InputNumber
@@ -113,8 +113,8 @@ export function WithdrawModal({ isOpen, onClose, accountId }: ModalProps) {
             placeholder="0"
           />
         </Form.Item>
-        <Form.Item name="description" label="Description (Optional)">
-          <Input.TextArea placeholder="E.g., ATM Withdrawal..." rows={2} />
+        <Form.Item name="description" label="Mô tả (Tùy chọn)">
+          <Input.TextArea placeholder="Ví dụ: Rút tiền ATM..." rows={2} />
         </Form.Item>
       </Form>
     </Modal>

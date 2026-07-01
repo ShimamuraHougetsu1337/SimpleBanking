@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Form, Input, Button, Typography, Layout, Card, Alert } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useLogin } from '@/hooks/useAuth';
+import { useLogin } from '@/hooks/client/useAuth';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account, AccountStatus } from './entities/account.entity';
 import { User } from '@/users/entities/user.entity';
+import { CreateAccountDto } from './dto/create-account.dto';
 
 @Injectable()
 export class AccountsService {
@@ -66,6 +67,24 @@ export class AccountsService {
     if (updateData.theme !== undefined) {
       account.theme = updateData.theme;
     }
+
+    return this.accountRepository.save(account);
+  }
+
+  async createAccount(user: User, createAccountDto: CreateAccountDto): Promise<Account> {
+    const timestamp = Date.now().toString().slice(-10);
+    const random = Math.floor(1000 + Math.random() * 9000).toString();
+    const accountNumber = `VN${timestamp}${random}`;
+
+    const account = this.accountRepository.create({
+      userId: user.id,
+      accountNumber,
+      name: createAccountDto.name,
+      theme: createAccountDto.theme || 'linear-gradient(135deg, #111827 0%, #000000 100%)',
+      balance: '0.00',
+      currency: 'VND',
+      status: AccountStatus.ACTIVE,
+    });
 
     return this.accountRepository.save(account);
   }

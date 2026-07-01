@@ -51,3 +51,11 @@ Use this skill when creating, modifying, or refactoring React components and cus
 - Avoid deeply nested conditional (ternary) operators inside JSX.
 - If a section of JSX has complex conditional rendering logic, extract it into a helper function (e.g., `renderStatus()`) or a separate sub-component (e.g., `<StatusDisplay>`).
 - Keep JSX clean, readable, and declarative.
+
+### 6. Constants Organization & Scope
+- Replace hard-coded strings, magic numbers, or configuration arrays with named constants.
+- Determine constant placement based on its usage scope:
+  - **Global Scope**: If a constant is shared across multiple modules/pages (like API base paths, app-wide configs, or global themes), place it in `src/constants/` (e.g., `src/constants/config.ts`).
+  - **Feature Scope**: If a constant is shared only between components/hooks of a specific feature folder (e.g. options shared within `src/components/transfer/`), isolate it in a dedicated constants file inside that feature directory (e.g., `src/components/transfer/transfer.constants.ts`).
+  - **Local Scope**: If a constant is strictly local to a single React component or hook (e.g., local lists or specific options arrays), define it directly at the top of the file using UPPER_SNAKE_CASE.
+

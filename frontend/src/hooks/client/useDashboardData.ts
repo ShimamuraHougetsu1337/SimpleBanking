@@ -9,6 +9,8 @@ export interface Account {
   balance: string;
   currency: string;
   theme?: string;
+  status: string;
+  createdAt: string;
   user?: {
     fullName: string;
   };

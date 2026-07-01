@@ -1,6 +1,6 @@
 import { Layout, Typography, Space, Divider } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useLogout } from '@/hooks/useAuth';
+import { useLogout } from '@/hooks/client/useAuth';
 import {
   DashboardOutlined,
   CreditCardOutlined,
@@ -17,21 +17,21 @@ const { Title } = Typography;
 const navGroups = [
   {
     items: [
-      { key: '/dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
-      { key: '/accounts', label: 'Accounts', icon: <CreditCardOutlined /> },
-      { key: '/transfer', label: 'Transfers', icon: <SwapOutlined /> },
+      { key: '/dashboard', label: 'Tổng quan', icon: <DashboardOutlined /> },
+      { key: '/accounts', label: 'Tài khoản', icon: <CreditCardOutlined /> },
+      { key: '/transfer', label: 'Chuyển tiền', icon: <SwapOutlined /> },
     ]
   },
   {
     items: [
-      { key: '/transactions', label: 'History & Analytics', icon: <HistoryOutlined /> },
+      { key: '/transactions', label: 'Lịch sử giao dịch', icon: <HistoryOutlined /> },
     ]
   }
 ];
 
 const bottomItems = [
-  { key: '/settings', label: 'Settings & Security', icon: <SettingOutlined /> },
-  { key: 'logout', label: 'Logout', icon: <LogoutOutlined />, isDanger: true },
+  { key: '/settings', label: 'Cài đặt & Bảo mật', icon: <SettingOutlined /> },
+  { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, isDanger: true },
 ];
 
 export function Sidebar() {

@@ -1,6 +1,6 @@
 import { Table, Tag, Typography, Card } from 'antd';
 import { useState } from 'react';
-import { useTransactions } from '../hooks/useTransactions';
+import { useTransactions } from '../hooks/client/useTransactions';
 
 const { Title, Text } = Typography;
 
@@ -10,19 +10,19 @@ export default function TransactionsPage() {
 
   const columns = [
     {
-      title: 'Date',
+      title: 'Ngày giao dịch',
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (val: string) => new Date(val).toLocaleString('vi-VN'),
     },
     {
-      title: 'Description',
+      title: 'Mô tả',
       dataIndex: 'description',
       key: 'description',
       render: (val: string) => <Text strong>{val || 'N/A'}</Text>,
     },
     {
-      title: 'Counterpart',
+      title: 'Đối tác',
       dataIndex: 'counterpartName',
       key: 'counterpartName',
       render: (val: string, record: any) => (
@@ -35,7 +35,7 @@ export default function TransactionsPage() {
       ),
     },
     {
-      title: 'Amount',
+      title: 'Số tiền',
       dataIndex: 'amount',
       key: 'amount',
       render: (val: string, record: any) => {
@@ -55,22 +55,32 @@ export default function TransactionsPage() {
       align: 'right' as const,
     },
     {
-      title: 'Status',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       render: (val: string) => {
         let color = 'default';
-        if (val === 'success') color = 'green';
-        if (val === 'failed') color = 'red';
-        if (val === 'pending') color = 'orange';
-        return <Tag color={color}>{val.toUpperCase()}</Tag>;
+        let statusText = val.toUpperCase();
+        if (val === 'success') {
+          color = 'green';
+          statusText = 'THÀNH CÔNG';
+        }
+        if (val === 'failed') {
+          color = 'red';
+          statusText = 'THẤT BẠI';
+        }
+        if (val === 'pending') {
+          color = 'orange';
+          statusText = 'ĐANG XỬ LÝ';
+        }
+        return <Tag color={color}>{statusText}</Tag>;
       },
     },
   ];
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', paddingBottom: 60 }}>
-      <Title level={2} style={{ marginBottom: 24 }}>Transaction History</Title>
+      <Title level={2} style={{ marginBottom: 24 }}>Lịch sử giao dịch</Title>
       <Card bordered={false}>
         <Table
           columns={columns}
