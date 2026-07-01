@@ -1,32 +1,43 @@
 import { useState } from 'react';
-import { Card, Space, Row, Col, Input, DatePicker, List, Typography, Modal, Descriptions, Tag } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Card, Space, List, Typography, Modal, Descriptions, Tag } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
+import { useTransactionFilters } from '@/hooks/client/useTransactionFilters';
+import { TransactionFilters } from '@/components/transactions/TransactionFilters';
 
 const { Text } = Typography;
-const { RangePicker } = DatePicker;
 
 interface AccountTransactionsProps {
   accountId: string;
 }
 
 export function AccountTransactions({ accountId }: AccountTransactionsProps) {
-  const [dateRange, setDateRange] = useState<[string, string] | null>(null);
-  const [search, setSearch] = useState('');
   const [selectedTx, setSelectedTx] = useState<any>(null);
+  const {
+    draftFilters,
+    appliedFilters,
+    filterParams,
+    isFilterActive,
+    handleDateRangeChange,
+    handleKeywordChange,
+    handleApplyFilters,
+    handleResetFilters,
+    handleRemoveDateRange,
+    handleRemoveKeyword,
+  } = useTransactionFilters();
 
   const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ['transactions', accountId, search, dateRange],
+    queryKey: ['transactions', accountId, filterParams],
     queryFn: async () => {
       if (!accountId) return [];
       const params: any = { accountId, limit: 50 };
-      if (search) {
-        params['filter[search]'] = search;
+      
+      if (filterParams.search) {
+        params.search = filterParams.search;
       }
-      if (dateRange) {
-        params['filter[fromDate]'] = dateRange[0];
-        params['filter[toDate]'] = dateRange[1];
+      if (filterParams.fromDate) {
+        params.fromDate = filterParams.fromDate;
+        params.toDate = filterParams.toDate;
       }
 
       const res = await api.get('/transactions', { params });
@@ -44,34 +55,17 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
   return (
     <Card title="Lịch sử giao dịch" bordered={false} styles={{ body: { padding: '24px' } }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
-        <Row gutter={16}>
-          <Col xs={24} sm={12} style={{ marginBottom: 16 }}>
-            <Input
-              placeholder="Tìm kiếm theo mô tả"
-              prefix={<SearchOutlined />}
-              allowClear
-              onPressEnter={(e: any) => setSearch(e.target.value)}
-              onBlur={(e: any) => setSearch(e.target.value)}
-              size="large"
-            />
-          </Col>
-          <Col xs={24} sm={12}>
-            <RangePicker
-              style={{ width: '100%' }}
-              size="large"
-              onChange={(dates) => {
-                if (dates && dates[0] && dates[1]) {
-                  setDateRange([
-                    dates[0].toISOString(),
-                    dates[1].toISOString(),
-                  ]);
-                } else {
-                  setDateRange(null);
-                }
-              }}
-            />
-          </Col>
-        </Row>
+        <TransactionFilters
+          draftFilters={draftFilters}
+          appliedFilters={appliedFilters}
+          isFilterActive={isFilterActive}
+          onDateRangeChange={handleDateRangeChange}
+          onKeywordChange={handleKeywordChange}
+          onApplyFilters={handleApplyFilters}
+          onResetFilters={handleResetFilters}
+          onRemoveDateRange={handleRemoveDateRange}
+          onRemoveKeyword={handleRemoveKeyword}
+        />
 
         <List
           dataSource={transactions}
