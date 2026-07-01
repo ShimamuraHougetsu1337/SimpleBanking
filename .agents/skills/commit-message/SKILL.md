@@ -16,7 +16,7 @@ Use this skill when the user triggers the `/commit_message` command or asks you 
 
 2. **Verify Branch Name**:
    - Run `git branch --show-current` to check the current branch name.
-   - Suggest a **meaningful branch name** if the current one is too generic (like `main`, `master`, `dev`) and the changes represent a specific task. Use patterns like `feature/feature-name`, `bugfix/issue-name`, or `refactor/refactor-name`.
+   - Suggest a **meaningful branch name** if the current one is too generic (like `main`, `master`, `dev`) or not suitable for the changes represent a specific task. Use patterns like `feature/feature-name`, `bugfix/issue-name`, or `refactor/refactor-name`.
 
 3. **Analyze and Split Commits**:
    - Group changes logically.
@@ -24,17 +24,6 @@ Use this skill when the user triggers the `/commit_message` command or asks you 
 
 4. **Construct Commit Messages**:
    - For each logical group, generate a commit message following the **Conventional Commits** specification.
-   - Follow this structure:
-     ```xml
-     <commit-message>
-       <type>feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert</type>
-       <scope>(optional: component or feature name)</scope>
-       <description>A short, imperative summary of the change</description>
-       <body>(optional: more detailed explanation)</body>
-       <footer>(optional: e.g. BREAKING CHANGE: details, or issue references)</footer>
-     </commit-message>
-     ```
-
    - **Validation Rules**:
      - `type`: Must be one of the allowed types.
      - `scope`: Optional, but recommended for clarity.

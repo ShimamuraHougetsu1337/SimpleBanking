@@ -8,7 +8,9 @@ import {
   LogoutOutlined,
   UserOutlined,
   SettingOutlined,
-  SafetyCertificateOutlined
+  SafetyCertificateOutlined,
+  DashboardOutlined,
+  BankOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -17,7 +19,9 @@ const { Title } = Typography;
 const navGroups = [
   {
     items: [
+      { key: '/admin/dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
       { key: '/admin/users', label: 'User Management', icon: <TeamOutlined /> },
+      { key: '/admin/accounts', label: 'Account Management', icon: <BankOutlined /> },
       { key: '/admin/transactions', label: 'All Transactions', icon: <TransactionOutlined /> },
     ]
   }

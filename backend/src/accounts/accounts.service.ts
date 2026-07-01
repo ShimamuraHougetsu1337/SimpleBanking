@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account, AccountStatus } from './entities/account.entity';
@@ -58,16 +58,46 @@ export class AccountsService {
   ): Promise<Account> {
     const account = await this.findById(id, userId);
     if (!account) {
-      throw new Error('Account not found');
+      throw new NotFoundException('Account not found');
+    }
+    Object.assign(account, updateData);
+    return this.accountRepository.save(account);
+  }
+
+  async findAll(page: number = 1, limit: number = 10, search?: string, status?: AccountStatus) {
+    const query = this.accountRepository.createQueryBuilder('account')
+      .leftJoinAndSelect('account.user', 'user')
+      .orderBy('account.createdAt', 'DESC');
+
+    if (search) {
+      query.andWhere(
+        '(account.accountNumber ILIKE :search OR user.fullName ILIKE :search OR user.email ILIKE :search)',
+        { search: `%${search}%` }
+      );
     }
 
-    if (updateData.name !== undefined) {
-      account.name = updateData.name;
-    }
-    if (updateData.theme !== undefined) {
-      account.theme = updateData.theme;
+    if (status) {
+      query.andWhere('account.status = :status', { status });
     }
 
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total };
+  }
+
+  async countAll(): Promise<number> {
+    return this.accountRepository.count();
+  }
+
+  async updateStatus(id: string, status: AccountStatus): Promise<Account> {
+    const account = await this.accountRepository.findOne({ where: { id } });
+    if (!account) {
+      throw new NotFoundException(`Account with ID "${id}" not found`);
+    }
+    account.status = status;
     return this.accountRepository.save(account);
   }
 

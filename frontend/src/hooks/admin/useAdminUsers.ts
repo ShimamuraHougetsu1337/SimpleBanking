@@ -70,12 +70,6 @@ export function useAdminUsers() {
     unlockMutation.mutate(userId);
   };
 
-  const stats = {
-    totalUsers: data?.meta?.totalUsers ?? 0,
-    activeAccounts: data?.meta?.activeAccounts ?? 0,
-    lockedAccounts: data?.meta?.lockedAccounts ?? 0,
-  };
-
   return {
     users: data?.data ?? [],
     total: data?.meta?.total ?? 0,
@@ -86,7 +80,6 @@ export function useAdminUsers() {
     handlePageChange,
     handleLockUser,
     handleUnlockUser,
-    stats,
     isLoading,
     error,
   };

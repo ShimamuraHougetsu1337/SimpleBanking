@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { Brackets, Repository, DataSource, QueryRunner } from 'typeorm';
+import { Brackets, Repository, DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { Transaction, TransactionType, TransactionStatus } from './entities/transaction.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { TransferDto } from './dto/transfer.dto';
@@ -14,7 +14,11 @@ export class TransactionsService {
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     @InjectDataSource() private readonly dataSource: DataSource,
-  ) { }
+  ) {}
+
+  // ===========================================================================
+  // QUERY METHODS (READ)
+  // ===========================================================================
 
   async getTransactionsForUser(
     userId: string,
@@ -45,17 +49,7 @@ export class TransactionsService {
     }
 
     if (filter?.search) {
-      const searchPattern = `%${filter.search}%`;
-      query.andWhere(
-        new Brackets((qb) => {
-          qb.where('tx.description ILIKE :search', { search: searchPattern })
-            .orWhere('CAST(tx.id AS TEXT) ILIKE :search', { search: searchPattern })
-            .orWhere('fromUser.fullName ILIKE :search', { search: searchPattern })
-            .orWhere('toUser.fullName ILIKE :search', { search: searchPattern })
-            .orWhere('fromAccount.accountNumber ILIKE :search', { search: searchPattern })
-            .orWhere('toAccount.accountNumber ILIKE :search', { search: searchPattern });
-        }),
-      );
+      this.applySearchFilter(query, `%${filter.search}%`);
     }
 
     if (filter?.fromDate) {
@@ -63,7 +57,6 @@ export class TransactionsService {
     }
 
     if (filter?.toDate) {
-      // Adding 1 day to include the end date fully if it's just a date string
       const toDate = new Date(filter.toDate);
       toDate.setUTCHours(23, 59, 59, 999);
       query.andWhere('tx.createdAt <= :toDate', { toDate });
@@ -76,12 +69,8 @@ export class TransactionsService {
 
     return transactions.flatMap((tx) => {
       if (accountId) {
-        if (tx.fromAccountId === accountId) {
-          return this.mapToResult(tx, 'debit', tx.toAccount);
-        }
-        if (tx.toAccountId === accountId) {
-          return this.mapToResult(tx, 'credit', tx.fromAccount);
-        }
+        if (tx.fromAccountId === accountId) return this.mapToResult(tx, 'debit', tx.toAccount);
+        if (tx.toAccountId === accountId) return this.mapToResult(tx, 'credit', tx.fromAccount);
         return [];
       }
 
@@ -94,32 +83,87 @@ export class TransactionsService {
           this.mapToResult(tx, 'credit', tx.fromAccount, 'credit'),
         ];
       }
-      if (isFromUser) {
-        return this.mapToResult(tx, 'debit', tx.toAccount);
-      }
-      if (isToUser) {
-        return this.mapToResult(tx, 'credit', tx.fromAccount);
-      }
+      if (isFromUser) return this.mapToResult(tx, 'debit', tx.toAccount);
+      if (isToUser) return this.mapToResult(tx, 'credit', tx.fromAccount);
       return [];
     });
   }
 
-  async transfer(dto: TransferDto, currentUserId: string): Promise<Transaction> {
-    const existing = await this.dataSource
-      .getRepository(Transaction)
-      .findOne({ where: { idempotencyKey: dto.idempotencyKey } });
+  async findAll(page: number = 1, limit: number = 10, search?: string, startDate?: string, endDate?: string, type?: string) {
+    const query = this.transactionRepository.createQueryBuilder('tx')
+      .leftJoinAndSelect('tx.fromAccount', 'fromAccount')
+      .leftJoinAndSelect('tx.toAccount', 'toAccount')
+      .leftJoinAndSelect('fromAccount.user', 'fromUser')
+      .leftJoinAndSelect('toAccount.user', 'toUser')
+      .orderBy('tx.createdAt', 'DESC');
 
-    if (existing) {
-      return existing;
+    if (search) this.applySearchFilter(query, `%${search}%`);
+    if (startDate) query.andWhere('tx.createdAt >= :startDate', { startDate });
+    if (endDate) query.andWhere('tx.createdAt <= :endDate', { endDate });
+    if (type) query.andWhere('tx.type = :type', { type });
+
+    const statsQuery = query.clone();
+    const rawStats: { totalVolume: string | null; successfulCount: string | null; failedCount: string | null } | undefined = await statsQuery
+      .select('SUM(CAST(tx.amount AS NUMERIC))', 'totalVolume')
+      .addSelect(`SUM(CASE WHEN tx.status = 'success' THEN 1 ELSE 0 END)`, 'successfulCount')
+      .addSelect(`SUM(CASE WHEN tx.status = 'failed' THEN 1 ELSE 0 END)`, 'failedCount')
+      .getRawOne();
+
+    const stats = {
+      totalVolume: rawStats?.totalVolume || '0',
+      successfulCount: Number(rawStats?.successfulCount) || 0,
+      failedCount: Number(rawStats?.failedCount) || 0,
+    };
+
+    const [data, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { data, total, stats };
+  }
+
+  async getWeeklyVolume() {
+    const today = new Date();
+    const last7Days = new Date();
+    last7Days.setDate(today.getDate() - 7);
+
+    const transactions = await this.transactionRepository.createQueryBuilder('tx')
+      .where('tx.createdAt >= :date', { date: last7Days })
+      .getMany();
+
+    const volumeByDate = new Map<string, Decimal>();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      volumeByDate.set(dateStr, new Decimal(0));
     }
 
-    const queryRunner: QueryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    for (const tx of transactions) {
+      const dateStr = tx.createdAt.toISOString().split('T')[0];
+      if (volumeByDate.has(dateStr)) {
+        volumeByDate.set(dateStr, volumeByDate.get(dateStr)!.plus(new Decimal(tx.amount)));
+      }
+    }
 
-    try {
+    return Array.from(volumeByDate.entries()).map(([date, volume]) => ({
+      date,
+      volume: volume.toFixed(2),
+    }));
+  }
+
+  // ===========================================================================
+  // TRANSACTION METHODS (WRITE)
+  // ===========================================================================
+
+  async transfer(dto: TransferDto, currentUserId: string): Promise<Transaction> {
+    const existing = await this.checkIdempotency(dto.idempotencyKey);
+    if (existing) return existing;
+
+    return this.executeTransaction(async (manager) => {
       // Resolve destination account first without locking to get its ID
-      const toAccountRef = await queryRunner.manager.findOne(Account, {
+      const toAccountRef = await manager.findOne(Account, {
         where: { accountNumber: dto.to_accountNumber },
       });
 
@@ -142,203 +186,175 @@ export class TransactionsService {
       let toAccount: Account | null = null;
 
       if (firstId === fromAccountId) {
-        fromAccount = await queryRunner.manager.findOne(Account, {
-          where: { id: fromAccountId, userId: currentUserId, status: AccountStatus.ACTIVE },
-          lock: { mode: 'pessimistic_write' },
-        });
-        toAccount = await queryRunner.manager.findOne(Account, {
-          where: { id: toAccountId },
-          lock: { mode: 'pessimistic_write' },
-        });
+        fromAccount = await manager.findOne(Account, { where: { id: fromAccountId, userId: currentUserId, status: AccountStatus.ACTIVE }, lock: { mode: 'pessimistic_write' } });
+        toAccount = await manager.findOne(Account, { where: { id: toAccountId }, lock: { mode: 'pessimistic_write' } });
       } else {
-        toAccount = await queryRunner.manager.findOne(Account, {
-          where: { id: toAccountId },
-          lock: { mode: 'pessimistic_write' },
-        });
-        fromAccount = await queryRunner.manager.findOne(Account, {
-          where: { id: fromAccountId, userId: currentUserId, status: AccountStatus.ACTIVE },
-          lock: { mode: 'pessimistic_write' },
-        });
+        toAccount = await manager.findOne(Account, { where: { id: toAccountId }, lock: { mode: 'pessimistic_write' } });
+        fromAccount = await manager.findOne(Account, { where: { id: fromAccountId, userId: currentUserId, status: AccountStatus.ACTIVE }, lock: { mode: 'pessimistic_write' } });
       }
 
-      if (!fromAccount) {
-        throw new NotFoundException('Source account not found or is locked');
-      }
-      if (!toAccount) {
-        throw new NotFoundException('Destination account not found');
-      }
-      if (toAccount.status !== AccountStatus.ACTIVE) {
-        throw new UnprocessableEntityException('Destination account is locked');
-      }
+      if (!fromAccount) throw new NotFoundException('Source account not found or is locked');
+      if (!toAccount) throw new NotFoundException('Destination account not found');
+      if (toAccount.status !== AccountStatus.ACTIVE) throw new UnprocessableEntityException('Destination account is locked');
 
-      const amount = new Decimal(dto.amount);
-      const balance = new Decimal(fromAccount.balance);
-      if (amount.gt(balance)) {
-        throw new UnprocessableEntityException('Insufficient balance');
-      }
-      if (amount.lte(0)) {
-        throw new BadRequestException('Transfer amount must be greater than 0');
-      }
-      if (amount.decimalPlaces() > 2) {
-        throw new BadRequestException('Amount has a maximum of 2 decimal places');
-      }
+      const amount = this.validateAmount(dto.amount, fromAccount.balance);
 
-      await queryRunner.manager
-        .createQueryBuilder()
-        .update(Account)
-        .set({ balance: () => `balance - ${amount.toFixed(2)}` })
-        .where('id = :id', { id: fromAccount.id })
-        .execute();
+      await this.updateAccountBalance(manager, fromAccount.id, amount, 'subtract');
+      await this.updateAccountBalance(manager, toAccount.id, amount, 'add');
 
-      await queryRunner.manager
-        .createQueryBuilder()
-        .update(Account)
-        .set({ balance: () => `balance + ${amount.toFixed(2)}` })
-        .where('id = :id', { id: toAccount.id })
-        .execute();
-
-      const transaction = queryRunner.manager.create(Transaction, {
+      return this.createAndSaveTransaction(manager, {
         fromAccountId: fromAccount.id,
         toAccountId: toAccount.id,
         amount: dto.amount,
         description: dto.description,
         idempotencyKey: dto.idempotencyKey,
-        status: TransactionStatus.SUCCESS,
         type: TransactionType.TRANSFER,
       });
-      await queryRunner.manager.save(Transaction, transaction);
-
-      await queryRunner.commitTransaction();
-      return transaction;
-
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-
-    } finally {
-      await queryRunner.release();
-    }
+    });
   }
-  async deposit(dto: DepositDto, currentUserId: string): Promise<Transaction> {
-    const existing = await this.dataSource
-      .getRepository(Transaction)
-      .findOne({ where: { idempotencyKey: dto.idempotencyKey } });
 
-    if (existing) {
-      return existing;
-    }
+  async adminDeposit(accountId: string, amountStr: string, description: string, idempotencyKey: string): Promise<Transaction> {
+    const existing = await this.checkIdempotency(idempotencyKey);
+    if (existing) return existing;
 
-    const queryRunner: QueryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+    return this.executeTransaction(async (manager) => {
+      const account = await this.getAccountWithLock(manager, accountId);
+      const amount = this.validateAmount(amountStr);
 
-    try {
-      const account = await queryRunner.manager.findOne(Account, {
-        where: { id: dto.accountId, userId: currentUserId, status: AccountStatus.ACTIVE },
-        lock: { mode: 'pessimistic_write' },
-      });
+      await this.updateAccountBalance(manager, account.id, amount, 'add');
 
-      if (!account) {
-        throw new NotFoundException('Account not found or is locked');
-      }
-
-      const amount = new Decimal(dto.amount);
-      if (amount.lte(0)) {
-        throw new BadRequestException('Deposit amount must be greater than 0');
-      }
-      if (amount.decimalPlaces() > 2) {
-        throw new BadRequestException('Amount has a maximum of 2 decimal places');
-      }
-
-      await queryRunner.manager
-        .createQueryBuilder()
-        .update(Account)
-        .set({ balance: () => `balance + ${amount.toFixed(2)}` })
-        .where('id = :id', { id: account.id })
-        .execute();
-
-      const transaction = queryRunner.manager.create(Transaction, {
-        toAccountId: account.id,
-        amount: dto.amount.toString(), // Entity amount is a string (numeric)
-        description: dto.description || 'Deposit',
-        idempotencyKey: dto.idempotencyKey,
-        status: TransactionStatus.SUCCESS,
+      return this.createAndSaveTransaction(manager, {
+        toAccountId: accountId,
+        amount: amountStr,
+        description,
+        idempotencyKey,
         type: TransactionType.DEPOSIT,
       });
-      await queryRunner.manager.save(Transaction, transaction);
+    });
+  }
 
-      await queryRunner.commitTransaction();
-      return transaction;
+  async deposit(dto: DepositDto, currentUserId: string): Promise<Transaction> {
+    const existing = await this.checkIdempotency(dto.idempotencyKey);
+    if (existing) return existing;
 
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+    return this.executeTransaction(async (manager) => {
+      const account = await this.getAccountWithLock(manager, dto.accountId, currentUserId);
+      const amount = this.validateAmount(dto.amount);
+
+      await this.updateAccountBalance(manager, account.id, amount, 'add');
+
+      return this.createAndSaveTransaction(manager, {
+        toAccountId: account.id,
+        amount: dto.amount.toString(),
+        description: dto.description || 'Deposit',
+        idempotencyKey: dto.idempotencyKey,
+        type: TransactionType.DEPOSIT,
+      });
+    });
   }
 
   async withdraw(dto: WithdrawDto, currentUserId: string): Promise<Transaction> {
-    const existing = await this.dataSource
-      .getRepository(Transaction)
-      .findOne({ where: { idempotencyKey: dto.idempotencyKey } });
+    const existing = await this.checkIdempotency(dto.idempotencyKey);
+    if (existing) return existing;
 
-    if (existing) {
-      return existing;
-    }
+    return this.executeTransaction(async (manager) => {
+      const account = await this.getAccountWithLock(manager, dto.accountId, currentUserId);
+      const amount = this.validateAmount(dto.amount, account.balance);
 
-    const queryRunner: QueryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+      await this.updateAccountBalance(manager, account.id, amount, 'subtract');
 
-    try {
-      const account = await queryRunner.manager.findOne(Account, {
-        where: { id: dto.accountId, userId: currentUserId, status: AccountStatus.ACTIVE },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!account) {
-        throw new NotFoundException('Account not found or is locked');
-      }
-
-      const amount = new Decimal(dto.amount);
-      const balance = new Decimal(account.balance);
-      if (amount.gt(balance)) {
-        throw new UnprocessableEntityException('Insufficient balance');
-      }
-      if (amount.lte(0)) {
-        throw new BadRequestException('Withdraw amount must be greater than 0');
-      }
-      if (amount.decimalPlaces() > 2) {
-        throw new BadRequestException('Amount has a maximum of 2 decimal places');
-      }
-
-      await queryRunner.manager
-        .createQueryBuilder()
-        .update(Account)
-        .set({ balance: () => `balance - ${amount.toFixed(2)}` })
-        .where('id = :id', { id: account.id })
-        .execute();
-
-      const transaction = queryRunner.manager.create(Transaction, {
+      return this.createAndSaveTransaction(manager, {
         fromAccountId: account.id,
         amount: dto.amount.toString(),
         description: dto.description || 'Withdraw',
         idempotencyKey: dto.idempotencyKey,
-        status: TransactionStatus.SUCCESS,
         type: TransactionType.WITHDRAW,
       });
-      await queryRunner.manager.save(Transaction, transaction);
+    });
+  }
 
+  // ===========================================================================
+  // PRIVATE HELPERS
+  // ===========================================================================
+
+  private async executeTransaction<T>(operation: (manager: EntityManager) => Promise<T>): Promise<T> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const result = await operation(queryRunner.manager);
       await queryRunner.commitTransaction();
-      return transaction;
-
+      return result;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       await queryRunner.release();
     }
+  }
+
+  private async checkIdempotency(key: string): Promise<Transaction | null> {
+    return this.dataSource.getRepository(Transaction).findOne({ where: { idempotencyKey: key } });
+  }
+
+  private async getAccountWithLock(manager: EntityManager, accountId: string, userId?: string): Promise<Account> {
+    const where: import('typeorm').FindOptionsWhere<Account> = { id: accountId, status: AccountStatus.ACTIVE };
+    if (userId) where.userId = userId;
+
+    const account = await manager.findOne(Account, { where, lock: { mode: 'pessimistic_write' } });
+    if (!account) {
+      throw new NotFoundException('Account not found or is locked');
+    }
+    return account;
+  }
+
+  private validateAmount(amountStr: string | number, balanceStr?: string | number): Decimal {
+    const amount = new Decimal(amountStr);
+    if (amount.lte(0)) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+    if (amount.decimalPlaces() > 2) {
+      throw new BadRequestException('Amount has a maximum of 2 decimal places');
+    }
+    if (balanceStr !== undefined) {
+      const balance = new Decimal(balanceStr);
+      if (amount.gt(balance)) {
+        throw new UnprocessableEntityException('Insufficient balance');
+      }
+    }
+    return amount;
+  }
+
+  private async updateAccountBalance(manager: EntityManager, accountId: string, amount: Decimal, operation: 'add' | 'subtract') {
+    const sign = operation === 'add' ? '+' : '-';
+    await manager
+      .createQueryBuilder()
+      .update(Account)
+      .set({ balance: () => `balance ${sign} ${amount.toFixed(2)}` })
+      .where('id = :id', { id: accountId })
+      .execute();
+  }
+
+  private async createAndSaveTransaction(manager: EntityManager, data: Partial<Transaction>): Promise<Transaction> {
+    const transaction = manager.create(Transaction, {
+      ...data,
+      status: TransactionStatus.SUCCESS,
+    });
+    return manager.save(Transaction, transaction);
+  }
+
+  private applySearchFilter(query: SelectQueryBuilder<Transaction>, searchPattern: string) {
+    query.andWhere(
+      new Brackets((qb) => {
+        qb.where('tx.description ILIKE :search', { search: searchPattern })
+          .orWhere('CAST(tx.id AS TEXT) ILIKE :search', { search: searchPattern })
+          .orWhere('fromUser.fullName ILIKE :search', { search: searchPattern })
+          .orWhere('toUser.fullName ILIKE :search', { search: searchPattern })
+          .orWhere('fromAccount.accountNumber ILIKE :search', { search: searchPattern })
+          .orWhere('toAccount.accountNumber ILIKE :search', { search: searchPattern });
+      }),
+    );
   }
 
   private mapToResult(
@@ -348,8 +364,7 @@ export class TransactionsService {
     suffix?: string,
   ) {
     const defaultName = direction === 'credit' ? 'System Deposit' : 'Unknown';
-    const counterpartName =
-      counterpartAccount?.user?.fullName || counterpartAccount?.name || defaultName;
+    const counterpartName = counterpartAccount?.user?.fullName || counterpartAccount?.name || defaultName;
 
     return {
       id: suffix ? `${tx.id}-${suffix}` : tx.id,
