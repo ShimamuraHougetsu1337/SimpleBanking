@@ -1,0 +1,25 @@
+# Coding Conventions
+
+- Always use **TypeScript strict mode** (`"strict": true` in `tsconfig.json`).
+- Backend file naming convention: `kebab-case` (e.g., `transfer-money.service.ts`, `jwt-auth.guard.ts`).
+- Frontend component file naming convention: `PascalCase` (e.g., `TransferForm.tsx`, `DashboardPage.tsx`).
+- Frontend hook/util/service file naming convention: `camelCase` (e.g., `useTransactions.ts`, `api.ts`).
+- Use `DECIMAL` / `numeric(18,2)` for all monetary database fields — **NEVER** use float, double, or plain JavaScript `number` variables to represent money in calculations.
+- Use `decimal.js` (or an equivalent precision math library) when performing currency calculations in backend services.
+- Define variables and function names in clear, expressive English. Avoid obscure abbreviations.
+- **All code comments MUST be written in English** — this applies to inline comments, block comments, JSDoc, and TODO/FIXME notes. No exceptions.
+- Each file should export a single primary responsibility (Single Responsibility Principle).
+- **Path aliases**: All cross-module imports in `backend/src/` and `frontend/src/` MUST use the `@/` path alias (e.g., `import { User } from '@/users/entities/user.entity'`). Same-module (sibling) imports use relative paths (`./` or `../`). Never use deep relative paths like `../../` to cross module boundaries.
+- **Clean Code & Code Quality:**
+  - **Constants Over Magic Numbers:** Replace hard-coded values with named constants at the top of the file or in a dedicated constants file.
+  - **Meaningful Naming:** Variables, functions, and classes should reveal their purpose (e.g., `isUserLoading` instead of `loading`). Avoid obscure abbreviations.
+  - **Smart Comments:** Make code self-documenting. Don't comment on what the code does; use comments to explain *why* something is done a certain way.
+  - **Single Responsibility Principle (SRP):** Each function/component should do exactly one thing. If it needs a comment to explain what it does, split it.
+  - **DRY (Don't Repeat Yourself):** Extract repeated code into reusable functions and maintain single sources of truth.
+  - **Clean Structure:** Keep related code together and organize code in a logical hierarchy using consistent conventions.
+  - **Encapsulation:** Hide implementation details, expose clear interfaces, and move nested conditionals into well-named functions.
+  - **Code Quality Maintenance:** Refactor continuously, fix technical debt early, and leave code cleaner than you found it.
+  - **Testing:** Write tests before fixing bugs, keep tests readable, and test edge cases.
+  - **Version Control:** Write clear commit messages, make small focused commits, and use meaningful branch names.
+  - **Robust Error Handling:** Implement clean `try/catch` blocks, centralized API error handling, and graceful degradation for both frontend UI and backend services.
+- **Strict Interfaces:** Utilize TypeScript to define strict contracts (Interfaces, DTOs, Prop Types) for components and services, making them predictable and type-safe.
