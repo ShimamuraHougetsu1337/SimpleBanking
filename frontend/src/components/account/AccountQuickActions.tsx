@@ -19,7 +19,7 @@ export function AccountQuickActions({ onDeposit, onWithdraw }: AccountQuickActio
         onClick={onDeposit}
         style={{ flex: 1, borderRadius: 8, background: '#10B981', borderColor: '#10B981' }}
       >
-        Deposit
+        Nạp tiền
       </Button>
       <Button 
         type="primary" 
@@ -28,7 +28,7 @@ export function AccountQuickActions({ onDeposit, onWithdraw }: AccountQuickActio
         onClick={onWithdraw}
         style={{ flex: 1, borderRadius: 8, background: '#F43F5E', borderColor: '#F43F5E' }}
       >
-        Withdraw
+        Rút tiền
       </Button>
       <Button 
         type="default" 
@@ -37,7 +37,7 @@ export function AccountQuickActions({ onDeposit, onWithdraw }: AccountQuickActio
         onClick={() => navigate('/transfer')}
         style={{ flex: 1, borderRadius: 8 }}
       >
-        Transfer
+        Chuyển tiền
       </Button>
     </div>
   );

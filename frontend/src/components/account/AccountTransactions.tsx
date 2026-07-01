@@ -36,19 +36,19 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
 
   const columns = [
     {
-      title: 'Date',
+      title: 'Ngày giao dịch',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      render: (val: string) => new Date(val).toLocaleString(),
+      render: (val: string) => new Date(val).toLocaleString('vi-VN'),
     },
     {
-      title: 'Description',
+      title: 'Mô tả',
       dataIndex: 'description',
       key: 'description',
       render: (val: string) => <Text strong>{val || 'N/A'}</Text>,
     },
     {
-      title: 'Counterpart',
+      title: 'Đối tác',
       dataIndex: 'counterpartName',
       key: 'counterpartName',
       render: (val: string, record: any) => (
@@ -61,7 +61,7 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
       ),
     },
     {
-      title: 'Amount',
+      title: 'Số tiền',
       dataIndex: 'amount',
       key: 'amount',
       render: (val: string, record: any) => {
@@ -81,26 +81,36 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
       align: 'right' as const,
     },
     {
-      title: 'Status',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       render: (val: string) => {
         let color = 'default';
-        if (val === 'completed') color = 'green';
-        if (val === 'failed') color = 'red';
-        if (val === 'pending') color = 'orange';
-        return <Tag color={color}>{val.toUpperCase()}</Tag>;
+        let statusText = val.toUpperCase();
+        if (val === 'completed') {
+          color = 'green';
+          statusText = 'HOÀN THÀNH';
+        }
+        if (val === 'failed') {
+          color = 'red';
+          statusText = 'THẤT BẠI';
+        }
+        if (val === 'pending') {
+          color = 'orange';
+          statusText = 'ĐANG XỬ LÝ';
+        }
+        return <Tag color={color}>{statusText}</Tag>;
       },
     },
   ];
 
   return (
-    <Card title="Transactions" bordered={false}>
+    <Card title="Lịch sử giao dịch" bordered={false}>
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
         <Row gutter={16}>
           <Col xs={24} sm={12} style={{ marginBottom: 16 }}>
             <Input
-              placeholder="Search by description"
+              placeholder="Tìm kiếm theo mô tả"
               prefix={<SearchOutlined />}
               allowClear
               onPressEnter={(e: any) => setSearch(e.target.value)}

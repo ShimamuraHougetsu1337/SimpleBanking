@@ -1,6 +1,6 @@
 import { Typography, message, Form } from 'antd';
 import { useState, useEffect } from 'react';
-import { useTransfer } from '../hooks/useTransfer';
+import { useTransfer } from '../hooks/client/useTransfer';
 import { v4 as uuidv4 } from 'uuid';
 import { getErrorMessage } from '../utils/error';
 import { useQuery } from '@tanstack/react-query';
@@ -41,9 +41,9 @@ export default function TransferPage() {
       setIsModalVisible(true);
     } catch (err: any) {
       if (err.response?.status === 404) {
-        message.error('Destination account not found');
+        message.error('Không tìm thấy tài khoản thụ hưởng');
       } else {
-        message.error('Failed to resolve account. Please try again later.');
+        message.error('Lỗi hệ thống khi tìm tài khoản. Vui lòng thử lại sau.');
       }
     } finally {
       setIsResolving(false);
@@ -60,7 +60,7 @@ export default function TransferPage() {
       idempotencyKey: uuidv4(),
     }, {
       onSuccess: () => {
-        message.success('Transfer successful');
+        message.success('Chuyển tiền thành công');
         form.resetFields(['to_accountNumber', 'amount', 'description']);
         setIsModalVisible(false);
         setPendingValues(null);
@@ -80,7 +80,7 @@ export default function TransferPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 60 }}>
-      <Title level={2} style={{ marginBottom: 24 }}>Transfers</Title>
+      <Title level={2} style={{ marginBottom: 24 }}>Chuyển tiền</Title>
 
       <TransferForm
         form={form}

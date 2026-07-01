@@ -1,64 +1,59 @@
-import { Typography, Button, Spin, Empty, Alert } from 'antd';
+import { Typography, Button, Spin, Empty, Alert, Modal, Form, Input, Select } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
-import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import api from '@/services/api';
+import { useAccounts } from '@/hooks/client/useAccounts';
+
+const AVAILABLE_THEMES = [
+  { label: 'Đen kim loại mặc định', value: 'linear-gradient(135deg, #111827 0%, #000000 100%)' },
+  { label: 'Xanh đại dương', value: 'linear-gradient(135deg, #0f172a 0%, #1e40af 100%)' },
+  { label: 'Xanh lục bảo', value: 'linear-gradient(135deg, #064e3b 0%, #047857 100%)' },
+  { label: 'Tím hoàng gia', value: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)' },
+];
 
 const { Title } = Typography;
 
-interface Account {
-  id: string;
-  accountNumber: string;
-  name: string;
-  balance: string;
-  currency: string;
-  theme?: string;
-  user?: {
-    fullName: string;
-  };
-}
-
 export default function AccountsPage() {
-  const navigate = useNavigate();
-
-  const { data: accounts, isLoading, error } = useQuery<Account[]>({
-    queryKey: ['accounts', 'me'],
-    queryFn: async () => {
-      const res = await api.get('/accounts/me');
-      return res.data;
-    },
-  });
+  const {
+    accounts,
+    isLoading,
+    error,
+    isModalOpen,
+    form,
+    isCreating,
+    handleOpenModal,
+    handleCloseModal,
+    handleOk,
+    navigate,
+  } = useAccounts();
 
   if (isLoading) {
     return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" /></div>;
   }
 
   if (error) {
-    return <Alert message="Error loading accounts" type="error" showIcon style={{ margin: '20px' }} />;
+    return <Alert message="Lỗi khi tải danh sách tài khoản" type="error" showIcon style={{ margin: '20px' }} />;
   }
-
-  const accountList = accounts || [];
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto', paddingBottom: 60 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>My Accounts</Title>
+        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Tài khoản của tôi</Title>
         <Button
           type="dashed"
           icon={<PlusOutlined />}
           size="large"
+          onClick={handleOpenModal}
           style={{ borderRadius: 8 }}
         >
-          Open New Account
+          Mở tài khoản mới
         </Button>
       </div>
 
-      {accountList.length === 0 ? (
-        <Empty description="You don't have any accounts yet." />
+      {accounts.length === 0 ? (
+        <Empty description="Bạn chưa có tài khoản nào." />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 20 }}>
-          {accountList.map((account) => {
+          {accounts.map((account) => {
             const themeGradient = account.theme || 'linear-gradient(135deg, #111827 0%, #000000 100%)';
             return (
               <div key={account.id}>
@@ -80,6 +75,53 @@ export default function AccountsPage() {
           })}
         </div>
       )}
+      <Modal
+        title="Mở tài khoản mới"
+        open={isModalOpen}
+        onOk={handleOk}
+        onCancel={handleCloseModal}
+        confirmLoading={isCreating}
+        okText="Mở tài khoản"
+        cancelText="Hủy"
+        centered
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          style={{ marginTop: 24 }}
+          initialValues={{
+            theme: AVAILABLE_THEMES[0].value,
+          }}
+        >
+          <Form.Item
+            name="name"
+            label="Tên tài khoản"
+            rules={[
+              { required: true, message: 'Vui lòng nhập tên tài khoản' },
+              { max: 100, message: 'Tên tài khoản không được dài quá 100 ký tự' },
+            ]}
+          >
+            <Input placeholder="Ví dụ: Tài khoản tiết kiệm" size="large" />
+          </Form.Item>
+
+          <Form.Item
+            name="theme"
+            label="Giao diện thẻ"
+            rules={[{ required: true, message: 'Vui lòng chọn giao diện' }]}
+          >
+            <Select size="large">
+              {AVAILABLE_THEMES.map((theme) => (
+                <Select.Option key={theme.value} value={theme.value}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 16, height: 16, background: theme.value, borderRadius: 4 }}></div>
+                    {theme.label}
+                  </div>
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

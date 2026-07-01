@@ -21,6 +21,7 @@ Before starting to code, evaluate if your task falls into any of the specialized
 - **Frontend API Integration, Axios, or React Query hooks** ➜ Read `.agents/skills/react-api-layer/SKILL.md`
 - **Database Transactions, Money Transfers, or Balance Updates** ➜ Read `.agents/skills/typeorm-transaction/SKILL.md`
 - **User uses command: /commit_message** ➜ Read `.agents/skills/commit-message/SKILL.md`
+- **User uses command: /pullcode** ➜ Read `.agents/skills/pullcode/SKILL.md`
 
 ---
 
@@ -34,6 +35,7 @@ Before starting to code, evaluate if your task falls into any of the specialized
 - Use `decimal.js` (or an equivalent precision math library) when performing currency calculations in backend services.
 - Define variables and function names in clear, expressive English. Avoid obscure abbreviations.
 - **All code comments MUST be written in English** — this applies to inline comments, block comments, JSDoc, and TODO/FIXME notes. No exceptions.
+- **All user interface (UI) text MUST be written in Vietnamese** — this applies to all user-facing labels, buttons, placeholders, menus, dialogs, titles, and validation or status messages (with exceptions only for specific card-based visual accents).
 - Each file should export a single primary responsibility (Single Responsibility Principle).
 - **Path aliases**: All cross-module imports in `backend/src/` and `frontend/src/` MUST use the `@/` path alias (e.g., `import { User } from '@/users/entities/user.entity'`). Same-module (sibling) imports use relative paths (`./` or `../`). Never use deep relative paths like `../../` to cross module boundaries.
 - **Clean Code & Code Quality:**

@@ -22,17 +22,17 @@ export function TransferForm({ form, accounts, isLoadingAccounts, onReview, isRe
   const formatVND = (num: number | string) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(num));
 
   return (
-    <Card title="Transfer Money" bordered={false}>
+    <Card title="Chuyển tiền" bordered={false}>
       <Form form={form} layout="vertical" onFinish={onReview}>
         <Form.Item
           name="from_accountId"
-          label="From Account"
-          rules={[{ required: true, message: 'Please select an account to transfer from' }]}
+          label="Tài khoản chuyển"
+          rules={[{ required: true, message: 'Vui lòng chọn tài khoản nguồn' }]}
         >
           <Select
             size="large"
             loading={isLoadingAccounts}
-            placeholder="Select source account"
+            placeholder="Chọn tài khoản nguồn"
           >
             {accounts?.map((acc: any) => (
               <Select.Option key={acc.id} value={acc.id}>
@@ -44,10 +44,10 @@ export function TransferForm({ form, accounts, isLoadingAccounts, onReview, isRe
 
         <Form.Item
           name="to_accountNumber"
-          label="Destination Account Number"
+          label="Số tài khoản thụ hưởng"
           rules={[
-            { required: true, message: 'Please enter account number' },
-            { pattern: /^VN\d{14}$/, message: 'Account number must be in format VN + 14 digits' },
+            { required: true, message: 'Vui lòng nhập số tài khoản thụ hưởng' },
+            { pattern: /^VN\d{14}$/, message: 'Số tài khoản phải bắt đầu bằng VN và tiếp theo là 14 chữ số' },
           ]}
         >
           <Input placeholder="VN17198234569999" size="large" />
@@ -55,26 +55,26 @@ export function TransferForm({ form, accounts, isLoadingAccounts, onReview, isRe
 
         <Form.Item
           name="amount"
-          label="Amount (VND)"
+          label="Số tiền (VND)"
           rules={[
-            { required: true, message: 'Please input transfer amount' },
-            { pattern: /^\d+(\.\d{1,2})?$/, message: 'Invalid decimal representation' },
+            { required: true, message: 'Vui lòng nhập số tiền cần chuyển' },
+            { pattern: /^\d+(\.\d{1,2})?$/, message: 'Định dạng số tiền không hợp lệ' },
             {
               validator: (_, value) => Number(value) > 0
                 ? Promise.resolve()
-                : Promise.reject('Amount must be greater than 0')
+                : Promise.reject('Số tiền phải lớn hơn 0')
             },
           ]}
         >
           <Input placeholder="500000" suffix="VND" size="large" />
         </Form.Item>
 
-        <Form.Item name="description" label="Message (Optional)">
-          <Input.TextArea maxLength={255} showCount rows={3} placeholder="Dinner share..." />
+        <Form.Item name="description" label="Lời nhắn (Tùy chọn)">
+          <Input.TextArea maxLength={255} showCount rows={3} placeholder="Ví dụ: Chuyển tiền ăn tối..." />
         </Form.Item>
 
         <Button type="primary" htmlType="submit" size="large" block loading={isResolving}>
-          Review Transfer
+          Tiếp tục
         </Button>
       </Form>
     </Card>

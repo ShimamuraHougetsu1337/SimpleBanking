@@ -34,9 +34,9 @@ export default function AccountDetailPage() {
   if (!account) {
     return (
       <div style={{ textAlign: 'center', padding: '100px' }}>
-        <Empty description="Account not found" />
+        <Empty description="Không tìm thấy tài khoản" />
         <Button type="primary" onClick={() => navigate(-1)} style={{ marginTop: 20 }}>
-          Back
+          Quay lại
         </Button>
       </div>
     );
@@ -51,7 +51,7 @@ export default function AccountDetailPage() {
           onClick={() => navigate(-1)}
           style={{ padding: 0 }}
         >
-          Back
+          Quay lại
         </Button>
       </div>
 

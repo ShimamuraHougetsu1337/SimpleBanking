@@ -1,9 +1,10 @@
-import { Controller, Get, Patch, Body, UseGuards, Param, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, UseGuards, Param, NotFoundException } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { AccountsService } from './accounts.service';
 import { User } from '@/users/entities/user.entity';
 import { UpdateAccountDto } from './dto/update-account.dto';
+import { CreateAccountDto } from './dto/create-account.dto';
 
 @Controller('accounts')
 @UseGuards(JwtAuthGuard)
@@ -13,6 +14,14 @@ export class AccountsController {
   @Get('me')
   async getMyAccounts(@CurrentUser() user: User) {
     return this.accountsService.findByUserId(user.id);
+  }
+
+  @Post()
+  async createAccount(
+    @CurrentUser() user: User,
+    @Body() createAccountDto: CreateAccountDto,
+  ) {
+    return this.accountsService.createAccount(user, createAccountDto);
   }
 
   @Get('resolve/:accountNumber')
