@@ -6,6 +6,7 @@ import { User } from '@/users/entities/user.entity';
 import { TransferDto } from './dto/transfer.dto';
 import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
+import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
 
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
@@ -30,20 +31,31 @@ export class TransactionsController {
   @Get()
   async getTransactions(
     @CurrentUser() user: User,
-    @Query('limit') limitStr?: string,
-    @Query('accountId') accountId?: string,
-    @Query('filter') filter?: Record<string, string>,
+    @Query() query: GetTransactionsQueryDto,
   ) {
-    const limit = limitStr ? parseInt(limitStr, 10) : 10;
-    const data = await this.transactionsService.getTransactionsForUser(user.id, limit, accountId, filter);
+    const limit = query.limit ? parseInt(query.limit, 10) : 10;
+
+    // Map flat query params into the filter record expected by the service
+    const filter: Record<string, string> = {};
+    if (query.search) filter.search = query.search;
+    if (query.fromDate) filter.fromDate = query.fromDate;
+    if (query.toDate) filter.toDate = query.toDate;
+
+    const data = await this.transactionsService.getTransactionsForUser(
+      user.id,
+      limit,
+      query.accountId,
+      Object.keys(filter).length > 0 ? filter : undefined,
+    );
+
     return {
       data,
       meta: {
         page: 1,
         limit,
-        total: data.length, // Naive implementation for MVP
+        total: data.length,
         totalPages: 1,
-      }
+      },
     };
   }
 }

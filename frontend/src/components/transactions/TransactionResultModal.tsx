@@ -1,5 +1,5 @@
-import { Modal, Result, Button, Descriptions, Space, Typography, Card } from 'antd';
-import { CheckCircleFilled, CloseCircleFilled, HomeOutlined, RedoOutlined } from '@ant-design/icons';
+import { Modal, Button, Typography } from 'antd';
+import { CheckOutlined, CloseOutlined, RedoOutlined } from '@ant-design/icons';
 
 const { Text, Title } = Typography;
 
@@ -49,105 +49,127 @@ export function TransactionResultModal({
       footer={null}
       closable={false}
       centered
-      width={500}
+      width={480}
       styles={{ body: { padding: '32px 24px' } }}
       style={{ borderRadius: 16, overflow: 'hidden' }}
       destroyOnClose
     >
       {isSuccess ? (
-        <Result
-          icon={<CheckCircleFilled style={{ color: '#10B981', fontSize: 64 }} />}
-          title={
-            <Title level={3} style={{ margin: 0, color: '#0f172a', fontWeight: 700 }}>
+        <div>
+          {/* Success Icon & Header */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 24 }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: '#ecfdf5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#10b981',
+              fontSize: 28,
+              border: '2px solid #a7f3d0',
+              marginBottom: 16
+            }}>
+              <CheckOutlined />
+            </div>
+            <Title level={3} style={{ margin: 0, color: '#1e293b', fontWeight: 700, textAlign: 'center' }}>
               Giao dịch thành công!
             </Title>
-          }
-          subTitle={
-            <div style={{ marginTop: 8 }}>
-              <Text style={{ fontSize: 28, fontWeight: 700, color: '#0f172a' }}>
-                {formatCurrency(txData?.amount || 0)}
+            <div style={{ fontSize: 32, fontWeight: 800, color: '#10b981', marginTop: 12 }}>
+              {formatCurrency(txData?.amount || 0)}
+            </div>
+          </div>
+
+          {/* Receipt Details Box */}
+          <div style={{
+            background: '#f8fafc',
+            borderRadius: 12,
+            border: '1px solid #f1f5f9',
+            padding: '16px 20px',
+            marginBottom: 24,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <Text type="secondary" style={{ fontSize: 13 }}>Loại giao dịch</Text>
+              <Text strong style={{ color: '#1e293b', fontSize: 13 }}>{getTxTypeLabel(txData?.type)}</Text>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9', alignItems: 'center' }}>
+              <Text type="secondary" style={{ fontSize: 13 }}>Mã giao dịch</Text>
+              <Text copyable={{ text: txData?.id }} style={{ fontFamily: 'monospace', color: '#1e293b', fontSize: 13 }}>
+                {txData?.id ? `${txData.id.slice(0, 8)}...${txData.id.slice(-8)}` : 'N/A'}
               </Text>
             </div>
-          }
-          style={{ padding: 0 }}
-        >
-          {/* Receipt Section */}
-          <Card
-            bordered={false}
-            style={{
-              background: '#f8fafc',
-              borderRadius: 12,
-              border: '1px dashed #e2e8f0',
-              marginBottom: 24,
-            }}
-            styles={{ body: { padding: '16px' } }}
-          >
-            <Descriptions column={1} size="small" colon={false}>
-              <Descriptions.Item label={<Text type="secondary">Loại giao dịch</Text>}>
-                <Text strong>{getTxTypeLabel(txData?.type)}</Text>
-              </Descriptions.Item>
-              <Descriptions.Item label={<Text type="secondary">Mã giao dịch</Text>}>
-                <Text copyable={{ text: txData?.id }} style={{ fontFamily: 'monospace' }}>
-                  {txData?.id ? `${txData.id.slice(0, 8)}...${txData.id.slice(-8)}` : 'N/A'}
-                </Text>
-              </Descriptions.Item>
-              {txData?.fromAccount && (
-                <Descriptions.Item label={<Text type="secondary">Từ tài khoản</Text>}>
-                  <Text strong style={{ fontFamily: 'monospace' }}>{txData.fromAccount}</Text>
-                </Descriptions.Item>
-              )}
-              {txData?.toAccount && (
-                <Descriptions.Item label={<Text type="secondary">Đến tài khoản</Text>}>
-                  <Text strong style={{ fontFamily: 'monospace' }}>{txData.toAccount}</Text>
-                </Descriptions.Item>
-              )}
-              <Descriptions.Item label={<Text type="secondary">Nội dung</Text>}>
-                {txData?.description || 'Không có lời nhắn'}
-              </Descriptions.Item>
-              <Descriptions.Item label={<Text type="secondary">Thời gian</Text>}>
-                {txData?.createdAt ? new Date(txData.createdAt).toLocaleString('vi-VN') : 'Vừa xong'}
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
+            {txData?.fromAccount && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+                <Text type="secondary" style={{ fontSize: 13 }}>Từ tài khoản</Text>
+                <Text strong style={{ fontFamily: 'monospace', color: '#1e293b', fontSize: 13 }}>{txData.fromAccount}</Text>
+              </div>
+            )}
+            {txData?.toAccount && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+                <Text type="secondary" style={{ fontSize: 13 }}>Đến tài khoản</Text>
+                <Text strong style={{ fontFamily: 'monospace', color: '#1e293b', fontSize: 13 }}>{txData.toAccount}</Text>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #f1f5f9' }}>
+              <Text type="secondary" style={{ fontSize: 13 }}>Nội dung</Text>
+              <Text style={{ color: '#1e293b', fontSize: 13, maxWidth: '65%', textAlign: 'right' }}>{txData?.description || 'Không có lời nhắn'}</Text>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0' }}>
+              <Text type="secondary" style={{ fontSize: 13 }}>Thời gian</Text>
+              <Text style={{ color: '#1e293b', fontSize: 13 }}>{txData?.createdAt ? new Date(txData.createdAt).toLocaleString('vi-VN') : 'Vừa xong'}</Text>
+            </div>
+          </div>
 
-          <Space direction="vertical" style={{ width: '100%' }} size="middle">
-            <Button
-              type="primary"
-              icon={<HomeOutlined />}
-              onClick={onClose}
-              size="large"
-              block
-              style={{ background: '#0f172a', borderColor: '#0f172a', borderRadius: 8, height: 44 }}
-            >
-              Quay lại
-            </Button>
-          </Space>
-        </Result>
+          {/* Action Button */}
+          <Button
+            type="primary"
+            onClick={onClose}
+            size="large"
+            block
+            style={{ borderRadius: 8, height: 46, fontWeight: 600, boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)' }}
+          >
+            Quay lại
+          </Button>
+        </div>
       ) : (
-        <Result
-          status="error"
-          icon={<CloseCircleFilled style={{ color: '#ef4444', fontSize: 64 }} />}
-          title={
-            <Title level={3} style={{ margin: 0, color: '#0f172a', fontWeight: 700 }}>
+        <div>
+          {/* Failure Icon & Header */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 32, marginTop: 12 }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
+              background: '#fef2f2',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ef4444',
+              fontSize: 28,
+              border: '2px solid #fecaca',
+              marginBottom: 20
+            }}>
+              <CloseOutlined />
+            </div>
+            <Title level={3} style={{ margin: 0, color: '#1e293b', fontWeight: 700, textAlign: 'center' }}>
               Giao dịch thất bại!
             </Title>
-          }
-          subTitle={
-            <Text type="secondary" style={{ fontSize: 14 }}>
+            <Text type="secondary" style={{ textAlign: 'center', marginTop: 12, padding: '0 8px', fontSize: 14, lineHeight: '1.6' }}>
               {errorMsg || 'Đã có lỗi xảy ra trong quá trình xử lý giao dịch. Vui lòng thử lại sau.'}
             </Text>
-          }
-          style={{ padding: 0 }}
-        >
-          <Space direction="vertical" style={{ width: '100%', marginTop: 12 }} size="middle">
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {onRetry && (
               <Button
                 type="primary"
+                danger
                 icon={<RedoOutlined />}
                 onClick={onRetry}
                 size="large"
                 block
-                style={{ background: '#ef4444', borderColor: '#ef4444', borderRadius: 8, height: 44 }}
+                style={{ borderRadius: 8, height: 46, fontWeight: 600 }}
               >
                 Thử lại giao dịch
               </Button>
@@ -157,13 +179,14 @@ export function TransactionResultModal({
               onClick={onClose}
               size="large"
               block
-              style={{ borderRadius: 8, height: 44, color: '#475569' }}
+              style={{ borderRadius: 8, height: 46, fontWeight: 600, color: '#64748b' }}
             >
-              Hủy bỏ & Quay về
+              Quay về
             </Button>
-          </Space>
-        </Result>
+          </div>
+        </div>
       )}
     </Modal>
   );
 }
+

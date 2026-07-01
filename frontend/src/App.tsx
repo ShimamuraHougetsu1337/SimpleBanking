@@ -39,6 +39,7 @@ const router = createBrowserRouter([
       { path: 'accounts/:id', element: <AccountDetailPage /> },
       { path: 'transfer', element: <TransferPage /> },
       { path: 'transactions', element: <TransactionsPage /> },
+      { path: 'settings', element: <SettingsPage /> },
     ],
   },
   {
@@ -63,6 +64,7 @@ const router = createBrowserRouter([
 
 import { App as AntApp } from 'antd';
 import AccountDetailPage from './pages/AccountDetailPage';
+import SettingsPage from './pages/SettingsPage';
 import { AuthProvider } from './components/AuthProvider';
 
 export default function App() {

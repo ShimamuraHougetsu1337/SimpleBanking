@@ -127,10 +127,6 @@ export default function TransferPage() {
         errorMsg={resultTx?.errorMsg}
         txData={resultTx?.txData}
         onClose={() => setResultTx(null)}
-        onRetry={() => {
-          setResultTx(null);
-          setIsModalVisible(true);
-        }}
       />
     </div>
   );

@@ -114,6 +114,28 @@ export class UsersService {
   async countStatus(status: UserStatus): Promise<number> {
     return this.userRepository.count({ where: { status } });
   }
+
+  async updateProfile(id: string, fullName: string): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with id "${id}" not found`);
+    }
+    user.fullName = fullName;
+    return this.userRepository.save(user);
+  }
+
+  async changePassword(id: string, oldPassword: string, newPassword: string): Promise<void> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with id "${id}" not found`);
+    }
+    const isPasswordValid = await bcrypt.compare(oldPassword, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new ConflictException('Incorrect old password');
+    }
+    user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
+    await this.userRepository.save(user);
+  }
 }
 
 

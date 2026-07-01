@@ -45,7 +45,17 @@ export class TransactionsService {
     }
 
     if (filter?.search) {
-      query.andWhere('tx.description ILIKE :search', { search: `%${filter.search}%` });
+      const searchPattern = `%${filter.search}%`;
+      query.andWhere(
+        new Brackets((qb) => {
+          qb.where('tx.description ILIKE :search', { search: searchPattern })
+            .orWhere('CAST(tx.id AS TEXT) ILIKE :search', { search: searchPattern })
+            .orWhere('fromUser.fullName ILIKE :search', { search: searchPattern })
+            .orWhere('toUser.fullName ILIKE :search', { search: searchPattern })
+            .orWhere('fromAccount.accountNumber ILIKE :search', { search: searchPattern })
+            .orWhere('toAccount.accountNumber ILIKE :search', { search: searchPattern });
+        }),
+      );
     }
 
     if (filter?.fromDate) {
@@ -108,25 +118,54 @@ export class TransactionsService {
     await queryRunner.startTransaction();
 
     try {
-      const fromAccount = await queryRunner.manager.findOne(Account, {
-        where: { id: dto.from_accountId, userId: currentUserId, status: AccountStatus.ACTIVE },
-        lock: { mode: 'pessimistic_write' },
+      // Resolve destination account first without locking to get its ID
+      const toAccountRef = await queryRunner.manager.findOne(Account, {
+        where: { accountNumber: dto.to_accountNumber },
       });
+
+      if (!toAccountRef) {
+        throw new NotFoundException('Destination account does not exist');
+      }
+
+      const fromAccountId = dto.from_accountId;
+      const toAccountId = toAccountRef.id;
+
+      if (fromAccountId === toAccountId) {
+        throw new BadRequestException('Cannot transfer to the same account');
+      }
+
+      // Sort account IDs to ensure consistent locking order and avoid deadlocks
+      const sortedIds = [fromAccountId, toAccountId].sort();
+      const firstId = sortedIds[0];
+
+      let fromAccount: Account | null = null;
+      let toAccount: Account | null = null;
+
+      if (firstId === fromAccountId) {
+        fromAccount = await queryRunner.manager.findOne(Account, {
+          where: { id: fromAccountId, userId: currentUserId, status: AccountStatus.ACTIVE },
+          lock: { mode: 'pessimistic_write' },
+        });
+        toAccount = await queryRunner.manager.findOne(Account, {
+          where: { id: toAccountId },
+          lock: { mode: 'pessimistic_write' },
+        });
+      } else {
+        toAccount = await queryRunner.manager.findOne(Account, {
+          where: { id: toAccountId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        fromAccount = await queryRunner.manager.findOne(Account, {
+          where: { id: fromAccountId, userId: currentUserId, status: AccountStatus.ACTIVE },
+          lock: { mode: 'pessimistic_write' },
+        });
+      }
 
       if (!fromAccount) {
         throw new NotFoundException('Source account not found or is locked');
       }
-
-      const toAccount = await queryRunner.manager.findOne(Account, {
-        where: { accountNumber: dto.to_accountNumber },
-        lock: { mode: 'pessimistic_write' },
-      });
-
       if (!toAccount) {
-        throw new NotFoundException('Destination account does not exist');
-      }
-      if (fromAccount.id === toAccount.id) {
-        throw new BadRequestException('Cannot transfer to the same account');
+        throw new NotFoundException('Destination account not found');
       }
       if (toAccount.status !== AccountStatus.ACTIVE) {
         throw new UnprocessableEntityException('Destination account is locked');
