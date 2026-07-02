@@ -1,5 +1,6 @@
 import { Table, Typography, Tag, Space, ConfigProvider } from 'antd';
 import { formatVnd } from '@/utils/format';
+import type { AdminTransaction } from '@/services/admin.service';
 
 const { Text } = Typography;
 
@@ -8,16 +9,16 @@ export const ADMIN_TRANSACTION_COLUMNS = [
     title: 'Tx ID',
     dataIndex: 'id',
     key: 'id',
-    align: 'left' as const,
+    align: 'center' as const,
     render: (id: string) => <Text type="secondary" copyable>{id}</Text>,
   },
   {
     title: 'Date & Time',
     dataIndex: 'createdAt',
     key: 'createdAt',
-    align: 'right' as const,
+    align: 'center' as const,
     render: (date: string) => (
-      <Space direction="vertical" size={0}>
+      <Space direction="vertical" size={0} align="center">
         <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
           {new Date(date).toLocaleDateString('vi-VN')}
         </Text>
@@ -31,15 +32,33 @@ export const ADMIN_TRANSACTION_COLUMNS = [
     title: 'Sender',
     dataIndex: 'fromUserName',
     key: 'sender_name',
-    align: 'left' as const,
-    render: (name: string) => <Text strong style={{ color: '#1e293b' }}>{name}</Text>,
+    align: 'center' as const,
+    render: (name: string, record: AdminTransaction) => (
+      <Space direction="vertical" size={0} align="center">
+        <Text strong style={{ color: '#1e293b' }}>{name || '-'}</Text>
+        {record.fromAccount && (
+          <Text type="secondary" style={{ fontSize: 12, color: '#64748b' }} copyable>
+            {record.fromAccount}
+          </Text>
+        )}
+      </Space>
+    ),
   },
   {
     title: 'Receiver',
     dataIndex: 'toUserName',
     key: 'receiver_name',
-    align: 'left' as const,
-    render: (name: string) => <Text strong style={{ color: '#1e293b' }}>{name}</Text>,
+    align: 'center' as const,
+    render: (name: string, record: AdminTransaction) => (
+      <Space direction="vertical" size={0} align="center">
+        <Text strong style={{ color: '#1e293b' }}>{name || '-'}</Text>
+        {record.toAccount && (
+          <Text type="secondary" style={{ fontSize: 12, color: '#64748b' }} copyable>
+            {record.toAccount}
+          </Text>
+        )}
+      </Space>
+    ),
   },
   {
     title: 'Type',
@@ -69,7 +88,7 @@ export const ADMIN_TRANSACTION_COLUMNS = [
     title: 'Amount',
     dataIndex: 'amount',
     key: 'amount',
-    align: 'right' as const,
+    align: 'center' as const,
     render: (amount: string) => (
       <Text strong style={{ fontSize: '15px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
         {formatVnd(amount)}
@@ -79,7 +98,7 @@ export const ADMIN_TRANSACTION_COLUMNS = [
 ];
 
 interface AdminTransactionTableProps {
-  transactions: any[];
+  transactions: AdminTransaction[];
   page: number;
   pageSize: number;
   total: number;

@@ -3,7 +3,7 @@ import { Spin, Empty, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
-import { AccountTransactions } from '@/components/account/AccountTransactions';
+import { AccountTransactions } from '@/components/customer/account/AccountTransactions';
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();

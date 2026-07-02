@@ -3,8 +3,8 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import AccountsPage from './pages/AccountsPage';
-import TransferPage from './pages/TransferPage';
-import TransactionsPage from './pages/TransactionsPage';
+import TransferPage from './pages/customer/TransferPage';
+import TransactionsPage from './pages/customer/TransactionsPage';
 
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminAccountsPage from './pages/admin/AdminAccountsPage';
@@ -67,7 +67,7 @@ const router = createBrowserRouter([
 ]);
 
 import { App as AntApp } from 'antd';
-import AccountDetailPage from './pages/AccountDetailPage';
+import AccountDetailPage from './pages/customer/AccountDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import { AuthProvider } from './components/AuthProvider';
 

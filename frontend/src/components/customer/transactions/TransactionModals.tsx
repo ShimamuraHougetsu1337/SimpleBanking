@@ -1,6 +1,6 @@
 import { Modal, Form, InputNumber, Input, message } from 'antd';
-import { useDeposit } from '@/hooks/client/useDeposit';
-import { useWithdraw } from '@/hooks/client/useWithdraw';
+import { useDeposit } from '@/hooks/customer/useDeposit';
+import { useWithdraw } from '@/hooks/customer/useWithdraw';
 import { useAuthStore } from '@/store/auth.store';
 
 interface ModalProps {

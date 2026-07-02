@@ -1,7 +1,7 @@
 import { Card, Typography, Tag, Button, Space, Descriptions } from 'antd';
 import { SwapOutlined, HistoryOutlined, SafetyCertificateOutlined, MinusCircleOutlined, SettingOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import type { Account } from '@/hooks/client/useDashboardData';
+import type { Account } from '@/hooks/customer/useDashboardData';
 
 const { Title, Text } = Typography;
 

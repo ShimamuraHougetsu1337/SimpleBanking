@@ -1,5 +1,5 @@
 import { Form, Row, Col, Input, Select, Button, Card, message } from 'antd';
-import { useUpdateAccount } from '@/hooks/client/useUpdateAccount';
+import { useUpdateAccount } from '@/hooks/customer/useUpdateAccount';
 
 const AVAILABLE_THEMES = [
   { label: 'Đen kim loại mặc định', value: 'linear-gradient(135deg, #111827 0%, #000000 100%)' },

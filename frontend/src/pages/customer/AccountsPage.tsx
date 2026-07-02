@@ -1,7 +1,7 @@
 import { Typography, Button, Spin, Empty, Alert, Modal, Form, Input, Select } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { BalanceCard } from '@/components/dashboard/BalanceCard';
-import { useAccounts } from '@/hooks/client/useAccounts';
+import { BalanceCard } from '@/components/customer/dashboard/BalanceCard';
+import { useAccounts } from '@/hooks/customer/useAccounts';
 
 const AVAILABLE_THEMES = [
   { label: 'Đen kim loại mặc định', value: 'linear-gradient(135deg, #111827 0%, #000000 100%)' },

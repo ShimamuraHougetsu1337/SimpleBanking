@@ -1,7 +1,7 @@
 import { Form, Input, Button, Typography, Layout, Card } from 'antd';
 import { LockOutlined, UserOutlined, MailOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { useRegister } from '@/hooks/client/useAuth';
+import { useRegister } from '@/hooks/customer/useAuth';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;

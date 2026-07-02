@@ -1,6 +1,6 @@
 import { Layout, Typography, Space, Divider } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useLogout } from '@/hooks/client/useAuth';
+import { useLogout } from '@/hooks/customer/useAuth';
 import {
   DashboardOutlined,
   CreditCardOutlined,

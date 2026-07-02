@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Card, Typography, Table } from 'antd';
-import { useTransactions } from '@/hooks/client/useTransactions';
-import { useTransactionFilters } from '@/hooks/client/useTransactionFilters';
-import { TransactionFilters } from '@/components/transactions/TransactionFilters';
+import { useTransactions } from '@/hooks/customer/useTransactions';
+import { useTransactionFilters } from '@/hooks/customer/useTransactionFilters';
+import { TransactionFilters } from '@/components/customer/transactions/TransactionFilters';
 import type { TransactionRecord } from '@/types/transaction';
-import { TransactionDetailModal } from '@/components/transactions/TransactionDetailModal';
-import { getTransactionColumns } from '@/components/transactions/TransactionColumns';
+import { TransactionDetailModal } from '@/components/customer/transactions/TransactionDetailModal';
+import { getTransactionColumns } from '@/components/customer/transactions/TransactionColumns';
 import './TransactionsPage.css';
 
 const { Title, Text } = Typography;
