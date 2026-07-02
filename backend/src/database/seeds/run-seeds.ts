@@ -8,6 +8,7 @@ import {
   TransactionType,
   TransactionStatus,
 } from '@/transactions/entities/transaction.entity';
+import { SystemSetting } from '@/admin/entities/system-setting.entity';
 import * as bcrypt from 'bcrypt';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -27,6 +28,7 @@ async function run() {
   try {
     console.log('Truncating existing database tables (cascade)...');
     // Truncate tables in order to avoid foreign key constraint violations
+    await queryRunner.query('TRUNCATE TABLE system_settings CASCADE;');
     await queryRunner.query('TRUNCATE TABLE transactions CASCADE;');
     await queryRunner.query('TRUNCATE TABLE refresh_tokens CASCADE;');
     await queryRunner.query('TRUNCATE TABLE accounts CASCADE;');
@@ -166,6 +168,39 @@ async function run() {
     tx4.description = 'ATM cash withdrawal';
     tx4.createdAt = fewHoursAgo;
     await queryRunner.manager.save(Transaction, tx4);
+
+    console.log('Creating system settings...');
+    const settings = [
+      {
+        settingKey: 'daily_limit',
+        settingValue: '50000000',
+        dataType: 'float',
+        displayName: 'Hạn mức hàng ngày (VND)',
+        description: 'Hạn mức chuyển tiền tối đa cho phép của mỗi người dùng trong một ngày.',
+        groupName: 'giao_dich'
+      },
+      {
+        settingKey: 'auto_lock_suspicious',
+        settingValue: 'true',
+        dataType: 'boolean',
+        displayName: 'Tự động khóa tài khoản nghi ngờ',
+        description: 'Tự động khóa hồ sơ khách hàng khi phát hiện sử dụng lại refresh token hoặc khi ghi nhận nhiều giao dịch thất bại.',
+        groupName: 'bao_mat'
+      },
+      {
+        settingKey: 'maintenance_mode',
+        settingValue: 'false',
+        dataType: 'boolean',
+        displayName: 'Chế độ bảo trì hệ thống',
+        description: 'Đặt toàn bộ ứng dụng vào trạng thái bảo trì. Khách hàng sẽ không thể đăng nhập hoặc thực hiện giao dịch.',
+        groupName: 'he_thong'
+      }
+    ];
+
+    for (const settingData of settings) {
+      const setting = queryRunner.manager.create(SystemSetting, settingData);
+      await queryRunner.manager.save(SystemSetting, setting);
+    }
 
     console.log('Committing transaction...');
     await queryRunner.commitTransaction();

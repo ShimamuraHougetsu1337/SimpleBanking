@@ -4,10 +4,14 @@ import { AccountsModule } from '@/accounts/accounts.module';
 import { TransactionsModule } from '@/transactions/transactions.module';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { SystemSetting } from './entities/system-setting.entity';
+import { SystemSettingsService } from './system-settings.service';
 
 @Module({
-  imports: [UsersModule, AccountsModule, TransactionsModule],
+  imports: [TypeOrmModule.forFeature([SystemSetting]), UsersModule, AccountsModule, TransactionsModule],
   controllers: [AdminController],
-  providers: [AdminService],
+  providers: [AdminService, SystemSettingsService],
+  exports: [SystemSettingsService],
 })
 export class AdminModule { }

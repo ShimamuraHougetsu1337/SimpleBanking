@@ -5,8 +5,6 @@ import {
   Button,
   Input,
   Switch,
-  Row,
-  Col,
   Form,
   Divider,
 } from 'antd';
@@ -15,9 +13,10 @@ import {
   DollarOutlined,
   SafetyOutlined,
   ToolOutlined,
-  LockOutlined,
+  BarsOutlined,
 } from '@ant-design/icons';
 import { useAdminSettings } from '@/hooks/admin/useAdminSettings';
+import type { SystemSetting } from '@/services/admin.service';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -29,15 +28,49 @@ const CARD_SHADOW_STYLE = {
   marginBottom: 24,
 };
 
+const GROUP_CONFIG: Record<string, { title: string; icon: React.ReactNode }> = {
+  giao_dich: { title: 'Quy tắc giao dịch', icon: <DollarOutlined style={{ marginRight: 8, color: '#10B981' }} /> },
+  bao_mat: { title: 'Chính sách bảo mật & tài khoản', icon: <SafetyOutlined style={{ marginRight: 8, color: '#EF4444' }} /> },
+  he_thong: { title: 'Trạng thái hệ thống', icon: <ToolOutlined style={{ marginRight: 8, color: '#F59E0B' }} /> },
+};
+
 export default function AdminSettingsPage() {
   const { settings, isSaving, handleUpdateSetting, handleSave } = useAdminSettings();
+
+  // Group settings
+  const groupedSettings = settings.reduce((acc, setting) => {
+    if (!acc[setting.groupName]) {
+      acc[setting.groupName] = [];
+    }
+    acc[setting.groupName].push(setting);
+    return acc;
+  }, {} as Record<string, SystemSetting[]>);
+
+  const renderInput = (setting: SystemSetting) => {
+    if (setting.dataType === 'boolean') {
+      return (
+        <Switch
+          checked={Boolean(setting.value)}
+          onChange={(checked) => handleUpdateSetting(setting.settingKey, checked)}
+        />
+      );
+    }
+    
+    return (
+      <Input
+        value={setting.value}
+        onChange={(e) => handleUpdateSetting(setting.settingKey, e.target.value)}
+        style={{ borderRadius: 8, height: 40, maxWidth: 300 }}
+      />
+    );
+  };
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Space size={12}>
           <SettingOutlined style={{ fontSize: 24, color: '#3B82F6' }} />
-          <Title level={2} style={{ margin: 0, color: '#1e293b' }}>System Settings</Title>
+          <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Cài Đặt Hệ Thống</Title>
         </Space>
         <Button
           type="primary"
@@ -45,84 +78,41 @@ export default function AdminSettingsPage() {
           loading={isSaving}
           style={{ borderRadius: 8, height: 40, paddingInline: 24 }}
         >
-          Save Changes
+          Lưu Thay Đổi
         </Button>
       </div>
 
       <Form layout="vertical">
-        {/* Transaction Limits & Fees */}
-        <Card style={CARD_SHADOW_STYLE} title={<span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}><DollarOutlined style={{ marginRight: 8, color: '#10B981' }} />Transaction Rules</span>}>
-          <Row gutter={24}>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label={<span style={{ fontWeight: 500, color: '#475569' }}>Daily Limit (VND)</span>}
-                help="Maximum aggregate transfer amount allowed per user per day."
-              >
-                <Input
-                  prefix={<span style={{ color: '#94a3b8' }}>₫</span>}
-                  value={settings.dailyLimit}
-                  onChange={(e) => handleUpdateSetting('dailyLimit', e.target.value)}
-                  style={{ borderRadius: 8, height: 40 }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item
-                label={<span style={{ fontWeight: 500, color: '#475569' }}>Standard Transfer Fee (VND)</span>}
-                help="Flat charge deducted automatically on domestic bank transfers."
-              >
-                <Input
-                  prefix={<span style={{ color: '#94a3b8' }}>₫</span>}
-                  value={settings.transferFee}
-                  onChange={(e) => handleUpdateSetting('transferFee', e.target.value)}
-                  style={{ borderRadius: 8, height: 40 }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Card>
-
-        {/* Security & Access Policies */}
-        <Card style={CARD_SHADOW_STYLE} title={<span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}><SafetyOutlined style={{ marginRight: 8, color: '#EF4444' }} />Security & Accounts Policies</span>}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-            <div>
-              <Text strong style={{ color: '#1e293b', display: 'block' }}>Auto-Lock Suspicious Accounts</Text>
-              <Paragraph type="secondary" style={{ margin: 0, fontSize: 13, maxWidth: 450 }}>
-                Automatically lock customer profiles when refresh token reuse is detected or multiple rapid failed transactions are recorded.
-              </Paragraph>
-            </div>
-            <Switch
-              checked={settings.autoLockSuspicious}
-              onChange={(checked) => handleUpdateSetting('autoLockSuspicious', checked)}
-            />
-          </div>
-          <Divider style={{ margin: '16px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <Text strong style={{ color: '#1e293b', display: 'block' }}><LockOutlined style={{ marginRight: 6 }} />Enforce Two-Factor Authentication (2FA)</Text>
-              <Paragraph type="secondary" style={{ margin: 0, fontSize: 13, maxWidth: 450 }}>
-                Require admins and high-volume customers to register Google Authenticator or Email OTP code before execution.
-              </Paragraph>
-            </div>
-            <Switch disabled checked={true} />
-          </div>
-        </Card>
-
-        {/* System Operations & Maintenance */}
-        <Card style={CARD_SHADOW_STYLE} title={<span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}><ToolOutlined style={{ marginRight: 8, color: '#F59E0B' }} />System State</span>}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <Text strong style={{ color: '#1e293b', display: 'block' }}>System Maintenance Mode</Text>
-              <Paragraph type="secondary" style={{ margin: 0, fontSize: 13, maxWidth: 450 }}>
-                Puts the entire application into maintenance. Customers will not be able to log in or initiate transactions. Admins retain full access.
-              </Paragraph>
-            </div>
-            <Switch
-              checked={settings.maintenanceMode}
-              onChange={(checked) => handleUpdateSetting('maintenanceMode', checked)}
-            />
-          </div>
-        </Card>
+        {Object.entries(groupedSettings).map(([groupName, groupSettings]) => {
+          const config = GROUP_CONFIG[groupName] || { title: groupName, icon: <BarsOutlined style={{ marginRight: 8 }} /> };
+          
+          return (
+            <Card
+              key={groupName}
+              style={CARD_SHADOW_STYLE}
+              title={<span style={{ fontSize: 16, fontWeight: 600, color: '#1e293b' }}>{config.icon}{config.title}</span>}
+            >
+              {groupSettings.map((setting, index) => (
+                <div key={setting.settingKey}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+                    <div style={{ paddingRight: 24 }}>
+                      <Text strong style={{ color: '#1e293b', display: 'block', marginBottom: 4 }}>
+                        {setting.displayName}
+                      </Text>
+                      <Paragraph type="secondary" style={{ margin: 0, fontSize: 13, maxWidth: 450 }}>
+                        {setting.description}
+                      </Paragraph>
+                    </div>
+                    <div>
+                      {renderInput(setting)}
+                    </div>
+                  </div>
+                  {index < groupSettings.length - 1 && <Divider style={{ margin: '16px 0' }} />}
+                </div>
+              ))}
+            </Card>
+          );
+        })}
       </Form>
     </div>
   );
