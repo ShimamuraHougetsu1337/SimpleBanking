@@ -1,6 +1,6 @@
 import { Layout, Typography, Avatar, Divider, Space } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { useLogout } from '@/hooks/client/useAuth';
+import { useLogout } from '@/hooks/customer/useAuth';
 import { useAuthStore } from '@/store/auth.store';
 import {
   TeamOutlined,

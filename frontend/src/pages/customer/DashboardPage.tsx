@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Typography, Spin, Alert, Modal } from 'antd';
-import { BalanceCard } from '@/components/dashboard/BalanceCard';
-import { AccountDetailsCard } from '@/components/dashboard/AccountDetailsCard';
-import { useDashboardData, type Account } from '@/hooks/client/useDashboardData';
-import { WithdrawModal } from '@/components/transactions/TransactionModals';
-import { AccountSettingsForm } from '@/components/account/AccountSettingsForm';
-import { TransactionResultModal } from '@/components/transactions/TransactionResultModal';
+import { BalanceCard } from '@/components/customer/dashboard/BalanceCard';
+import { AccountDetailsCard } from '@/components/customer/dashboard/AccountDetailsCard';
+import { useDashboardData, type Account } from '@/hooks/customer/useDashboardData';
+import { WithdrawModal } from '@/components/customer/transactions/TransactionModals';
+import { AccountSettingsForm } from '@/components/customer/account/AccountSettingsForm';
+import { TransactionResultModal } from '@/components/customer/transactions/TransactionResultModal';
 
 const { Title } = Typography;
 

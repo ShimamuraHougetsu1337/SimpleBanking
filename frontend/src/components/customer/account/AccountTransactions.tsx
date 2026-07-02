@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Card, Space, List, Typography, Modal, Descriptions, Tag } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
-import { useTransactionFilters } from '@/hooks/client/useTransactionFilters';
-import { TransactionFilters } from '@/components/transactions/TransactionFilters';
+import { useTransactionFilters } from '@/hooks/customer/useTransactionFilters';
+import { TransactionFilters } from '@/components/customer/transactions/TransactionFilters';
 
 const { Text } = Typography;
 
@@ -31,7 +31,7 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
     queryFn: async () => {
       if (!accountId) return [];
       const params: any = { accountId, limit: 50 };
-      
+
       if (filterParams.search) {
         params.search = filterParams.search;
       }

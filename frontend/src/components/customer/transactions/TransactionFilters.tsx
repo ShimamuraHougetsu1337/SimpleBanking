@@ -6,7 +6,7 @@ import {
   FilterOutlined,
 } from '@ant-design/icons';
 import type { Dayjs } from 'dayjs';
-import type { FiltersState } from '@/hooks/client/useTransactionFilters';
+import type { FiltersState } from '@/hooks/customer/useTransactionFilters';
 
 const { RangePicker } = DatePicker;
 

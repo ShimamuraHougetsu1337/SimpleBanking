@@ -3,7 +3,7 @@ import { Form, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
-import { useCreateAccount } from '@/hooks/client/useCreateAccount';
+import { useCreateAccount } from '@/hooks/customer/useCreateAccount';
 
 export interface Account {
   id: string;

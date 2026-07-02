@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, Typography, Tabs, Form, Input, Button, Spin } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useProfile, useUpdateProfile, useChangePassword } from '@/hooks/client/useSettings';
+import { useProfile, useUpdateProfile, useChangePassword } from '@/hooks/customer/useSettings';
 
 const { Title, Text } = Typography;
 

@@ -1,13 +1,13 @@
 import { Typography, message, Form } from 'antd';
 import { useState, useEffect } from 'react';
-import { useTransfer } from '../hooks/client/useTransfer';
+import { useTransfer } from '../../hooks/customer/useTransfer';
 import { v4 as uuidv4 } from 'uuid';
-import { getErrorMessage } from '../utils/error';
+import { getErrorMessage } from '../../utils/error';
 import { useQuery } from '@tanstack/react-query';
-import api from '../services/api';
-import { TransferForm } from '../components/transfer/TransferForm';
-import { TransferReviewModal } from '../components/transfer/TransferReviewModal';
-import { TransactionResultModal } from '@/components/transactions/TransactionResultModal';
+import api from '../../services/api';
+import { TransferForm } from '../../components/customer/transfer/TransferForm';
+import { TransferReviewModal } from '../../components/customer/transfer/TransferReviewModal';
+import { TransactionResultModal } from '@/components/customer/transactions/TransactionResultModal';
 
 const { Title } = Typography;
 
