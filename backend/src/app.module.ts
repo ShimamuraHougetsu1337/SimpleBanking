@@ -8,6 +8,10 @@ import { UsersModule } from './users/users.module';
 import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { AdminModule } from './admin/admin.module';
+import { TasksModule } from './tasks/tasks.module';
+import { ScheduleModule } from '@nestjs/schedule/dist/schedule.module';
+import { APP_GUARD } from '@nestjs/core';
+import { MaintenanceGuard } from './common/guards/maintenance.guard';
 import databaseConfig from './config/database.config';
 
 @Module({
@@ -34,8 +38,16 @@ import databaseConfig from './config/database.config';
     AccountsModule,
     TransactionsModule,
     AdminModule,
+    TasksModule,
+    ScheduleModule.forRoot(),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: MaintenanceGuard,
+    },
+  ],
 })
 export class AppModule {}

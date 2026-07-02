@@ -1,8 +1,8 @@
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
-import AccountsPage from './pages/AccountsPage';
+import DashboardPage from './pages/customer/DashboardPage';
+import AccountsPage from './pages/customer/AccountsPage';
 import TransferPage from './pages/customer/TransferPage';
 import TransactionsPage from './pages/customer/TransactionsPage';
 
@@ -11,6 +11,7 @@ import AdminAccountsPage from './pages/admin/AdminAccountsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import MaintenancePage from './pages/MaintenancePage';
 
 import { AppLayout } from './components/layout/AppLayout';
 import { AdminLayout } from './components/layout/AdminLayout';
@@ -61,6 +62,10 @@ const router = createBrowserRouter([
     ],
   },
   {
+    path: '/maintenance',
+    element: <MaintenancePage />,
+  },
+  {
     path: '*',
     element: <Navigate to="/" replace />,
   }
@@ -68,7 +73,7 @@ const router = createBrowserRouter([
 
 import { App as AntApp } from 'antd';
 import AccountDetailPage from './pages/customer/AccountDetailPage';
-import SettingsPage from './pages/SettingsPage';
+import SettingsPage from './pages/customer/SettingsPage';
 import { AuthProvider } from './components/AuthProvider';
 
 export default function App() {
