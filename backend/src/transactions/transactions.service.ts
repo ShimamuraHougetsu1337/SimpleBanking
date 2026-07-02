@@ -6,6 +6,7 @@ import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { TransferDto } from './dto/transfer.dto';
 import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
+import { SystemSetting } from '@/admin/entities/system-setting.entity';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -14,7 +15,7 @@ export class TransactionsService {
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     @InjectDataSource() private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   // ===========================================================================
   // QUERY METHODS (READ)
@@ -199,6 +200,23 @@ export class TransactionsService {
 
       const amount = this.validateAmount(dto.amount, fromAccount.balance);
 
+      // Check Daily Limit
+      const limitSetting = await manager.findOne(SystemSetting, { where: { settingKey: 'daily_limit' } });
+      if (limitSetting) {
+        const dailyLimit = new Decimal(limitSetting.settingValue);
+        const usedLimit = new Decimal(fromAccount.usedDailyLimit || 0);
+        if (usedLimit.plus(amount).gt(dailyLimit)) {
+          throw new BadRequestException('Bạn đã vượt quá hạn mức chuyển tiền hàng ngày');
+        }
+        // Update used daily limit
+        await manager
+          .createQueryBuilder()
+          .update(Account)
+          .set({ usedDailyLimit: () => `"used_daily_limit" + ${amount.toFixed(2)}` })
+          .where('id = :id', { id: fromAccount.id })
+          .execute();
+      }
+
       await this.updateAccountBalance(manager, fromAccount.id, amount, 'subtract');
       await this.updateAccountBalance(manager, toAccount.id, amount, 'add');
 
@@ -363,7 +381,7 @@ export class TransactionsService {
     counterpartAccount: Account | null | undefined,
     suffix?: string,
   ) {
-    const defaultName = direction === 'credit' ? 'System Deposit' : 'Unknown';
+    const defaultName = direction === 'credit' ? 'Hệ thống' : 'Hệ thống';
     const counterpartName = counterpartAccount?.user?.fullName || counterpartAccount?.name || defaultName;
 
     return {
