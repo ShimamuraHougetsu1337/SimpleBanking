@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Card, Typography, Table } from 'antd';
+import { Card, Typography, Table, ConfigProvider } from 'antd';
 import { useTransactions } from '@/hooks/customer/useTransactions';
 import { useTransactionFilters } from '@/hooks/customer/useTransactionFilters';
 import { TransactionFilters } from '@/components/customer/transactions/TransactionFilters';
 import type { TransactionRecord } from '@/types/transaction';
 import { TransactionDetailModal } from '@/components/customer/transactions/TransactionDetailModal';
 import { getTransactionColumns } from '@/components/customer/transactions/TransactionColumns';
-import './TransactionsPage.css';
 
 const { Title, Text } = Typography;
 const PAGE_SIZE = 10;
@@ -74,42 +73,59 @@ export default function TransactionsPage() {
 
       {/* Transaction table */}
       <Card bordered={false} styles={{ body: { padding: 0 } }}>
-        <Table<TransactionRecord>
-          dataSource={data?.data ?? []}
-          columns={columns}
-          rowKey="id"
-          loading={isLoading || isFetching}
-          onRow={(record) => ({
-            onClick: () => setSelectedTransaction(record),
-            style: { cursor: 'pointer' },
-            className: 'tx-table-row',
-          })}
-          pagination={{
-            current: page,
-            pageSize: PAGE_SIZE,
-            total: data?.meta?.total ?? 0,
-            onChange: setPage,
-            showSizeChanger: false,
-            showTotal: (total) => (
-              <Text style={{ color: '#64748b', fontSize: 13 }}>
-                {total} giao dịch{isFilterActive ? ' (đã lọc)' : ''}
-              </Text>
-            ),
-            style: { padding: '16px 24px', margin: 0 },
+        <ConfigProvider
+          theme={{
+            token: {
+              colorPrimary: '#3B82F6',
+              borderRadius: 12,
+            },
+            components: {
+              Table: {
+                headerBg: '#f8fafc',
+                headerColor: '#64748b',
+                headerSplitColor: 'transparent',
+                rowHoverBg: '#f8fafc',
+                cellPaddingBlock: 16,
+                cellPaddingInline: 16,
+              },
+            },
           }}
-          locale={{
-            emptyText: (
-              <div style={{ padding: '48px 0', textAlign: 'center' }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-                <Text style={{ color: '#94a3b8', fontSize: 14 }}>
-                  {isFilterActive ? 'Không tìm thấy giao dịch phù hợp với bộ lọc' : 'Chưa có giao dịch nào'}
+        >
+          <Table<TransactionRecord>
+            dataSource={data?.data ?? []}
+            columns={columns}
+            rowKey="id"
+            loading={isLoading || isFetching}
+            onRow={(record) => ({
+              onClick: () => setSelectedTransaction(record),
+              style: { cursor: 'pointer' },
+            })}
+            pagination={{
+              current: page,
+              pageSize: PAGE_SIZE,
+              total: data?.meta?.total ?? 0,
+              onChange: setPage,
+              showSizeChanger: false,
+              showTotal: (total) => (
+                <Text style={{ color: '#64748b', fontSize: 13 }}>
+                  {total} giao dịch{isFilterActive ? ' (đã lọc)' : ''}
                 </Text>
-              </div>
-            ),
-          }}
-          style={{ borderRadius: 12 }}
-          className="transactions-table"
-        />
+              ),
+              style: { padding: '16px 24px', margin: 0 },
+            }}
+            locale={{
+              emptyText: (
+                <div style={{ padding: '48px 0', textAlign: 'center' }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+                  <Text style={{ color: '#94a3b8', fontSize: 14 }}>
+                    {isFilterActive ? 'Không tìm thấy giao dịch phù hợp với bộ lọc' : 'Chưa có giao dịch nào'}
+                  </Text>
+                </div>
+              ),
+            }}
+            style={{ borderRadius: 12, overflow: 'hidden' }}
+          />
+        </ConfigProvider>
       </Card>
 
       {/* Transaction detail modal */}

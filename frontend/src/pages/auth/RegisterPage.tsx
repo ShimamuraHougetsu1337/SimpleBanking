@@ -20,9 +20,9 @@ export default function RegisterPage() {
           <Card variant="borderless" style={{ borderRadius: 12, padding: '24px 12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
               <Title level={2} style={{ margin: 0, color: '#1e293b' }}>
-                Create Account
+                Tạo Tài Khoản
               </Title>
-              <Text type="secondary" style={{ fontSize: 15 }}>Join us to start banking simply</Text>
+              <Text type="secondary" style={{ fontSize: 15 }}>Tham gia cùng chúng tôi để bắt đầu giao dịch ngân hàng dễ dàng</Text>
             </div>
 
             <Form
@@ -35,31 +35,31 @@ export default function RegisterPage() {
               <Form.Item
                 name="fullName"
                 rules={[
-                  { required: true, message: 'Please input your Full Name!' },
-                  { min: 2, message: 'Full name must be at least 2 characters' }
+                  { required: true, message: 'Vui lòng nhập Họ và tên!' },
+                  { min: 2, message: 'Họ và tên phải có ít nhất 2 ký tự' }
                 ]}
               >
-                <Input prefix={<UserOutlined />} placeholder="Full Name" />
+                <Input prefix={<UserOutlined />} placeholder="Họ và tên" />
               </Form.Item>
 
               <Form.Item
                 name="email"
                 rules={[
-                  { required: true, message: 'Please input your Email!' },
-                  { type: 'email', message: 'Please enter a valid email!' }
+                  { required: true, message: 'Vui lòng nhập Email!' },
+                  { type: 'email', message: 'Vui lòng nhập địa chỉ Email hợp lệ!' }
                 ]}
               >
-                <Input prefix={<MailOutlined />} placeholder="Email Address" />
+                <Input prefix={<MailOutlined />} placeholder="Địa chỉ Email" />
               </Form.Item>
 
               <Form.Item
                 name="password"
                 rules={[
-                  { required: true, message: 'Please input your Password!' },
-                  { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/, message: 'Password must be at least 6 characters and contain uppercase, lowercase, digit, and special character' }
+                  { required: true, message: 'Vui lòng nhập Mật khẩu!' },
+                  { pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,}$/, message: 'Mật khẩu phải có ít nhất 6 ký tự và chứa chữ hoa, chữ thường, chữ số, ký tự đặc biệt' }
                 ]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="Password" />
+                <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" />
               </Form.Item>
 
               <Form.Item
@@ -67,19 +67,19 @@ export default function RegisterPage() {
                 rules={[
                   {
                     required: true,
-                    message: 'Please confirm your password!',
+                    message: 'Vui lòng xác nhận mật khẩu!',
                   },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       if (!value || getFieldValue('password') === value) {
                         return Promise.resolve();
                       }
-                      return Promise.reject(new Error('The two passwords that you entered do not match!'));
+                      return Promise.reject(new Error('Hai mật khẩu bạn đã nhập không khớp!'));
                     },
                   }),
                 ]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="Confirm Password" />
+                <Input.Password prefix={<LockOutlined />} placeholder="Xác nhận mật khẩu" />
               </Form.Item>
 
               <Form.Item style={{ marginTop: 12, marginBottom: 0 }}>
@@ -91,11 +91,11 @@ export default function RegisterPage() {
                   block
                   style={{ height: 44, fontWeight: 600 }}
                 >
-                  Sign Up
+                  Đăng Ký
                 </Button>
                 <div style={{ textAlign: 'center', marginTop: 24 }}>
                   <Text type="secondary">
-                    Already have an account? <Link to="/login" style={{ fontWeight: 600 }}>Sign in</Link>
+                    Đã có tài khoản? <Link to="/login" style={{ fontWeight: 600 }}>Đăng nhập</Link>
                   </Text>
                 </div>
               </Form.Item>

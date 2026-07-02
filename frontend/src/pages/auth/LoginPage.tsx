@@ -31,14 +31,14 @@ export default function LoginPage() {
           <Card variant="borderless" style={{ borderRadius: 12, padding: '24px 12px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' }}>
             <div style={{ textAlign: 'center', marginBottom: 32 }}>
               <Title level={2} style={{ margin: 0, color: '#1e293b' }}>
-                Welcome Back
+                Chào Mừng Trở Lại
               </Title>
-              <Text type="secondary" style={{ fontSize: 15 }}>Sign in to access your account</Text>
+              <Text type="secondary" style={{ fontSize: 15 }}>Đăng nhập để truy cập tài khoản của bạn</Text>
             </div>
 
             {sessionExpired && (
               <Alert
-                message="Session expired for security reasons. Please log in again."
+                message="Phiên đăng nhập đã hết hạn vì lý do bảo mật. Vui lòng đăng nhập lại."
                 type="warning"
                 showIcon
                 style={{ marginBottom: 24 }}
@@ -47,7 +47,6 @@ export default function LoginPage() {
 
             <Form
               name="normal_login"
-              initialValues={{ remember: true }}
               onFinish={onFinish}
               size="large"
               layout="vertical"
@@ -56,8 +55,8 @@ export default function LoginPage() {
               <Form.Item
                 name="email"
                 rules={[
-                  { required: true, message: 'Please input your Email!' },
-                  { type: 'email', message: 'Please enter a valid email!' }
+                  { required: true, message: 'Vui lòng nhập Email!' },
+                  { type: 'email', message: 'Vui lòng nhập địa chỉ Email hợp lệ!' }
                 ]}
               >
                 <Input prefix={<UserOutlined />} placeholder="Email" />
@@ -65,9 +64,9 @@ export default function LoginPage() {
 
               <Form.Item
                 name="password"
-                rules={[{ required: true, message: 'Please input your Password!' }]}
+                rules={[{ required: true, message: 'Vui lòng nhập Mật khẩu!' }]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="Password" />
+                <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" />
               </Form.Item>
 
               <Form.Item style={{ marginTop: 12, marginBottom: 0 }}>
@@ -79,11 +78,11 @@ export default function LoginPage() {
                   block
                   style={{ height: 44, fontWeight: 600 }}
                 >
-                  Sign In
+                  Đăng Nhập
                 </Button>
                 <div style={{ textAlign: 'center', marginTop: 24 }}>
                   <Text type="secondary">
-                    Don't have an account? <Link to="/register" style={{ fontWeight: 600 }}>Register now</Link>
+                    Chưa có tài khoản? <Link to="/register" style={{ fontWeight: 600 }}>Đăng ký ngay</Link>
                   </Text>
                 </div>
               </Form.Item>

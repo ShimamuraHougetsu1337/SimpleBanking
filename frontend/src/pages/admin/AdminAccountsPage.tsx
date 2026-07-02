@@ -48,10 +48,10 @@ export default function AdminAccountsPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Account Management</Title>
+        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Quản Lý Tài Khoản</Title>
         <Space>
           <Input
-            placeholder="Search by account number, name, email..."
+            placeholder="Tìm kiếm bằng số tài khoản, tên, email..."
             prefix={<SearchOutlined style={{ color: '#64748b' }} />}
             style={{ width: 350, borderRadius: 8, height: 40 }}
             value={searchQuery}
