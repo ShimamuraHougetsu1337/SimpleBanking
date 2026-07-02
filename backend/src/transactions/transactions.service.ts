@@ -94,8 +94,7 @@ export class TransactionsService {
       .leftJoinAndSelect('tx.fromAccount', 'fromAccount')
       .leftJoinAndSelect('tx.toAccount', 'toAccount')
       .leftJoinAndSelect('fromAccount.user', 'fromUser')
-      .leftJoinAndSelect('toAccount.user', 'toUser')
-      .orderBy('tx.createdAt', 'DESC');
+      .leftJoinAndSelect('toAccount.user', 'toUser');
 
     if (search) this.applySearchFilter(query, `%${search}%`);
     if (startDate) query.andWhere('tx.createdAt >= :startDate', { startDate });
@@ -116,6 +115,7 @@ export class TransactionsService {
     };
 
     const [data, total] = await query
+      .orderBy('tx.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();

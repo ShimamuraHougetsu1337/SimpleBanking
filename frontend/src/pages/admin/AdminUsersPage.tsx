@@ -6,19 +6,15 @@ import {
   Space,
   Button,
   Input,
-  Row,
-  Col,
-  Statistic,
   ConfigProvider,
   Modal,
   Descriptions,
+  Tooltip,
 } from 'antd';
 import {
   SearchOutlined,
   LockOutlined,
   UnlockOutlined,
-  UsergroupAddOutlined,
-  UserDeleteOutlined,
   EyeOutlined,
 } from '@ant-design/icons';
 import { useAdminUsers, type AdminUser } from '@/hooks/admin/useAdminUsers';
@@ -58,9 +54,9 @@ export default function AdminUsersPage() {
     {
       title: 'Name & Email',
       key: 'user',
-      align: 'left' as const,
+      align: 'center' as const,
       render: (record: AdminUser) => (
-        <Space direction="vertical" size={0}>
+        <Space direction="vertical" size={0} align="center">
           <Text strong style={{ color: '#1e293b' }}>{record.fullName}</Text>
           <Text type="secondary" style={{ fontSize: 13, color: '#64748b' }}>{record.email}</Text>
         </Space>
@@ -92,7 +88,7 @@ export default function AdminUsersPage() {
       title: 'Balance',
       dataIndex: 'balance',
       key: 'balance',
-      align: 'right' as const,
+      align: 'center' as const,
       render: (balance: string, record: AdminUser) => (
         <Text strong style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
           {record.role !== 'admin' ? formatVND(balance) : '-'}
@@ -103,7 +99,7 @@ export default function AdminUsersPage() {
       title: 'Joined',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      align: 'right' as const,
+      align: 'center' as const,
       render: (date: string) => (
         <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>
           {new Date(date).toLocaleDateString('vi-VN')}
@@ -115,38 +111,48 @@ export default function AdminUsersPage() {
       key: 'action',
       align: 'center' as const,
       render: (record: AdminUser) => (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
           <Button
             type="text"
             icon={<EyeOutlined />}
             onClick={() => setSelectedUser(record)}
-            style={{ color: '#3B82F6', marginRight: 8 }}
+            style={{ color: '#3B82F6' }}
           >
             Details
           </Button>
-          {record.role !== 'admin' ? (
-            record.status === 'active' ? (
-              <Button
-                danger
-                type="text"
-                icon={<LockOutlined />}
-                onClick={() => handleLockUser(record.id)}
-                style={{ width: 90, textAlign: 'left', display: 'inline-flex', alignItems: 'center' }}
-              >
-                Lock
-              </Button>
-            ) : (
-              <Button
-                type="text"
-                style={{ color: '#10B981', width: 90, textAlign: 'left', display: 'inline-flex', alignItems: 'center' }}
-                icon={<UnlockOutlined />}
-                onClick={() => handleUnlockUser(record.id)}
-              >
-                Unlock
-              </Button>
-            )
+          {record.role === 'admin' ? (
+            <Tooltip title="Không thể thực hiện thao tác này">
+              <span>
+                <Button
+                  danger
+                  type="text"
+                  disabled
+                  icon={<LockOutlined />}
+                  style={{ display: 'inline-flex', alignItems: 'center', pointerEvents: 'none' }}
+                >
+                  Lock
+                </Button>
+              </span>
+            </Tooltip>
+          ) : record.status === 'active' ? (
+            <Button
+              danger
+              type="text"
+              icon={<LockOutlined />}
+              onClick={() => handleLockUser(record.id)}
+              style={{ display: 'inline-flex', alignItems: 'center' }}
+            >
+              Lock
+            </Button>
           ) : (
-            <div style={{ width: 90 }} />
+            <Button
+              type="text"
+              style={{ color: '#10B981', display: 'inline-flex', alignItems: 'center' }}
+              icon={<UnlockOutlined />}
+              onClick={() => handleUnlockUser(record.id)}
+            >
+              Unlock
+            </Button>
           )}
         </div>
       ),
