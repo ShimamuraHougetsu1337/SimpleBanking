@@ -33,7 +33,7 @@ export const AdminAccountTable = ({
 }: AdminAccountTableProps) => {
   const columns = [
     {
-      title: 'Account Number',
+      title: 'Số tài khoản',
       key: 'accountNumber',
       align: 'center' as const,
       render: (record: AdminAccount) => (
@@ -41,7 +41,7 @@ export const AdminAccountTable = ({
       ),
     },
     {
-      title: 'Owner',
+      title: 'Chủ tài khoản',
       key: 'owner',
       align: 'center' as const,
       render: (record: AdminAccount) => (
@@ -52,7 +52,7 @@ export const AdminAccountTable = ({
       ),
     },
     {
-      title: 'Status',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       align: 'center' as const,
@@ -63,7 +63,7 @@ export const AdminAccountTable = ({
       ),
     },
     {
-      title: 'Balance',
+      title: 'Số dư',
       dataIndex: 'balance',
       key: 'balance',
       align: 'center' as const,
@@ -74,7 +74,7 @@ export const AdminAccountTable = ({
       ),
     },
     {
-      title: 'Created At',
+      title: 'Ngày tạo',
       dataIndex: 'createdAt',
       key: 'createdAt',
       align: 'center' as const,
@@ -85,7 +85,7 @@ export const AdminAccountTable = ({
       ),
     },
     {
-      title: 'Action',
+      title: 'Hành động',
       key: 'action',
       align: 'center' as const,
       render: (record: AdminAccount) => (
@@ -97,7 +97,7 @@ export const AdminAccountTable = ({
             style={{ color: '#10B981' }}
             disabled={record.status !== 'active'}
           >
-            Deposit
+            Nạp tiền
           </Button>
           {record.ownerEmail === 'admin@gmail.com' ? (
             <Tooltip title="Không thể thực hiện thao tác này">
@@ -109,7 +109,7 @@ export const AdminAccountTable = ({
                   icon={<LockOutlined />}
                   style={{ display: 'inline-flex', alignItems: 'center', pointerEvents: 'none' }}
                 >
-                  Lock
+                  Khóa
                 </Button>
               </span>
             </Tooltip>
@@ -121,7 +121,7 @@ export const AdminAccountTable = ({
               onClick={() => onFreezeAccount(record.id)}
               style={{ display: 'inline-flex', alignItems: 'center' }}
             >
-              Lock
+              Khóa
             </Button>
           ) : (
             <Button
@@ -130,7 +130,7 @@ export const AdminAccountTable = ({
               icon={<UnlockOutlined />}
               onClick={() => onUnfreezeAccount(record.id)}
             >
-              Unlock
+              Mở khóa
             </Button>
           )}
         </div>

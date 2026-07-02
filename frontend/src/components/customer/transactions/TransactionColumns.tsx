@@ -14,6 +14,9 @@ export function getTransactionColumns(
     {
       title: 'Đối tác giao dịch',
       key: 'counterpart',
+      onHeaderCell: () => ({
+        style: { textAlign: 'center' as const }
+      }),
       render: (_, record) => {
         const isCredit = record.direction === 'credit';
         return (
@@ -51,6 +54,9 @@ export function getTransactionColumns(
       title: 'Nội dung',
       dataIndex: 'description',
       key: 'description',
+      onHeaderCell: () => ({
+        style: { textAlign: 'center' as const }
+      }),
       ellipsis: true,
       render: (text: string) => (
         <Text style={{ fontSize: 13, color: '#475569' }}>
@@ -62,7 +68,10 @@ export function getTransactionColumns(
       title: 'Thời gian',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      align: 'right',
+      align: 'right' as const,
+      onHeaderCell: () => ({
+        style: { textAlign: 'center' as const }
+      }),
       render: (date: string) => (
         <Text style={{ fontSize: 13, color: '#64748b', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
           {formatDate(date)}
@@ -73,7 +82,7 @@ export function getTransactionColumns(
       title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
-      align: 'center',
+      align: 'center' as const,
       render: (status: string) => {
         const config = STATUS_CONFIG[status] ?? { color: 'default', label: status };
         return (
@@ -90,7 +99,10 @@ export function getTransactionColumns(
       title: 'Số tiền',
       dataIndex: 'amount',
       key: 'amount',
-      align: 'right',
+      align: 'right' as const,
+      onHeaderCell: () => ({
+        style: { textAlign: 'center' as const }
+      }),
       render: (amount: string, record) => {
         const isCredit = record.direction === 'credit';
         return (
@@ -111,7 +123,7 @@ export function getTransactionColumns(
     {
       title: '',
       key: 'action',
-      align: 'center',
+      align: 'center' as const,
       width: 48,
       render: (_, record) => (
         <InfoCircleOutlined

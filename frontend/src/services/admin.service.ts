@@ -82,6 +82,15 @@ export interface DashboardStats {
   weeklyVolume: { date: string; volume: string }[];
 }
 
+export interface SystemSetting {
+  settingKey: string;
+  value: any;
+  dataType: string;
+  displayName: string;
+  description: string;
+  groupName: string;
+}
+
 export const adminService = {
   async getDashboardStats(): Promise<DashboardStats> {
     const { data } = await api.get('/admin/dashboard-stats');
@@ -115,6 +124,16 @@ export const adminService = {
 
   async getTransactions(params?: { page?: number; limit?: number; search?: string; startDate?: string; endDate?: string; type?: string }): Promise<GetTransactionsResponse> {
     const { data } = await api.get('/admin/transactions', { params });
+    return data;
+  },
+
+  async getSettings(): Promise<SystemSetting[]> {
+    const { data } = await api.get('/admin/settings');
+    return data;
+  },
+
+  async updateSettings(updates: Record<string, any>): Promise<SystemSetting[]> {
+    const { data } = await api.patch('/admin/settings', { updates });
     return data;
   }
 };

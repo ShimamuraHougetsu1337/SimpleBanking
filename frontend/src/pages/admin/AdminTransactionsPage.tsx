@@ -26,10 +26,10 @@ export default function AdminTransactionsPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>All Transactions</Title>
+        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Tất Cả Giao Dịch</Title>
         <Space>
-          <Button icon={<FilterOutlined />}>More Filters</Button>
-          <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Export Report</Button>
+          <Button icon={<FilterOutlined />}>Bộ lọc nâng cao</Button>
+          <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Xuất báo cáo</Button>
         </Space>
       </div>
 

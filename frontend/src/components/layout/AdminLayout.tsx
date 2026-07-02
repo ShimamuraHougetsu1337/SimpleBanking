@@ -19,17 +19,17 @@ const { Title } = Typography;
 const navGroups = [
   {
     items: [
-      { key: '/admin/dashboard', label: 'Dashboard', icon: <DashboardOutlined /> },
-      { key: '/admin/users', label: 'User Management', icon: <TeamOutlined /> },
-      { key: '/admin/accounts', label: 'Account Management', icon: <BankOutlined /> },
-      { key: '/admin/transactions', label: 'All Transactions', icon: <TransactionOutlined /> },
+      { key: '/admin/dashboard', label: 'Bảng điều khiển', icon: <DashboardOutlined /> },
+      { key: '/admin/users', label: 'Quản lý người dùng', icon: <TeamOutlined /> },
+      { key: '/admin/accounts', label: 'Quản lý tài khoản', icon: <BankOutlined /> },
+      { key: '/admin/transactions', label: 'Lịch sử giao dịch', icon: <TransactionOutlined /> },
     ]
   }
 ];
 
 const bottomItems = [
-  { key: '/admin/settings', label: 'System Settings', icon: <SettingOutlined /> },
-  { key: 'logout', label: 'Logout', icon: <LogoutOutlined />, isDanger: true },
+  { key: '/admin/settings', label: 'Cài đặt hệ thống', icon: <SettingOutlined /> },
+  { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, isDanger: true },
 ];
 
 export function AdminLayout() {
@@ -61,7 +61,7 @@ export function AdminLayout() {
               <div style={{ width: 32, height: 32, borderRadius: 8, background: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>
                 <SafetyCertificateOutlined />
               </div>
-              <Title level={4} style={{ margin: 0, color: '#1e293b' }}>Admin Panel</Title>
+              <Title level={4} style={{ margin: 0, color: '#1e293b' }}>Trang quản trị</Title>
             </Space>
           </div>
 

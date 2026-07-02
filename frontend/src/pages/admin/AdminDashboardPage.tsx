@@ -32,15 +32,15 @@ export default function AdminDashboardPage() {
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
-        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Dashboard Overview</Title>
-        <Text type="secondary">System wide statistics and recent activities</Text>
+        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Tổng Quan Dashboard</Title>
+        <Text type="secondary">Thống kê toàn hệ thống và các hoạt động gần đây</Text>
       </div>
 
       <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
         <Col xs={24} sm={8}>
           <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
             <Statistic
-              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Total Users</span>}
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Tổng số người dùng</span>}
               value={stats.totalUsers}
               prefix={<UsergroupAddOutlined style={{ color: '#3B82F6' }} />}
               valueStyle={{ color: '#1e293b', fontWeight: 700 }}
@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
         <Col xs={24} sm={8}>
           <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
             <Statistic
-              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Total Accounts</span>}
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Tổng số tài khoản</span>}
               value={stats.totalAccounts}
               prefix={<BankOutlined style={{ color: '#10B981' }} />}
               valueStyle={{ color: '#10B981', fontWeight: 700 }}
@@ -60,7 +60,7 @@ export default function AdminDashboardPage() {
         <Col xs={24} sm={8}>
           <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
             <Statistic
-              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Total System Balance</span>}
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Tổng số dư hệ thống</span>}
               value={stats.totalBalance}
               formatter={(value) => formatVND(value.toString())}
               prefix={<WalletOutlined style={{ color: '#8B5CF6' }} />}
@@ -71,7 +71,7 @@ export default function AdminDashboardPage() {
       </Row>
 
       <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: '24px' }}>
-        <Title level={4} style={{ marginTop: 0, marginBottom: 24 }}>Weekly Transaction Volume</Title>
+        <Title level={4} style={{ marginTop: 0, marginBottom: 24 }}>Khối lượng giao dịch hàng tuần</Title>
         <List
           itemLayout="horizontal"
           dataSource={stats.weeklyVolume}

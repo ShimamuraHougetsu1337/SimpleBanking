@@ -52,7 +52,7 @@ export default function AdminUsersPage() {
 
   const columns = [
     {
-      title: 'Name & Email',
+      title: 'Tên & Email',
       key: 'user',
       align: 'center' as const,
       render: (record: AdminUser) => (
@@ -63,7 +63,7 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: 'Role',
+      title: 'Vai trò',
       dataIndex: 'role',
       key: 'role',
       align: 'center' as const,
@@ -74,7 +74,7 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: 'Status',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       align: 'center' as const,
@@ -85,7 +85,7 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: 'Balance',
+      title: 'Số dư',
       dataIndex: 'balance',
       key: 'balance',
       align: 'center' as const,
@@ -96,7 +96,7 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: 'Joined',
+      title: 'Ngày tham gia',
       dataIndex: 'createdAt',
       key: 'createdAt',
       align: 'center' as const,
@@ -107,7 +107,7 @@ export default function AdminUsersPage() {
       ),
     },
     {
-      title: 'Action',
+      title: 'Hành động',
       key: 'action',
       align: 'center' as const,
       render: (record: AdminUser) => (
@@ -118,7 +118,7 @@ export default function AdminUsersPage() {
             onClick={() => setSelectedUser(record)}
             style={{ color: '#3B82F6' }}
           >
-            Details
+            Chi tiết
           </Button>
           {record.role === 'admin' ? (
             <Tooltip title="Không thể thực hiện thao tác này">
@@ -130,7 +130,7 @@ export default function AdminUsersPage() {
                   icon={<LockOutlined />}
                   style={{ display: 'inline-flex', alignItems: 'center', pointerEvents: 'none' }}
                 >
-                  Lock
+                  Khóa
                 </Button>
               </span>
             </Tooltip>
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
               onClick={() => handleLockUser(record.id)}
               style={{ display: 'inline-flex', alignItems: 'center' }}
             >
-              Lock
+              Khóa
             </Button>
           ) : (
             <Button
@@ -151,7 +151,7 @@ export default function AdminUsersPage() {
               icon={<UnlockOutlined />}
               onClick={() => handleUnlockUser(record.id)}
             >
-              Unlock
+              Mở khóa
             </Button>
           )}
         </div>
@@ -162,16 +162,16 @@ export default function AdminUsersPage() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>User Management</Title>
+        <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Quản Lý Người Dùng</Title>
         <Space>
           <Input
-            placeholder="Search users by name or email..."
+            placeholder="Tìm kiếm người dùng bằng tên hoặc email..."
             prefix={<SearchOutlined style={{ color: '#64748b' }} />}
             style={{ width: 300, borderRadius: 8, height: 40 }}
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
           />
-          <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Export CSV</Button>
+          <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Xuất CSV</Button>
         </Space>
       </div>
 
@@ -209,32 +209,32 @@ export default function AdminUsersPage() {
       <Modal
         open={!!selectedUser}
         onCancel={() => setSelectedUser(null)}
-        title={<span style={{ fontSize: 18, fontWeight: 600, color: '#1e293b' }}>User Profile Details</span>}
+        title={<span style={{ fontSize: 18, fontWeight: 600, color: '#1e293b' }}>Chi Tiết Hồ Sơ Người Dùng</span>}
         footer={null}
         width={600}
         bodyStyle={{ paddingTop: 16 }}
       >
         {selectedUser && (
           <Descriptions bordered column={1} size="small">
-            <Descriptions.Item label="User ID"><Text copyable>{selectedUser.id}</Text></Descriptions.Item>
-            <Descriptions.Item label="Full Name">{selectedUser.fullName}</Descriptions.Item>
+            <Descriptions.Item label="Mã người dùng"><Text copyable>{selectedUser.id}</Text></Descriptions.Item>
+            <Descriptions.Item label="Họ và tên">{selectedUser.fullName}</Descriptions.Item>
             <Descriptions.Item label="Email">{selectedUser.email}</Descriptions.Item>
-            <Descriptions.Item label="Role">
+            <Descriptions.Item label="Vai trò">
               <Tag color={selectedUser.role === 'admin' ? 'purple' : 'blue'}>
                 {selectedUser.role.toUpperCase()}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Account Status">
+            <Descriptions.Item label="Trạng thái tài khoản">
               <Tag color={selectedUser.status === 'active' ? 'success' : 'error'}>
                 {selectedUser.status.toUpperCase()}
               </Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Current Balance">
+            <Descriptions.Item label="Số dư hiện tại">
               <span style={{ fontWeight: 600, color: '#1e293b' }}>
                 {selectedUser.role !== 'admin' ? formatVND(selectedUser.balance) : '-'}
               </span>
             </Descriptions.Item>
-            <Descriptions.Item label="Created At">
+            <Descriptions.Item label="Ngày tạo">
               {new Date(selectedUser.createdAt).toLocaleString('vi-VN')}
             </Descriptions.Item>
           </Descriptions>

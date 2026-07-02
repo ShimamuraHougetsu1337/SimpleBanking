@@ -40,6 +40,9 @@ export class Account {
   @Column({ type: 'numeric', precision: 18, scale: 2, default: 0.0 })
   balance: string;
 
+  @Column({ name: 'used_daily_limit', type: 'numeric', precision: 18, scale: 2, default: 0.0 })
+  usedDailyLimit: string;
+
   @Column({ length: 3, default: 'VND' })
   currency: string;
 

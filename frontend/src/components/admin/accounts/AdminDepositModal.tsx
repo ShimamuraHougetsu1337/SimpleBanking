@@ -23,7 +23,7 @@ export const AdminDepositModal = ({
 
   useEffect(() => {
     if (open) {
-      form.setFieldsValue({ description: 'Admin Deposit' });
+      form.setFieldsValue({ description: 'Nạp tiền từ Admin' });
     } else {
       form.resetFields();
     }
@@ -38,16 +38,16 @@ export const AdminDepositModal = ({
 
   return (
     <Modal
-      title={<span style={{ fontSize: 18, fontWeight: 600, color: '#1e293b' }}>Deposit to Account</span>}
+      title={<span style={{ fontSize: 18, fontWeight: 600, color: '#1e293b' }}>Nạp Tiền Vào Tài Khoản</span>}
       open={open}
       onCancel={onCancel}
       footer={null}
       width={400}
     >
       <div style={{ marginBottom: 24 }}>
-        <Text type="secondary">Depositing to account </Text>
+        <Text type="secondary">Đang nạp tiền vào tài khoản </Text>
         <Text strong>{account?.accountNumber}</Text>
-        <Text type="secondary"> owned by </Text>
+        <Text type="secondary"> sở hữu bởi </Text>
         <Text strong>{account?.ownerName}</Text>
       </div>
 
@@ -55,14 +55,14 @@ export const AdminDepositModal = ({
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
-        initialValues={{ description: 'Admin Deposit' }}
+        initialValues={{ description: 'Nạp tiền từ Admin' }}
       >
         <Form.Item
           name="amount"
-          label="Amount (VND)"
+          label="Số tiền (VND)"
           rules={[
-            { required: true, message: 'Please input deposit amount!' },
-            { type: 'number', min: 1000, message: 'Minimum deposit is 1,000 VND' },
+            { required: true, message: 'Vui lòng nhập số tiền nạp!' },
+            { type: 'number', min: 1000, message: 'Số tiền nạp tối thiểu là 1,000 VND' },
           ]}
         >
           <InputNumber
@@ -75,7 +75,7 @@ export const AdminDepositModal = ({
 
         <Form.Item
           name="description"
-          label="Description"
+          label="Mô tả"
         >
           <Input
             style={{ height: 40, borderRadius: 8 }}
@@ -90,7 +90,7 @@ export const AdminDepositModal = ({
           loading={isDepositing}
           style={{ height: 44, borderRadius: 8, marginTop: 16 }}
         >
-          Confirm Deposit
+          Xác nhận nạp tiền
         </Button>
       </Form>
     </Modal>

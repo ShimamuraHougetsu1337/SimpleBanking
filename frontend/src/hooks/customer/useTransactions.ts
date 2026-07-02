@@ -27,6 +27,7 @@ export function useTransactions(params: UseTransactionsParams = {}) {
       if (params.toDate) queryParams.toDate = params.toDate;
 
       const { data } = await api.get('/transactions', { params: queryParams });
+      console.log(data)
       return data;
     },
     placeholderData: keepPreviousData,

@@ -19,6 +19,8 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { AdminService } from './admin.service';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
+import { SystemSettingsService } from './system-settings.service';
+import { UpdateSettingsDto } from './dto/update-settings.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -26,7 +28,10 @@ import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 @Roles(UserRole.ADMIN)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) { }
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly systemSettingsService: SystemSettingsService,
+  ) { }
 
   @Get('users')
   @ApiOperation({ summary: 'List all users in the system (Admin only)' })
@@ -114,5 +119,20 @@ export class AdminController {
       endDate,
       type,
     );
+  }
+
+  @Get('settings')
+  @ApiOperation({ summary: 'Get all system settings' })
+  async getSettings() {
+    return this.systemSettingsService.getAllSettings();
+  }
+
+  @Patch('settings')
+  @ApiOperation({ summary: 'Update system settings' })
+  async updateSettings(
+    @Body() dto: UpdateSettingsDto,
+    @CurrentUser() admin: User,
+  ) {
+    return this.systemSettingsService.updateSettings(dto.updates, admin.fullName);
   }
 }
