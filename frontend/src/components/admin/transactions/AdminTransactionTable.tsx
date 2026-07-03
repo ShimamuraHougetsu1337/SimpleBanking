@@ -165,6 +165,13 @@ export const AdminTransactionTable = ({
         total: total,
         showSizeChanger: true,
         onChange: onPageChange,
+        showTotal: (total) => (
+          <Text style={{ color: '#64748b', fontSize: 13 }}>
+            {total} giao dịch
+          </Text>
+        ),
+        position: ['bottomCenter'],
+        style: { padding: '16px 24px', margin: 0 },
       }}
     />
   </ConfigProvider>

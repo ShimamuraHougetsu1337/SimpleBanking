@@ -54,6 +54,7 @@ export function getTransactionColumns(
       title: 'Nội dung',
       dataIndex: 'description',
       key: 'description',
+      align: "center",
       onHeaderCell: () => ({
         style: { textAlign: 'center' as const }
       }),
@@ -68,7 +69,7 @@ export function getTransactionColumns(
       title: 'Thời gian',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      align: 'right' as const,
+      align: 'center' as const,
       onHeaderCell: () => ({
         style: { textAlign: 'center' as const }
       }),
@@ -109,7 +110,7 @@ export function getTransactionColumns(
         const showFee = !isCredit && record.type === 'transfer';
 
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <Text
               strong
               style={{
