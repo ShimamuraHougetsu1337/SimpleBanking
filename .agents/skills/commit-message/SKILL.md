@@ -39,12 +39,7 @@ Use this skill when the user triggers the `/commit_message` command or asks you 
      - `chore: update dependencies`
      - `feat!: send email on registration (BREAKING CHANGE: email service required)`
 
-5. **Update CHANGELOG.md (Optional)**:
-   - ONLY IF the user explicitly requests to update the changelog, you MUST append a new changelog entry to `e:\Work\SimpleBankingApp\docs\CHANGELOG.md` to document the changes being committed.
-   - Use the `replace_file_content` tool to update the file, and then make sure to `git add` it along with the other changes.
-   - If the user does not mention the changelog, skip this step.
-
-6. **Final Execution**:
+5. **Final Execution**:
    - Provide the git commands for the user to easily copy and run, OR proactively run them using the `run_command` tool (if they are straightforward and you have confirmed what to commit).
    - Example command:
      ```bash
