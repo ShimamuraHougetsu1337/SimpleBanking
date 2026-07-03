@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Transaction Fee**: Added transaction fee processing in backend to deduct fee and credit the admin account.
+- Endpoint `GET /transactions/transfer-fee` to fetch current fee from system settings.
+- UI elements in `TransferReviewModal`, `TransactionDetailModal`, `TransactionColumns`, and `AdminTransactionTable` to display fee and total amount breakdown.
+- Support for `decimal` data type in `SystemSettingsService`.
+
+### Changed
+- **Daily Limit**: Updated transfer logic to only count the principal `amount` towards the daily limit, excluding the transaction fee.
+- **Frontend Refactoring**: Replaced `parseFloat` with `Number()` for fee conversions across UI components to standardize numeric handling.
+- **Seeds**: Updated `run-seeds.ts` to initialize `transfer_fee` and `daily_limit` as `decimal` types.
+- **Agent Skills**: Updated `commit-message` skill to make CHANGELOG updates optional.
+
 ### Planned
 - Docker Compose configurations
 - Database migrations and seed datasets setup

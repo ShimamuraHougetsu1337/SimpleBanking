@@ -28,6 +28,7 @@ export class SystemSettingsService {
         } catch {
           return null;
         }
+      case 'decimal':
       case 'string':
       default:
         return value;
@@ -42,6 +43,7 @@ export class SystemSettingsService {
         return JSON.stringify(value);
       case 'int':
       case 'float':
+      case 'decimal':
       case 'string':
       default:
         return String(value);

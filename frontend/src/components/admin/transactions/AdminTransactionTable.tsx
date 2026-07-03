@@ -95,6 +95,35 @@ export const ADMIN_TRANSACTION_COLUMNS = [
       </Text>
     ),
   },
+  {
+    title: 'Fee',
+    dataIndex: 'fee',
+    key: 'fee',
+    align: 'center' as const,
+    render: (fee: string, record: AdminTransaction) => {
+      const feeNum = Number(fee || 0);
+      if (feeNum === 0 || record.type !== 'transfer') return <Text type="secondary">-</Text>;
+      return (
+        <Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+          {formatVnd(fee)}
+        </Text>
+      );
+    },
+  },
+  {
+    title: 'Total',
+    dataIndex: 'totalAmount',
+    key: 'totalAmount',
+    align: 'center' as const,
+    render: (totalAmount: string, record: AdminTransaction) => {
+      const val = totalAmount || record.amount;
+      return (
+        <Text strong style={{ fontSize: '15px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#dc2626' }}>
+          {formatVnd(val)}
+        </Text>
+      );
+    },
+  },
 ];
 
 interface AdminTransactionTableProps {

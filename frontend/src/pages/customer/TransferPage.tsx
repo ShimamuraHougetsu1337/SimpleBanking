@@ -32,6 +32,15 @@ export default function TransferPage() {
     },
   });
 
+  const { data: feeData } = useQuery({
+    queryKey: ['transferFee'],
+    queryFn: async () => {
+      const { data } = await api.get('/transactions/transfer-fee');
+      return data;
+    },
+  });
+  const transferFee = feeData?.fee || '0';
+
   useEffect(() => {
     if (accounts && accounts.length > 0 && !form.getFieldValue('from_accountId')) {
       form.setFieldsValue({ from_accountId: accounts[0].id });
@@ -119,6 +128,7 @@ export default function TransferPage() {
         pendingValues={pendingValues}
         selectedAccount={selectedAccount}
         receiver={receiver}
+        fee={transferFee}
       />
 
       <TransactionResultModal

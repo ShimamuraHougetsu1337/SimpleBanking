@@ -152,6 +152,8 @@ export class AdminService {
         id: tx.id,
         type: tx.type,
         amount: tx.amount,
+        fee: tx.fee,
+        totalAmount: tx.totalAmount,
         status: tx.status,
         description: tx.description,
         fromAccount: tx.fromAccount?.accountNumber || null,
