@@ -3,6 +3,7 @@ import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Brackets, Repository, DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { Transaction, TransactionType, TransactionStatus } from './entities/transaction.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
+import { UserRole } from '@/users/entities/user.entity';
 import { TransferDto } from './dto/transfer.dto';
 import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
@@ -155,6 +156,15 @@ export class TransactionsService {
   }
 
   // ===========================================================================
+  // FEE METHOD
+  // ===========================================================================
+
+  async getTransferFee(): Promise<{ fee: string }> {
+    const feeSetting = await this.dataSource.getRepository(SystemSetting).findOne({ where: { settingKey: 'transfer_fee' } });
+    return { fee: feeSetting?.settingValue || '0.00' };
+  }
+
+  // ===========================================================================
   // TRANSACTION METHODS (WRITE)
   // ===========================================================================
 
@@ -163,6 +173,19 @@ export class TransactionsService {
     if (existing) return existing;
 
     return this.executeTransaction(async (manager) => {
+      // Find fee
+      const feeSetting = await manager.findOne(SystemSetting, { where: { settingKey: 'transfer_fee' } });
+      const feeValue = new Decimal(feeSetting?.settingValue || 0);
+
+      let adminAccountRef: Account | null = null;
+      if (feeValue.gt(0)) {
+         adminAccountRef = await manager.createQueryBuilder(Account, 'account')
+           .innerJoin('account.user', 'user')
+           .where('user.role = :role', { role: UserRole.ADMIN })
+           .getOne();
+         if (!adminAccountRef) throw new NotFoundException('Admin account not found for fee collection');
+      }
+
       // Resolve destination account first without locking to get its ID
       const toAccountRef = await manager.findOne(Account, {
         where: { accountNumber: dto.to_accountNumber },
@@ -179,28 +202,36 @@ export class TransactionsService {
         throw new BadRequestException('Cannot transfer to the same account');
       }
 
-      // Sort account IDs to ensure consistent locking order and avoid deadlocks
-      const sortedIds = [fromAccountId, toAccountId].sort();
-      const firstId = sortedIds[0];
+      // Ensure consistent locking order and avoid deadlocks
+      const accountIdsToLock = [fromAccountId, toAccountId];
+      if (adminAccountRef && adminAccountRef.id !== fromAccountId && adminAccountRef.id !== toAccountId) {
+          accountIdsToLock.push(adminAccountRef.id);
+      }
+      
+      accountIdsToLock.sort();
 
-      let fromAccount: Account | null = null;
-      let toAccount: Account | null = null;
-
-      if (firstId === fromAccountId) {
-        fromAccount = await manager.findOne(Account, { where: { id: fromAccountId, userId: currentUserId, status: AccountStatus.ACTIVE }, lock: { mode: 'pessimistic_write' } });
-        toAccount = await manager.findOne(Account, { where: { id: toAccountId }, lock: { mode: 'pessimistic_write' } });
-      } else {
-        toAccount = await manager.findOne(Account, { where: { id: toAccountId }, lock: { mode: 'pessimistic_write' } });
-        fromAccount = await manager.findOne(Account, { where: { id: fromAccountId, userId: currentUserId, status: AccountStatus.ACTIVE }, lock: { mode: 'pessimistic_write' } });
+      const lockedAccounts = new Map<string, Account>();
+      for (const id of accountIdsToLock) {
+         const acc = await manager.findOne(Account, { where: { id }, lock: { mode: 'pessimistic_write' } });
+         if (acc) lockedAccounts.set(id, acc);
       }
 
-      if (!fromAccount) throw new NotFoundException('Source account not found or is locked');
+      const fromAccount = lockedAccounts.get(fromAccountId);
+      const toAccount = lockedAccounts.get(toAccountId);
+      const adminAccount = adminAccountRef ? lockedAccounts.get(adminAccountRef.id) : null;
+
+      if (!fromAccount || fromAccount.userId !== currentUserId || fromAccount.status !== AccountStatus.ACTIVE) throw new NotFoundException('Source account not found or is locked');
       if (!toAccount) throw new NotFoundException('Destination account not found');
       if (toAccount.status !== AccountStatus.ACTIVE) throw new UnprocessableEntityException('Destination account is locked');
 
-      const amount = this.validateAmount(dto.amount, fromAccount.balance);
+      const amount = this.validateAmount(dto.amount);
+      const totalAmount = amount.plus(feeValue);
+      
+      if (totalAmount.gt(fromAccount.balance)) {
+         throw new UnprocessableEntityException('Insufficient balance');
+      }
 
-      // Check Daily Limit
+      // Check Daily Limit (chỉ tính số tiền chuyển, không tính phí)
       const limitSetting = await manager.findOne(SystemSetting, { where: { settingKey: 'daily_limit' } });
       if (limitSetting) {
         const dailyLimit = new Decimal(limitSetting.settingValue);
@@ -217,13 +248,19 @@ export class TransactionsService {
           .execute();
       }
 
-      await this.updateAccountBalance(manager, fromAccount.id, amount, 'subtract');
+      await this.updateAccountBalance(manager, fromAccount.id, totalAmount, 'subtract');
       await this.updateAccountBalance(manager, toAccount.id, amount, 'add');
+      
+      if (adminAccount && feeValue.gt(0)) {
+         await this.updateAccountBalance(manager, adminAccount.id, feeValue, 'add');
+      }
 
       return this.createAndSaveTransaction(manager, {
         fromAccountId: fromAccount.id,
         toAccountId: toAccount.id,
         amount: dto.amount,
+        fee: feeValue.toFixed(2),
+        totalAmount: totalAmount.toFixed(2),
         description: dto.description,
         idempotencyKey: dto.idempotencyKey,
         type: TransactionType.TRANSFER,
@@ -244,6 +281,8 @@ export class TransactionsService {
       return this.createAndSaveTransaction(manager, {
         toAccountId: accountId,
         amount: amountStr,
+        fee: '0.00',
+        totalAmount: amountStr,
         description,
         idempotencyKey,
         type: TransactionType.DEPOSIT,
@@ -264,6 +303,8 @@ export class TransactionsService {
       return this.createAndSaveTransaction(manager, {
         toAccountId: account.id,
         amount: dto.amount.toString(),
+        fee: '0.00',
+        totalAmount: dto.amount.toString(),
         description: dto.description || 'Deposit',
         idempotencyKey: dto.idempotencyKey,
         type: TransactionType.DEPOSIT,
@@ -284,6 +325,8 @@ export class TransactionsService {
       return this.createAndSaveTransaction(manager, {
         fromAccountId: account.id,
         amount: dto.amount.toString(),
+        fee: '0.00',
+        totalAmount: dto.amount.toString(),
         description: dto.description || 'Withdraw',
         idempotencyKey: dto.idempotencyKey,
         type: TransactionType.WITHDRAW,
@@ -389,6 +432,8 @@ export class TransactionsService {
       type: tx.type,
       direction,
       amount: tx.amount,
+      fee: tx.fee,
+      totalAmount: tx.totalAmount,
       counterpartAccount: counterpartAccount?.accountNumber,
       counterpartName,
       description: tx.description,

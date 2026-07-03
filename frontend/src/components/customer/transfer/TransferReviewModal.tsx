@@ -11,6 +11,7 @@ interface TransferReviewModalProps {
   pendingValues: any;
   selectedAccount: any;
   receiver: any;
+  fee: string;
 }
 
 export function TransferReviewModal({
@@ -20,7 +21,8 @@ export function TransferReviewModal({
   isPending,
   pendingValues,
   selectedAccount,
-  receiver
+  receiver,
+  fee
 }: TransferReviewModalProps) {
   const formatVND = (num: number | string) => 
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(num));
@@ -132,7 +134,11 @@ export function TransferReviewModal({
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <Text type="secondary">Phí dịch vụ</Text>
-              <Text type="success" strong>Miễn phí</Text>
+              {Number(fee) === 0 ? (
+                <Text type="success" strong>Miễn phí</Text>
+              ) : (
+                <Text strong style={{ color: '#1e293b' }}>{formatVND(fee)}</Text>
+              )}
             </div>
             {pendingValues.description && (
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -159,7 +165,7 @@ export function TransferReviewModal({
           }}>
             <Text strong style={{ color: '#64748b' }}>Tổng số tiền thanh toán</Text>
             <Text style={{ fontSize: 20, color: '#3b82f6', fontWeight: 700 }}>
-              {formatVND(pendingValues.amount)}
+              {formatVND(Number(pendingValues.amount) + Number(fee))}
             </Text>
           </div>
         </div>

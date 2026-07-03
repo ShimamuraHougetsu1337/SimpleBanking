@@ -70,7 +70,7 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
         <List
           dataSource={transactions}
           loading={isLoading}
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 10, align: 'center' }}
           renderItem={(item: any) => {
             const isCredit = item.direction === 'credit';
             const amountNum = Number(item.amount);

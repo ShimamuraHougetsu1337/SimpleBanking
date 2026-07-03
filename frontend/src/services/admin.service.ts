@@ -53,6 +53,8 @@ export interface AdminTransaction {
   id: string;
   type: string;
   amount: string;
+  fee?: string;
+  totalAmount?: string;
   status: string;
   description: string;
   fromAccount: string | null;

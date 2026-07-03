@@ -124,6 +124,8 @@ async function run() {
     tx1.toAccountId = savedCustomerAccount1.id;
     tx1.toAccount = savedCustomerAccount1;
     tx1.amount = '12000000.00';
+    tx1.fee = '0.00';
+    tx1.totalAmount = '12000000.00';
     tx1.type = TransactionType.DEPOSIT;
     tx1.status = TransactionStatus.SUCCESS;
     tx1.description = 'Initial cash deposit';
@@ -137,6 +139,8 @@ async function run() {
     tx2.toAccountId = savedCustomerAccount2.id;
     tx2.toAccount = savedCustomerAccount2;
     tx2.amount = '2000000.00';
+    tx2.fee = '0.00';
+    tx2.totalAmount = '2000000.00';
     tx2.type = TransactionType.TRANSFER;
     tx2.status = TransactionStatus.SUCCESS;
     tx2.description = 'Transfer to savings account';
@@ -150,6 +154,8 @@ async function run() {
     tx3.toAccountId = savedCustomerAccount2.id;
     tx3.toAccount = savedCustomerAccount2;
     tx3.amount = '3500000.00';
+    tx3.fee = '0.00';
+    tx3.totalAmount = '3500000.00';
     tx3.type = TransactionType.DEPOSIT;
     tx3.status = TransactionStatus.SUCCESS;
     tx3.description = 'Cash deposit via ATM';
@@ -163,6 +169,8 @@ async function run() {
     tx4.toAccountId = null;
     tx4.toAccount = null;
     tx4.amount = '500000.00';
+    tx4.fee = '0.00';
+    tx4.totalAmount = '500000.00';
     tx4.type = TransactionType.WITHDRAW;
     tx4.status = TransactionStatus.SUCCESS;
     tx4.description = 'ATM cash withdrawal';
@@ -172,9 +180,17 @@ async function run() {
     console.log('Creating system settings...');
     const settings = [
       {
+        settingKey: 'transfer_fee',
+        settingValue: '5000.00',
+        dataType: 'decimal',
+        displayName: 'Phí chuyển khoản (VND)',
+        description: 'Phí cố định áp dụng cho mỗi lần chuyển khoản.',
+        groupName: 'giao_dich'
+      },
+      {
         settingKey: 'daily_limit',
-        settingValue: '50000000',
-        dataType: 'float',
+        settingValue: '50000000.00',
+        dataType: 'decimal',
         displayName: 'Hạn mức hàng ngày (VND)',
         description: 'Hạn mức chuyển tiền tối đa cho phép của mỗi người dùng trong một ngày.',
         groupName: 'giao_dich'

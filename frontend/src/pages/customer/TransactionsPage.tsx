@@ -105,12 +105,13 @@ export default function TransactionsPage() {
               pageSize: PAGE_SIZE,
               total: data?.meta?.total ?? 0,
               onChange: setPage,
-              showSizeChanger: false,
+              showSizeChanger: true,
               showTotal: (total) => (
                 <Text style={{ color: '#64748b', fontSize: 13 }}>
                   {total} giao dịch{isFilterActive ? ' (đã lọc)' : ''}
                 </Text>
               ),
+              position: ['bottomCenter'],
               style: { padding: '16px 24px', margin: 0 },
             }}
             locale={{

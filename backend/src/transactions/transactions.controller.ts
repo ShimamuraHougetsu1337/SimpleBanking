@@ -28,6 +28,11 @@ export class TransactionsController {
     return this.transactionsService.withdraw(dto, user.id);
   }
 
+  @Get('transfer-fee')
+  async getTransferFee() {
+    return this.transactionsService.getTransferFee();
+  }
+
   @Get()
   async getTransactions(
     @CurrentUser() user: User,

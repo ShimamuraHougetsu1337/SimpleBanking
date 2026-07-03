@@ -61,7 +61,7 @@ export function TransactionDetailModal({ transaction, onClose }: TransactionDeta
             letterSpacing: '-0.03em',
           }}
         >
-          {isCredit ? '+' : '-'}{formatVnd(transaction.amount)}
+          {isCredit ? '+' : '-'}{formatVnd(isCredit ? transaction.amount : (transaction.totalAmount || transaction.amount))}
         </Text>
       </div>
 
@@ -87,6 +87,16 @@ export function TransactionDetailModal({ transaction, onClose }: TransactionDeta
         <Descriptions.Item label={isCredit ? 'Người gửi' : 'Người nhận'}>
           {transaction.counterpartName || 'N/A'}
         </Descriptions.Item>
+        {transaction.type === 'transfer' && !isCredit && (
+          <>
+            <Descriptions.Item label="Số tiền chuyển">
+              {formatVnd(transaction.amount)}
+            </Descriptions.Item>
+            <Descriptions.Item label="Phí giao dịch">
+              {Number(transaction.fee || 0) === 0 ? 'Miễn phí' : formatVnd(transaction.fee!)}
+            </Descriptions.Item>
+          </>
+        )}
         <Descriptions.Item label="Nội dung">
           {transaction.description || <Text type="secondary" italic>Không có nội dung</Text>}
         </Descriptions.Item>

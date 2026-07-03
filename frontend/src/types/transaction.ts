@@ -3,6 +3,8 @@ export interface TransactionRecord {
   type: string;
   direction: 'credit' | 'debit';
   amount: string;
+  fee?: string;
+  totalAmount?: string;
   counterpartAccount?: string;
   counterpartName?: string;
   description?: string;

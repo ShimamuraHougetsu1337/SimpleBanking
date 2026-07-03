@@ -54,6 +54,7 @@ export function getTransactionColumns(
       title: 'Nội dung',
       dataIndex: 'description',
       key: 'description',
+      align: "center",
       onHeaderCell: () => ({
         style: { textAlign: 'center' as const }
       }),
@@ -68,7 +69,7 @@ export function getTransactionColumns(
       title: 'Thời gian',
       dataIndex: 'createdAt',
       key: 'createdAt',
-      align: 'right' as const,
+      align: 'center' as const,
       onHeaderCell: () => ({
         style: { textAlign: 'center' as const }
       }),
@@ -105,18 +106,34 @@ export function getTransactionColumns(
       }),
       render: (amount: string, record) => {
         const isCredit = record.direction === 'credit';
+        const feeNum = Number(record.fee || 0);
+        const showFee = !isCredit && record.type === 'transfer';
+
         return (
-          <Text
-            strong
-            style={{
-              fontSize: 15,
-              color: isCredit ? '#059669' : '#dc2626',
-              fontVariantNumeric: 'tabular-nums',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {isCredit ? '+' : '-'}{formatVnd(amount)}
-          </Text>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Text
+              strong
+              style={{
+                fontSize: 15,
+                color: isCredit ? '#059669' : '#dc2626',
+                fontVariantNumeric: 'tabular-nums',
+                whiteSpace: 'nowrap',
+                lineHeight: 1.2
+              }}
+            >
+              {isCredit ? '+' : '-'}{formatVnd(amount)}
+            </Text>
+            {showFee && feeNum > 0 && (
+              <>
+                <Text style={{ fontSize: 11, color: '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>
+                  Phí: {formatVnd(record.fee || '0')}
+                </Text>
+                <Text style={{ fontSize: 12, fontWeight: 600, color: '#dc2626', fontVariantNumeric: 'tabular-nums', marginTop: 2 }}>
+                  Tổng: -{formatVnd(record.totalAmount || amount)}
+                </Text>
+              </>
+            )}
+          </div>
         );
       },
     },

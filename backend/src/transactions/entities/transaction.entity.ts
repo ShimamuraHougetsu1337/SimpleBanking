@@ -46,6 +46,12 @@ export class Transaction {
   @Column({ type: 'numeric', precision: 18, scale: 2 })
   amount: string;
 
+  @Column({ type: 'numeric', precision: 18, scale: 2, default: '0.00' })
+  fee: string;
+
+  @Column({ name: 'total_amount', type: 'numeric', precision: 18, scale: 2, default: '0.00' })
+  totalAmount: string;
+
   @Column({
     type: 'enum',
     enum: TransactionType,
