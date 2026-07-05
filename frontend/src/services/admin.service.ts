@@ -93,6 +93,61 @@ export interface SystemSetting {
   groupName: string;
 }
 
+export interface AdminAuditLog {
+  id: string;
+  adminId: string | null;
+  adminName: string | null;
+  adminEmail: string | null;
+  action: string;
+  status: string;
+  metadata: any;
+  ipAddress: string | null;
+  createdAt: string;
+}
+
+export interface CustomerAuditLog {
+  id: string;
+  customerId: string | null;
+  customerName: string | null;
+  customerEmail: string | null;
+  action: string;
+  status: string;
+  transactionId: string | null;
+  metadata: any;
+  ipAddress: string | null;
+  createdAt: string;
+}
+
+export interface GetAuditLogsParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  action?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+export interface GetAdminAuditLogsResponse {
+  data: AdminAuditLog[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface GetCustomerAuditLogsResponse {
+  data: CustomerAuditLog[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export const adminService = {
   async getDashboardStats(): Promise<DashboardStats> {
     const { data } = await api.get('/admin/dashboard-stats');
@@ -136,6 +191,18 @@ export const adminService = {
 
   async updateSettings(updates: Record<string, any>): Promise<SystemSetting[]> {
     const { data } = await api.patch('/admin/settings', { updates });
+    // Backend now returns { settings, oldValues, newValues } for audit purposes
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    return (data.settings ?? data) as SystemSetting[];
+  },
+
+  async getAdminAuditLogs(params?: GetAuditLogsParams): Promise<GetAdminAuditLogsResponse> {
+    const { data } = await api.get('/audit-logs/admin', { params });
+    return data;
+  },
+
+  async getCustomerAuditLogs(params?: GetAuditLogsParams): Promise<GetCustomerAuditLogsResponse> {
+    const { data } = await api.get('/audit-logs/customer', { params });
     return data;
   }
 };

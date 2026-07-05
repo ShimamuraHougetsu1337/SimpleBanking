@@ -21,6 +21,8 @@ import { GetUsersQueryDto } from './dto/get-users-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { SystemSettingsService } from './system-settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
+import { AdminLog } from '@/audit-logs/decorators/admin-log.decorator';
+import { AdminAuditAction } from '@/audit-logs/enums/admin-audit-action.enum';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -52,6 +54,7 @@ export class AdminController {
 
   @Patch('users/:id/status')
   @ApiOperation({ summary: 'Lock or unlock a user account (Admin only)' })
+  @AdminLog('UPDATE_USER_STATUS')
   async updateUserStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserStatusDto,
@@ -84,6 +87,7 @@ export class AdminController {
 
   @Patch('accounts/:id/status')
   @ApiOperation({ summary: 'Freeze or unfreeze a bank account (Admin only)' })
+  @AdminLog('UPDATE_ACCOUNT_STATUS')
   async updateAccountStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: string,
@@ -93,6 +97,7 @@ export class AdminController {
 
   @Post('accounts/:id/deposit')
   @ApiOperation({ summary: 'Deposit money into an account (Admin only)' })
+  @AdminLog(AdminAuditAction.ADMIN_DEPOSIT)
   async depositToAccount(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('amount') amount: string,
@@ -129,10 +134,14 @@ export class AdminController {
 
   @Patch('settings')
   @ApiOperation({ summary: 'Update system settings' })
+  @AdminLog(AdminAuditAction.UPDATE_SETTINGS)
   async updateSettings(
     @Body() dto: UpdateSettingsDto,
     @CurrentUser() admin: User,
   ) {
-    return this.systemSettingsService.updateSettings(dto.updates, admin.fullName);
+    const result = await this.systemSettingsService.updateSettings(dto.updates, admin.fullName);
+    // Interceptor captures the full result (including oldValues/newValues) for audit logging.
+    // The API response itself only exposes the updated settings list to the frontend.
+    return result;
   }
 }

@@ -9,6 +9,7 @@ import { AccountsModule } from './accounts/accounts.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { AdminModule } from './admin/admin.module';
 import { TasksModule } from './tasks/tasks.module';
+import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { ScheduleModule } from '@nestjs/schedule/dist/schedule.module';
 import { APP_GUARD } from '@nestjs/core';
 import { MaintenanceGuard } from './common/guards/maintenance.guard';
@@ -39,6 +40,7 @@ import databaseConfig from './config/database.config';
     TransactionsModule,
     AdminModule,
     TasksModule,
+    AuditLogsModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

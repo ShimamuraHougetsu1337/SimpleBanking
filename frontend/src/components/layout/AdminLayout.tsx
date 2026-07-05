@@ -11,6 +11,7 @@ import {
   SafetyCertificateOutlined,
   DashboardOutlined,
   BankOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -23,6 +24,7 @@ const navGroups = [
       { key: '/admin/users', label: 'Quản lý người dùng', icon: <TeamOutlined /> },
       { key: '/admin/accounts', label: 'Quản lý tài khoản', icon: <BankOutlined /> },
       { key: '/admin/transactions', label: 'Lịch sử giao dịch', icon: <TransactionOutlined /> },
+      { key: '/admin/audit-logs', label: 'Nhật ký hệ thống', icon: <DatabaseOutlined /> },
     ]
   }
 ];

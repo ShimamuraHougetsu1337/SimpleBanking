@@ -7,6 +7,14 @@ export interface ParsedSystemSetting extends Omit<SystemSetting, 'settingValue'>
   value: unknown;
 }
 
+export interface UpdateSettingsResult {
+  settings: ParsedSystemSetting[];
+  /** Giá trị cũ của các key vừa được cập nhật, dùng cho audit log */
+  oldValues: Record<string, unknown>;
+  /** Giá trị mới của các key vừa được cập nhật, dùng cho audit log */
+  newValues: Record<string, unknown>;
+}
+
 @Injectable()
 export class SystemSettingsService {
   constructor(
@@ -70,20 +78,26 @@ export class SystemSettingsService {
     return this.parseValue(setting.settingValue, setting.dataType) as T;
   }
 
-  async updateSettings(updates: Record<string, any>, updatedBy?: string): Promise<ParsedSystemSetting[]> {
+  async updateSettings(updates: Record<string, any>, updatedBy?: string): Promise<UpdateSettingsResult> {
     const settings = await this.settingsRepo.find();
-    
+
+    const oldValues: Record<string, unknown> = {};
+    const newValues: Record<string, unknown> = {};
+
     for (const setting of settings) {
       if (updates[setting.settingKey] !== undefined) {
+        // Snapshot giá trị cũ trước khi ghi đè
+        oldValues[setting.settingKey] = this.parseValue(setting.settingValue, setting.dataType);
         const newValue = this.serializeValue(updates[setting.settingKey], setting.dataType);
         setting.settingValue = newValue;
+        newValues[setting.settingKey] = this.parseValue(newValue, setting.dataType);
         if (updatedBy) {
           setting.updatedBy = updatedBy;
         }
       }
     }
-    
+
     await this.settingsRepo.save(settings);
-    return this.getAllSettings();
+    return { settings: await this.getAllSettings(), oldValues, newValues };
   }
 }
