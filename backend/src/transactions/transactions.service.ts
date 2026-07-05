@@ -179,11 +179,11 @@ export class TransactionsService {
 
       let adminAccountRef: Account | null = null;
       if (feeValue.gt(0)) {
-         adminAccountRef = await manager.createQueryBuilder(Account, 'account')
-           .innerJoin('account.user', 'user')
-           .where('user.role = :role', { role: UserRole.ADMIN })
-           .getOne();
-         if (!adminAccountRef) throw new NotFoundException('Admin account not found for fee collection');
+        adminAccountRef = await manager.createQueryBuilder(Account, 'account')
+          .innerJoin('account.user', 'user')
+          .where('user.role = :role', { role: UserRole.ADMIN })
+          .getOne();
+        if (!adminAccountRef) throw new NotFoundException('Admin account not found for fee collection');
       }
 
       // Resolve destination account first without locking to get its ID
@@ -205,15 +205,15 @@ export class TransactionsService {
       // Ensure consistent locking order and avoid deadlocks
       const accountIdsToLock = [fromAccountId, toAccountId];
       if (adminAccountRef && adminAccountRef.id !== fromAccountId && adminAccountRef.id !== toAccountId) {
-          accountIdsToLock.push(adminAccountRef.id);
+        accountIdsToLock.push(adminAccountRef.id);
       }
-      
+
       accountIdsToLock.sort();
 
       const lockedAccounts = new Map<string, Account>();
       for (const id of accountIdsToLock) {
-         const acc = await manager.findOne(Account, { where: { id }, lock: { mode: 'pessimistic_write' } });
-         if (acc) lockedAccounts.set(id, acc);
+        const acc = await manager.findOne(Account, { where: { id }, lock: { mode: 'pessimistic_write' } });
+        if (acc) lockedAccounts.set(id, acc);
       }
 
       const fromAccount = lockedAccounts.get(fromAccountId);
@@ -226,9 +226,9 @@ export class TransactionsService {
 
       const amount = this.validateAmount(dto.amount);
       const totalAmount = amount.plus(feeValue);
-      
+
       if (totalAmount.gt(fromAccount.balance)) {
-         throw new UnprocessableEntityException('Insufficient balance');
+        throw new UnprocessableEntityException('Insufficient balance');
       }
 
       // Check Daily Limit (chỉ tính số tiền chuyển, không tính phí)
@@ -250,9 +250,9 @@ export class TransactionsService {
 
       await this.updateAccountBalance(manager, fromAccount.id, totalAmount, 'subtract');
       await this.updateAccountBalance(manager, toAccount.id, amount, 'add');
-      
+
       if (adminAccount && feeValue.gt(0)) {
-         await this.updateAccountBalance(manager, adminAccount.id, feeValue, 'add');
+        await this.updateAccountBalance(manager, adminAccount.id, feeValue, 'add');
       }
 
       return this.createAndSaveTransaction(manager, {

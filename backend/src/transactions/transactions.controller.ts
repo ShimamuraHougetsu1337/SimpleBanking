@@ -7,6 +7,8 @@ import { TransferDto } from './dto/transfer.dto';
 import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
 import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
+import { CustomerLog } from '@/audit-logs/decorators/customer-log.decorator';
+import { CustomerAuditAction } from '@/audit-logs/enums/customer-audit-action.enum';
 
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
@@ -14,16 +16,19 @@ export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) { }
 
   @Post('transfer')
+  @CustomerLog(CustomerAuditAction.TRANSFER)
   async transfer(@CurrentUser() user: User, @Body() dto: TransferDto) {
     return this.transactionsService.transfer(dto, user.id);
   }
 
   @Post('deposit')
+  @CustomerLog(CustomerAuditAction.DEPOSIT)
   async deposit(@CurrentUser() user: User, @Body() dto: DepositDto) {
     return this.transactionsService.deposit(dto, user.id);
   }
 
   @Post('withdraw')
+  @CustomerLog(CustomerAuditAction.WITHDRAW)
   async withdraw(@CurrentUser() user: User, @Body() dto: WithdrawDto) {
     return this.transactionsService.withdraw(dto, user.id);
   }

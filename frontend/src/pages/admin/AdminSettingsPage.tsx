@@ -14,6 +14,7 @@ import {
   SafetyOutlined,
   ToolOutlined,
   BarsOutlined,
+  DatabaseOutlined,
 } from '@ant-design/icons';
 import { useAdminSettings } from '@/hooks/admin/useAdminSettings';
 import type { SystemSetting } from '@/services/admin.service';
@@ -32,6 +33,7 @@ const GROUP_CONFIG: Record<string, { title: string; icon: React.ReactNode }> = {
   giao_dich: { title: 'Quy tắc giao dịch', icon: <DollarOutlined style={{ marginRight: 8, color: '#10B981' }} /> },
   bao_mat: { title: 'Chính sách bảo mật & tài khoản', icon: <SafetyOutlined style={{ marginRight: 8, color: '#EF4444' }} /> },
   he_thong: { title: 'Trạng thái hệ thống', icon: <ToolOutlined style={{ marginRight: 8, color: '#F59E0B' }} /> },
+  audit: { title: 'Lưu trữ nhật ký (Audit Logs)', icon: <DatabaseOutlined style={{ marginRight: 8, color: '#8B5CF6' }} /> },
 };
 
 export default function AdminSettingsPage() {

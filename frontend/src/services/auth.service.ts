@@ -13,8 +13,17 @@ export const authService = {
   },
 
   async logout() {
-    await api.post('/auth/logout');
-    useAuthStore.getState().clearAuth();
+    try {
+      await api.post('/auth/logout');
+    } catch (error: any) {
+      // If token is already expired or invalid (401), we still want to clear local state
+      // and treat it as a successful logout from the user's perspective.
+      if (error.response?.status !== 401) {
+        throw error;
+      }
+    } finally {
+      useAuthStore.getState().clearAuth();
+    }
   },
 
   async getCurrentUser() {

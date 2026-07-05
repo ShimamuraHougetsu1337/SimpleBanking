@@ -26,6 +26,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-03]
+
+### Added
+- **Audit Logs**: Introduced a comprehensive audit log system for recording both admin and customer actions.
+- **Backend Decorators & Interceptor**: Implemented `@AdminLog` and `@CustomerLog` decorators along with a global `AuditInterceptor` for automatic logging of successful and failed requests.
+- **Audit Tables**: Created `admin_audit_logs` and `customer_audit_logs` entities with detailed tracking (action, status, ip_address, metadata, and transaction association).
+- **Audit Cleanup Cron Job**: Added a nightly cron job to automatically delete old logs based on configurable retention periods (default: 365 days for admins, 180 days for customers).
+- **Admin Settings**: Added an "Audit Logs" (Lưu trữ nhật ký) group in the System Settings UI to configure retention days.
+- **Admin Audit Logs UI**: Created a new page (`/admin/audit-logs`) with distinct tabs for "Admin Actions" and "Customer Actions" to search, filter, and monitor system activities.
+
+---
+
 ## [0.3.0] — 2026-06-30
 
 ### Added

@@ -210,6 +210,22 @@ async function run() {
         displayName: 'Chế độ bảo trì hệ thống',
         description: 'Đặt toàn bộ ứng dụng vào trạng thái bảo trì. Khách hàng sẽ không thể đăng nhập hoặc thực hiện giao dịch.',
         groupName: 'he_thong'
+      },
+      {
+        settingKey: 'admin_audit_retention_days',
+        settingValue: '365',
+        dataType: 'int',
+        displayName: 'Thời gian lưu Admin Audit Log (ngày)',
+        description: 'Số ngày lưu trữ nhật ký hoạt động của quản trị viên.',
+        groupName: 'audit'
+      },
+      {
+        settingKey: 'customer_audit_retention_days',
+        settingValue: '180',
+        dataType: 'int',
+        displayName: 'Thời gian lưu Customer Audit Log (ngày)',
+        description: 'Số ngày lưu trữ nhật ký hoạt động của khách hàng.',
+        groupName: 'audit'
       }
     ];
 

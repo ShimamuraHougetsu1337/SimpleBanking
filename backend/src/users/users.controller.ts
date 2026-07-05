@@ -6,6 +6,8 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { User } from './entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { CustomerLog } from '@/audit-logs/decorators/customer-log.decorator';
+import { CustomerAuditAction } from '@/audit-logs/enums/customer-audit-action.enum';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -22,6 +24,7 @@ export class UsersController {
 
   @Patch('me/profile')
   @ApiOperation({ summary: 'Update user profile (fullName)' })
+  @CustomerLog(CustomerAuditAction.UPDATE_PROFILE)
   async updateProfile(
     @CurrentUser() user: User,
     @Body() dto: UpdateProfileDto,
@@ -31,6 +34,7 @@ export class UsersController {
 
   @Patch('me/password')
   @ApiOperation({ summary: 'Change user password' })
+  @CustomerLog(CustomerAuditAction.CHANGE_PASSWORD)
   async changePassword(
     @CurrentUser() user: User,
     @Body() dto: ChangePasswordDto,
