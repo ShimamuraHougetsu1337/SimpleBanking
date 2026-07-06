@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Card, Typography, Tabs, Space, DatePicker, Select } from 'antd';
-import { DatabaseOutlined } from '@ant-design/icons';
+import { Card, Typography, Tabs, Space, DatePicker, Select, Button } from 'antd';
+import { DatabaseOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 import AdminAuditLogTable from '@/components/admin/AdminAuditLogTable';
 import CustomerAuditLogTable from '@/components/admin/CustomerAuditLogTable';
@@ -34,9 +34,9 @@ export default function AdminAuditLogsPage() {
 
   const loadLogs = (page = 1, pageSize = 10) => {
     const params: any = { page, limit: pageSize };
-    if (status) params.status = status;
-    if (dateRange[0]) params.startDate = dateRange[0].toISOString();
-    if (dateRange[1]) params.endDate = dateRange[1].toISOString();
+    if (status && status !== 'all') params.status = status;
+    if (dateRange && dateRange[0]) params.startDate = dateRange[0].startOf('day').toISOString();
+    if (dateRange && dateRange[1]) params.endDate = dateRange[1].endOf('day').toISOString();
 
     if (activeTab === 'admin') {
       fetchAdminLogs(params);
@@ -47,7 +47,7 @@ export default function AdminAuditLogsPage() {
 
   useEffect(() => {
     loadLogs(1, meta.limit);
-  }, [activeTab, dateRange, status]);
+  }, [activeTab]);
 
   const handleTableChange = (page: number, pageSize: number) => {
     loadLogs(page, pageSize);
@@ -80,10 +80,20 @@ export default function AdminAuditLogsPage() {
             allowClear
             style={{ width: 150 }}
             onChange={setStatus}
+            defaultValue="all"
           >
+            <Option value="all">All</Option>
             <Option value="success">Success</Option>
             <Option value="failed">Failed</Option>
           </Select>
+          <Button
+            type="primary"
+            icon={<SearchOutlined />}
+            onClick={() => loadLogs(1, meta.limit)}
+            style={{ borderRadius: 8 }}
+          >
+            Tìm kiếm
+          </Button>
         </div>
 
         <Tabs
