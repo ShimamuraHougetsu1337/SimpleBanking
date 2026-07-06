@@ -11,6 +11,7 @@ import { Response } from 'express';
 interface ExceptionResponseBody {
   message?: string | string[];
   error?: string;
+  retryAfter?: number;
 }
 
 /**
@@ -36,6 +37,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let errorCode = 'INTERNAL_SERVER_ERROR';
     let message: string = 'An unexpected error occurred';
     let details: { field: string; message: string }[] | undefined;
+    let retryAfter: number | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -56,6 +58,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
           message = exceptionResponse.message ?? message;
         }
         errorCode = exceptionResponse.error ?? this.statusToErrorCode(status);
+        retryAfter = exceptionResponse.retryAfter;
       }
     } else {
       // Log unexpected server-side errors
@@ -70,6 +73,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       error: errorCode,
       message,
       ...(details ? { details } : {}),
+      ...(retryAfter !== undefined ? { retryAfter } : {}),
     });
   }
 
@@ -82,6 +86,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       404: 'NOT_FOUND',
       409: 'CONFLICT',
       422: 'UNPROCESSABLE_ENTITY',
+      429: 'TOO_MANY_REQUESTS',
       500: 'INTERNAL_SERVER_ERROR',
     };
     return map[status] ?? 'INTERNAL_SERVER_ERROR';
