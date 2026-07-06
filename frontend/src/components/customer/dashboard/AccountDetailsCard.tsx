@@ -79,7 +79,7 @@ export function AccountDetailsCard({ account, onWithdraw, onSettings }: AccountD
             <Button
               type="primary"
               icon={<SwapOutlined />}
-              onClick={() => navigate('/transfer', { state: { fromAccountNumber: account.accountNumber } })}
+              onClick={() => navigate('/transfer', { state: { fromAccountId: account.id } })}
               disabled={isLocked}
               style={{
                 backgroundColor: '#3B82F6',

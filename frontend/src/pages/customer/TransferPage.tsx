@@ -1,5 +1,6 @@
 import { Typography, message, Form } from 'antd';
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTransfer } from '../../hooks/customer/useTransfer';
 import { v4 as uuidv4 } from 'uuid';
 import { getErrorMessage } from '../../utils/error';
@@ -12,6 +13,7 @@ import { TransactionResultModal } from '@/components/customer/transactions/Trans
 const { Title } = Typography;
 
 export default function TransferPage() {
+  const location = useLocation();
   const [form] = Form.useForm();
   const { mutate: transfer, isPending } = useTransfer();
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -42,10 +44,14 @@ export default function TransferPage() {
   const transferFee = feeData?.fee || '0';
 
   useEffect(() => {
-    if (accounts && accounts.length > 0 && !form.getFieldValue('from_accountId')) {
-      form.setFieldsValue({ from_accountId: accounts[0].id });
+    if (accounts && accounts.length > 0) {
+      if (location.state?.fromAccountId) {
+        form.setFieldsValue({ from_accountId: location.state.fromAccountId });
+      } else if (!form.getFieldValue('from_accountId')) {
+        form.setFieldsValue({ from_accountId: accounts[0].id });
+      }
     }
-  }, [accounts, form]);
+  }, [accounts, form, location.state]);
 
   const onReview = async (values: any) => {
     try {
