@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../../services/api';
+import { shouldRetryMutation } from '../../utils/retryUtils';
 
 interface TransferPayload {
   from_accountId: string;
@@ -13,6 +14,8 @@ export function useTransfer() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: (failureCount, error) => shouldRetryMutation(failureCount, error, 2),
+    retryDelay: (retryAttempt) => Math.min(1000 * 2 ** retryAttempt, 10000),
     mutationFn: async (payload: TransferPayload) => {
       const { data } = await api.post('/transactions/transfer', payload);
       return data;

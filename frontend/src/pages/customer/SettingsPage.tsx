@@ -67,6 +67,7 @@ export default function SettingsPage() {
             layout="vertical"
             onFinish={handleUpdateProfile}
             requiredMark={false}
+            validateTrigger="onSubmit"
           >
             <Form.Item
               label={<Text style={{ fontWeight: 500, color: '#475569' }}>Địa chỉ Email</Text>}
@@ -124,6 +125,7 @@ export default function SettingsPage() {
             layout="vertical"
             onFinish={handleChangePassword}
             requiredMark={false}
+            validateTrigger="onSubmit"
           >
             <Form.Item
               label={<Text style={{ fontWeight: 500, color: '#475569' }}>Mật khẩu hiện tại</Text>}

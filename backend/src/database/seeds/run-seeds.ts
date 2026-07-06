@@ -199,14 +199,6 @@ async function run() {
         groupName: 'transaction'
       },
       {
-        settingKey: 'auto_lock_suspicious',
-        settingValue: 'true',
-        dataType: 'boolean',
-        displayName: 'Tự động khóa tài khoản nghi ngờ',
-        description: 'Tự động khóa hồ sơ khách hàng khi phát hiện sử dụng lại refresh token hoặc khi ghi nhận nhiều giao dịch thất bại.',
-        groupName: 'security'
-      },
-      {
         settingKey: 'maintenance_mode',
         settingValue: 'false',
         dataType: 'boolean',
