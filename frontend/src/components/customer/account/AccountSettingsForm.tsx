@@ -31,7 +31,7 @@ export function AccountSettingsForm({ accountId, initialValues, onSuccess }: Acc
   };
 
   return (
-    <Card title="Cài đặt tài khoản" bordered={false} style={{ marginBottom: 24 }}>
+    <Card title="Cài đặt tài khoản" variant="borderless" style={{ marginBottom: 24 }}>
       <Form
         form={form}
         layout="vertical"

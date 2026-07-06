@@ -33,10 +33,12 @@ export default function AdminAuditLogTable({ logs, loading, pagination }: Props)
       key: 'createdAt',
       render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
       width: 170,
+      align: 'center',
     },
     {
       title: 'Admin',
       key: 'admin',
+      align: 'center',
       render: (_, record) => (
         <div>
           <Text strong>{record.adminName || 'System'}</Text>
@@ -48,6 +50,7 @@ export default function AdminAuditLogTable({ logs, loading, pagination }: Props)
       title: 'Action',
       dataIndex: 'action',
       key: 'action',
+      align: 'center',
       render: (action: string) => (
         <Tag color={actionColors[action] || 'default'}>{action}</Tag>
       ),
@@ -56,6 +59,7 @@ export default function AdminAuditLogTable({ logs, loading, pagination }: Props)
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      align: 'center',
       render: (status: string) => (
         <Tag color={status === 'success' ? 'success' : 'error'}>
           {status.toUpperCase()}
@@ -66,6 +70,7 @@ export default function AdminAuditLogTable({ logs, loading, pagination }: Props)
       title: 'IP Address',
       dataIndex: 'ipAddress',
       key: 'ipAddress',
+      align: 'center',
       render: (ip) => ip || '-',
     },
   ];

@@ -44,7 +44,7 @@ export function TransactionDetailModal({ transaction, onClose }: TransactionDeta
       onCancel={onClose}
       footer={null}
       centered
-      destroyOnClose
+      destroyOnHidden
       styles={{ body: { padding: '8px 0 16px' } }}
     >
       {/* Amount hero */}

@@ -56,7 +56,7 @@ export default function AdminUsersPage() {
       key: 'user',
       align: 'center' as const,
       render: (record: AdminUser) => (
-        <Space direction="vertical" size={0} align="center">
+        <Space orientation="vertical" size={0} align="center">
           <Text strong style={{ color: '#1e293b' }}>{record.fullName}</Text>
           <Text type="secondary" style={{ fontSize: 13, color: '#64748b' }}>{record.email}</Text>
         </Space>
@@ -68,7 +68,7 @@ export default function AdminUsersPage() {
       key: 'role',
       align: 'center' as const,
       render: (role: string) => (
-        <Tag bordered={false} color={role === 'admin' ? 'purple' : 'default'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
+        <Tag variant="filled" color={role === 'admin' ? 'purple' : 'default'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
           {role.toUpperCase()}
         </Tag>
       ),
@@ -79,7 +79,7 @@ export default function AdminUsersPage() {
       key: 'status',
       align: 'center' as const,
       render: (status: string) => (
-        <Tag bordered={false} color={status === 'active' ? 'success' : 'error'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
+        <Tag variant="filled" color={status === 'active' ? 'success' : 'error'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
           {status.toUpperCase()}
         </Tag>
       ),
@@ -175,7 +175,7 @@ export default function AdminUsersPage() {
         </Space>
       </div>
 
-      <Card style={CARD_SHADOW_STYLE} bodyStyle={{ padding: 0, overflow: 'hidden' }}>
+      <Card style={CARD_SHADOW_STYLE} styles={{ body: { padding: 0, overflow: 'hidden' } }}>
         <ConfigProvider
           theme={{
             components: {
@@ -212,7 +212,7 @@ export default function AdminUsersPage() {
         title={<span style={{ fontSize: 18, fontWeight: 600, color: '#1e293b' }}>Chi Tiết Hồ Sơ Người Dùng</span>}
         footer={null}
         width={600}
-        bodyStyle={{ paddingTop: 16 }}
+        styles={{ body: { paddingTop: 16 } }}
       >
         {selectedUser && (
           <Descriptions bordered column={1} size="small">

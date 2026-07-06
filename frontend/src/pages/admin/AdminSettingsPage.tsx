@@ -30,15 +30,14 @@ const CARD_SHADOW_STYLE = {
 };
 
 const GROUP_CONFIG: Record<string, { title: string; icon: React.ReactNode }> = {
-  giao_dich: { title: 'Quy tắc giao dịch', icon: <DollarOutlined style={{ marginRight: 8, color: '#10B981' }} /> },
-  bao_mat: { title: 'Chính sách bảo mật & tài khoản', icon: <SafetyOutlined style={{ marginRight: 8, color: '#EF4444' }} /> },
-  he_thong: { title: 'Trạng thái hệ thống', icon: <ToolOutlined style={{ marginRight: 8, color: '#F59E0B' }} /> },
+  transaction: { title: 'Quy tắc giao dịch', icon: <DollarOutlined style={{ marginRight: 8, color: '#10B981' }} /> },
+  security: { title: 'Chính sách bảo mật & tài khoản', icon: <SafetyOutlined style={{ marginRight: 8, color: '#EF4444' }} /> },
+  system: { title: 'Trạng thái hệ thống', icon: <ToolOutlined style={{ marginRight: 8, color: '#F59E0B' }} /> },
   audit: { title: 'Lưu trữ nhật ký (Audit Logs)', icon: <DatabaseOutlined style={{ marginRight: 8, color: '#8B5CF6' }} /> },
 };
 
 export default function AdminSettingsPage() {
   const { settings, isSaving, handleUpdateSetting, handleSave } = useAdminSettings();
-
   // Group settings
   const groupedSettings = settings.reduce((acc, setting) => {
     if (!acc[setting.groupName]) {
@@ -47,6 +46,11 @@ export default function AdminSettingsPage() {
     acc[setting.groupName].push(setting);
     return acc;
   }, {} as Record<string, SystemSetting[]>);
+
+  // Sort each group's settings alphabetically by settingKey
+  Object.values(groupedSettings).forEach((group) => {
+    group.sort((a, b) => a.settingKey.localeCompare(b.settingKey));
+  });
 
   const renderInput = (setting: SystemSetting) => {
     if (setting.dataType === 'boolean') {
@@ -57,7 +61,7 @@ export default function AdminSettingsPage() {
         />
       );
     }
-    
+
     return (
       <Input
         value={setting.value}
@@ -87,7 +91,7 @@ export default function AdminSettingsPage() {
       <Form layout="vertical">
         {Object.entries(groupedSettings).map(([groupName, groupSettings]) => {
           const config = GROUP_CONFIG[groupName] || { title: groupName, icon: <BarsOutlined style={{ marginRight: 8 }} /> };
-          
+
           return (
             <Card
               key={groupName}

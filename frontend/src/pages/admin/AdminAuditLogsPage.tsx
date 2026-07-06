@@ -69,9 +69,9 @@ export default function AdminAuditLogsPage() {
         </Space>
       </div>
 
-      <Card style={{ ...CARD_SHADOW_STYLE, flex: 1 }} bodyStyle={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      <Card style={{ ...CARD_SHADOW_STYLE, flex: 1 }} styles={{ body: { height: '100%', display: 'flex', flexDirection: 'column' } }}>
         <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
-          <RangePicker 
+          <RangePicker
             onChange={(dates) => setDateRange(dates as any)}
             style={{ borderRadius: 8 }}
           />

@@ -201,7 +201,7 @@ export default function SettingsPage() {
         </Text>
       </div>
 
-      <Card bordered={false} styles={{ body: { padding: '24px 32px' } }} style={{ borderRadius: 12 }}>
+      <Card variant="borderless" styles={{ body: { padding: '24px 32px' } }} style={{ borderRadius: 12 }}>
         <Tabs
           activeKey={activeTab}
           onChange={setActiveTab}

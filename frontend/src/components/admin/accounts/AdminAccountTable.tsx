@@ -45,7 +45,7 @@ export const AdminAccountTable = ({
       key: 'owner',
       align: 'center' as const,
       render: (record: AdminAccount) => (
-        <Space direction="vertical" size={0} align="center">
+        <Space orientation="vertical" size={0} align="center">
           <Text strong style={{ color: '#1e293b' }}>{record.ownerName}</Text>
           <Text type="secondary" style={{ fontSize: 13, color: '#64748b' }}>{record.ownerEmail}</Text>
         </Space>
@@ -57,7 +57,7 @@ export const AdminAccountTable = ({
       key: 'status',
       align: 'center' as const,
       render: (status: string) => (
-        <Tag bordered={false} color={status === 'active' ? 'success' : 'error'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
+        <Tag variant="filled" color={status === 'active' ? 'success' : 'error'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
           {status.toUpperCase()}
         </Tag>
       ),

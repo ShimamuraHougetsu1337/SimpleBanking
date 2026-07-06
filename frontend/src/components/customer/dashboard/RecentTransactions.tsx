@@ -1,4 +1,4 @@
-import { Card, Typography, Button, List, Avatar } from 'antd';
+import { Card, Typography, Button, Avatar } from 'antd';
 import { ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,67 +34,64 @@ export function RecentTransactions({ transactions, viewAllLink = '/transactions'
         styles={{ body: { padding: '0 24px' } }}
         style={{ borderRadius: 12, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' }}
       >
-        <List
-          itemLayout="horizontal"
-          dataSource={transactions}
-          renderItem={(item) => {
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {transactions.map((item) => {
             const isCredit = item.direction === 'credit';
             return (
-              <List.Item
+              <div
+                key={item.id}
                 style={{
                   padding: '20px 0',
                   borderBottom: '1px solid #f1f5f9',
                   transition: 'background-color 0.2s',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 16,
                 }}
                 className="transaction-list-item"
               >
-                <List.Item.Meta
-                  avatar={
-                    <Avatar
-                      size={48}
-                      style={{
-                        backgroundColor: isCredit ? '#ECFDF5' : '#FEF2F2',
-                        color: isCredit ? '#10B981' : '#EF4444',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      icon={isCredit ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                    />
-                  }
-                  title={
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <Text strong style={{ fontSize: 16, color: '#1e293b' }}>{item.counterpartName}</Text>
-                      <Text
-                        strong
-                        style={{
-                          color: isCredit ? '#10B981' : '#1e293b',
-                          fontSize: 16
-                        }}
-                      >
-                        {isCredit ? '+' : '-'}{formatVND(item.amount)}
-                      </Text>
-                    </div>
-                  }
-                  description={
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <Text type="secondary" style={{ fontSize: 14 }}>{item.description}</Text>
-                      <Text type="secondary" style={{ fontSize: 13 }}>
-                        {new Date(item.createdAt).toLocaleDateString('vi-VN', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </Text>
-                    </div>
-                  }
+                <Avatar
+                  size={48}
+                  style={{
+                    backgroundColor: isCredit ? '#ECFDF5' : '#FEF2F2',
+                    color: isCredit ? '#10B981' : '#EF4444',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                  icon={isCredit ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
                 />
-              </List.Item>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <Text strong style={{ fontSize: 16, color: '#1e293b' }}>{item.counterpartName}</Text>
+                    <Text
+                      strong
+                      style={{
+                        color: isCredit ? '#10B981' : '#1e293b',
+                        fontSize: 16
+                      }}
+                    >
+                      {isCredit ? '+' : '-'}{formatVND(item.amount)}
+                    </Text>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text type="secondary" style={{ fontSize: 14 }}>{item.description}</Text>
+                    <Text type="secondary" style={{ fontSize: 13 }}>
+                      {new Date(item.createdAt).toLocaleDateString('vi-VN', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  </div>
+                </div>
+              </div>
             );
-          }}
-        />
+          })}
+        </div>
       </Card>
 
       <style>{`

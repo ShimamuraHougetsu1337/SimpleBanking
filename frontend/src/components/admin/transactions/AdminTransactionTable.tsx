@@ -6,7 +6,7 @@ const { Text } = Typography;
 
 export const ADMIN_TRANSACTION_COLUMNS = [
   {
-    title: 'Tx ID',
+    title: 'Transaction ID',
     dataIndex: 'id',
     key: 'id',
     align: 'center' as const,
@@ -18,7 +18,7 @@ export const ADMIN_TRANSACTION_COLUMNS = [
     key: 'createdAt',
     align: 'center' as const,
     render: (date: string) => (
-      <Space direction="vertical" size={0} align="center">
+      <Space orientation="vertical" size={0} align="center">
         <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
           {new Date(date).toLocaleDateString('vi-VN')}
         </Text>
@@ -34,7 +34,7 @@ export const ADMIN_TRANSACTION_COLUMNS = [
     key: 'sender_name',
     align: 'center' as const,
     render: (name: string, record: AdminTransaction) => (
-      <Space direction="vertical" size={0} align="center">
+      <Space orientation="vertical" size={0} align="center">
         <Text strong style={{ color: '#1e293b' }}>{name || '-'}</Text>
         {record.fromAccount && (
           <Text type="secondary" style={{ fontSize: 12, color: '#64748b' }} copyable>
@@ -50,7 +50,7 @@ export const ADMIN_TRANSACTION_COLUMNS = [
     key: 'receiver_name',
     align: 'center' as const,
     render: (name: string, record: AdminTransaction) => (
-      <Space direction="vertical" size={0} align="center">
+      <Space orientation="vertical" size={0} align="center">
         <Text strong style={{ color: '#1e293b' }}>{name || '-'}</Text>
         {record.toAccount && (
           <Text type="secondary" style={{ fontSize: 12, color: '#64748b' }} copyable>
@@ -66,7 +66,7 @@ export const ADMIN_TRANSACTION_COLUMNS = [
     key: 'type',
     align: 'center' as const,
     render: (type: string) => (
-      <Tag bordered={false} color={type === 'deposit' ? 'blue' : 'default'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
+      <Tag variant="filled" color={type === 'deposit' ? 'blue' : 'default'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
         {type.toUpperCase()}
       </Tag>
     ),
@@ -81,7 +81,7 @@ export const ADMIN_TRANSACTION_COLUMNS = [
       if (status === 'completed') color = 'success';
       if (status === 'failed') color = 'error';
       if (status === 'pending') color = 'warning';
-      return <Tag bordered={false} color={color} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>{status.toUpperCase()}</Tag>;
+      return <Tag variant="filled" color={color} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>{status.toUpperCase()}</Tag>;
     },
   },
   {
@@ -170,7 +170,7 @@ export const AdminTransactionTable = ({
             {total} giao dịch
           </Text>
         ),
-        position: ['bottomCenter'],
+        placement: ['bottomCenter'] as any,
         style: { padding: '16px 24px', margin: 0 },
       }}
     />

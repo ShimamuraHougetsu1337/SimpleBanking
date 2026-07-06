@@ -31,7 +31,7 @@ export const AdminTransactionFilters = ({
       value={typeFilter}
       onChange={onTypeFilterChange}
       style={{ width: 150, height: 40 }}
-      dropdownStyle={{ borderRadius: 8 }}
+      styles={{ popup: { root: { borderRadius: 8 } } }}
     >
       <Option value="all">All Types</Option>
       <Option value="deposit">Deposit</Option>

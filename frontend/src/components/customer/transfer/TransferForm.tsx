@@ -22,7 +22,7 @@ export function TransferForm({ form, accounts, isLoadingAccounts, onReview, isRe
   const formatVND = (num: number | string) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(num));
 
   return (
-    <Card title="Chuyển tiền" bordered={false}>
+    <Card title="Chuyển tiền" variant="borderless">
       <Form form={form} layout="vertical" onFinish={onReview}>
         <Form.Item
           name="from_accountId"

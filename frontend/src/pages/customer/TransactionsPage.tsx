@@ -72,7 +72,7 @@ export default function TransactionsPage() {
       />
 
       {/* Transaction table */}
-      <Card bordered={false} styles={{ body: { padding: 0 } }}>
+      <Card variant="borderless" styles={{ body: { padding: 0 } }}>
         <ConfigProvider
           theme={{
             token: {
@@ -111,7 +111,7 @@ export default function TransactionsPage() {
                   {total} giao dịch{isFilterActive ? ' (đã lọc)' : ''}
                 </Text>
               ),
-              position: ['bottomCenter'],
+              placement: ['bottomCenter'] as any,
               style: { padding: '16px 24px', margin: 0 },
             }}
             locale={{

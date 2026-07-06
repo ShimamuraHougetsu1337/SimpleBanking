@@ -52,7 +52,7 @@ export function TransactionResultModal({
       width={480}
       styles={{ body: { padding: '32px 24px' } }}
       style={{ borderRadius: 16, overflow: 'hidden' }}
-      destroyOnClose
+      destroyOnHidden
     >
       {isSuccess ? (
         <div>
