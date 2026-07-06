@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
+import { shouldRetryMutation } from '@/utils/retryUtils';
 
 interface DepositVariables {
   accountId: string;
@@ -12,6 +13,8 @@ export function useDeposit() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    retry: (failureCount, error) => shouldRetryMutation(failureCount, error, 2),
+    retryDelay: (retryAttempt) => Math.min(1000 * 2 ** retryAttempt, 10000),
     mutationFn: async (variables: DepositVariables) => {
       const payload = {
         ...variables,
