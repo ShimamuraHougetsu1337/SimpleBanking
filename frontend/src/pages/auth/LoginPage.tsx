@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Form, Input, Button, Typography, Layout, Card, Alert } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useLogin } from '@/hooks/customer/useAuth';
 import { useAuthStore } from '@/store/auth.store';
+import axios from 'axios';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
@@ -11,6 +12,8 @@ const { Content } = Layout;
 export default function LoginPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sessionExpired, setSessionExpired] = useState(false);
+  const [rateLimitSeconds, setRateLimitSeconds] = useState(0);
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loginMutation = useLogin();
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
@@ -34,7 +37,42 @@ export default function LoginPage() {
     }
   }, [searchParams, setSearchParams]);
 
-  const onFinish = (values: any) => {
+  // Handle rate limit error — start countdown
+  useEffect(() => {
+    const error = loginMutation.error;
+    if (!error) return;
+
+    if (axios.isAxiosError(error) && error.response?.status === 429) {
+      // Ưu tiên đọc từ Header chuẩn HTTP 'Retry-After', nếu không có thì đọc từ JSON, cuối cùng fallback về 60
+      const headerRetry = error.response.headers?.['retry-after'];
+      const jsonRetry = (error.response.data as { retryAfter?: number })?.retryAfter;
+      const retryAfter: number = headerRetry ? parseInt(headerRetry as string, 10) : (jsonRetry ?? 60);
+      setRateLimitSeconds(retryAfter);
+
+      if (countdownRef.current) clearInterval(countdownRef.current);
+      countdownRef.current = setInterval(() => {
+        setRateLimitSeconds((prev) => {
+          if (prev <= 1) {
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+  }, [loginMutation.error]);
+
+  // Cleanup countdown on unmount
+  useEffect(() => {
+    return () => {
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
+
+  const isRateLimited = rateLimitSeconds > 0;
+
+  const onFinish = (values: { email: string; password: string }) => {
+    if (isRateLimited) return;
     loginMutation.mutate([values.email, values.password]);
   };
 
@@ -54,6 +92,15 @@ export default function LoginPage() {
               <Alert
                 message="Phiên đăng nhập đã hết hạn vì lý do bảo mật. Vui lòng đăng nhập lại."
                 type="warning"
+                showIcon
+                style={{ marginBottom: 24 }}
+              />
+            )}
+
+            {isRateLimited && (
+              <Alert
+                message={`Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau ${rateLimitSeconds} giây.`}
+                type="error"
                 showIcon
                 style={{ marginBottom: 24 }}
               />
@@ -88,11 +135,11 @@ export default function LoginPage() {
                   type="primary"
                   htmlType="submit"
                   loading={loginMutation.isPending}
-                  disabled={loginMutation.isPending}
+                  disabled={loginMutation.isPending || isRateLimited}
                   block
                   style={{ height: 44, fontWeight: 600 }}
                 >
-                  Đăng Nhập
+                  {isRateLimited ? `Thử lại sau ${rateLimitSeconds}s` : 'Đăng Nhập'}
                 </Button>
                 <div style={{ textAlign: 'center', marginTop: 24 }}>
                   <Text type="secondary">

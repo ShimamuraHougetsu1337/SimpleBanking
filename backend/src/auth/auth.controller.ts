@@ -14,6 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import type { Response, Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LoginRateLimitGuard } from './guards/login-rate-limit.guard';
 import { AuditLogin } from '@/audit-logs/decorators/audit-login.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -39,6 +40,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login user' })
+  @UseGuards(LoginRateLimitGuard)
   @AuditLogin()
   async login(
     @Body() dto: LoginDto,
