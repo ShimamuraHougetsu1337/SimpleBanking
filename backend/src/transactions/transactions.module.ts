@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TransactionsController } from './transactions.controller';
 import { TransactionsService } from './transactions.service';
+import { TransactionsHelper } from './transactions.helper';
 import { Transaction } from './entities/transaction.entity';
 import { AccountsModule } from '@/accounts/accounts.module';
 
@@ -11,7 +12,7 @@ import { AccountsModule } from '@/accounts/accounts.module';
     AccountsModule,
   ],
   controllers: [TransactionsController],
-  providers: [TransactionsService],
+  providers: [TransactionsService, TransactionsHelper],
   exports: [TransactionsService],
 })
 export class TransactionsModule {}
