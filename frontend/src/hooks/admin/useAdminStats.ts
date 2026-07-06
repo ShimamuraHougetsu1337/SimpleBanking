@@ -1,26 +1,21 @@
-import { useState, useCallback, useEffect } from 'react';
-import { adminService, type DashboardStats } from '@/services/admin.service';
+import { useQuery } from '@tanstack/react-query';
+import { adminService } from '@/services/admin.service';
 import { message } from 'antd';
 
 export function useAdminStats() {
-  const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const { data: stats, isLoading: loading, refetch } = useQuery({
+    queryKey: ['adminDashboardStats'],
+    queryFn: async () => {
+      try {
+        const data = await adminService.getDashboardStats();
+        return data;
+      } catch (error: any) {
+        message.error(error.response?.data?.message || 'Failed to fetch dashboard stats');
+        throw error;
+      }
+    },
+    retry: false,
+  });
 
-  const fetchStats = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await adminService.getDashboardStats();
-      setStats(data);
-    } catch (error: any) {
-      message.error(error.response?.data?.message || 'Failed to fetch dashboard stats');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void fetchStats();
-  }, [fetchStats]);
-
-  return { loading, stats, refetch: fetchStats };
+  return { loading, stats: stats || null, refetch };
 }
