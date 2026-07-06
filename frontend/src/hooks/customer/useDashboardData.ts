@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
-import type { Transaction } from '@/components/customer/dashboard/RecentTransactions';
+import type { Transaction } from '@/components/customer/dashboard/recent-transactions/RecentTransactions';
 
 export interface Account {
   id: string;

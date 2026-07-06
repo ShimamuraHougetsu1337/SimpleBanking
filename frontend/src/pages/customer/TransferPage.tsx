@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../../services/api';
 import { TransferForm } from '../../components/customer/transfer/TransferForm';
 import { TransferReviewModal } from '../../components/customer/transfer/TransferReviewModal';
-import { TransactionResultModal } from '@/components/customer/transactions/TransactionResultModal';
+import { TransactionResultModal } from '@/components/customer/transactions/result-modal/TransactionResultModal';
 
 const { Title } = Typography;
 

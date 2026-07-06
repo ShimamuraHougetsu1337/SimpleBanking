@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, Typography, Table, ConfigProvider } from 'antd';
 import { useTransactions } from '@/hooks/customer/useTransactions';
 import { useTransactionFilters } from '@/hooks/customer/useTransactionFilters';
-import { TransactionFilters } from '@/components/customer/transactions/TransactionFilters';
+import { TransactionFilters } from '@/components/customer/transactions/filters/TransactionFilters';
 import type { TransactionRecord } from '@/types/transaction';
 import { TransactionDetailModal } from '@/components/customer/transactions/TransactionDetailModal';
 import { getTransactionColumns } from '@/components/customer/transactions/TransactionColumns';

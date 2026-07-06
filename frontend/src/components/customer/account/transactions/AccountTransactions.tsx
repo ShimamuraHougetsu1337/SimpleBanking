@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, Space, Typography, Modal, Descriptions, Tag, Pagination, Spin } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { useTransactionFilters } from '@/hooks/customer/useTransactionFilters';
-import { TransactionFilters } from '@/components/customer/transactions/TransactionFilters';
+import { TransactionFilters } from '@/components/customer/transactions/filters/TransactionFilters';
 
 const { Text } = Typography;
 
@@ -29,9 +29,12 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  useEffect(() => {
+  const [prevFilter, setPrevFilter] = useState(filterParams);
+
+  if (filterParams !== prevFilter) {
+    setPrevFilter(filterParams);
     setCurrentPage(1);
-  }, [filterParams]);
+  }
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions', accountId, filterParams],
