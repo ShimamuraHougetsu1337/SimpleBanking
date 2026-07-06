@@ -228,7 +228,7 @@ export class TransactionsService {
       const totalAmount = amount.plus(feeValue);
 
       if (totalAmount.gt(fromAccount.balance)) {
-        throw new UnprocessableEntityException('Insufficient balance');
+        throw new UnprocessableEntityException('Số dư tài khoản không đủ ');
       }
 
       // Check Daily Limit (chỉ tính số tiền chuyển, không tính phí)
@@ -381,7 +381,7 @@ export class TransactionsService {
     if (balanceStr !== undefined) {
       const balance = new Decimal(balanceStr);
       if (amount.gt(balance)) {
-        throw new UnprocessableEntityException('Insufficient balance');
+        throw new UnprocessableEntityException('Số dư tài khoản không đủ');
       }
     }
     return amount;

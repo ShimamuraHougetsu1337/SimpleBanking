@@ -109,7 +109,10 @@ async function run() {
       `Customer Account 2 created with ID: ${savedCustomerAccount2.id}`,
     );
 
+
     console.log('Creating transaction history...');
+
+
 
     const now = new Date();
     const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
@@ -185,7 +188,7 @@ async function run() {
         dataType: 'decimal',
         displayName: 'Phí chuyển khoản (VND)',
         description: 'Phí cố định áp dụng cho mỗi lần chuyển khoản.',
-        groupName: 'giao_dich'
+        groupName: 'transaction'
       },
       {
         settingKey: 'daily_limit',
@@ -193,7 +196,7 @@ async function run() {
         dataType: 'decimal',
         displayName: 'Hạn mức hàng ngày (VND)',
         description: 'Hạn mức chuyển tiền tối đa cho phép của mỗi người dùng trong một ngày.',
-        groupName: 'giao_dich'
+        groupName: 'transaction'
       },
       {
         settingKey: 'auto_lock_suspicious',
@@ -201,7 +204,7 @@ async function run() {
         dataType: 'boolean',
         displayName: 'Tự động khóa tài khoản nghi ngờ',
         description: 'Tự động khóa hồ sơ khách hàng khi phát hiện sử dụng lại refresh token hoặc khi ghi nhận nhiều giao dịch thất bại.',
-        groupName: 'bao_mat'
+        groupName: 'security'
       },
       {
         settingKey: 'maintenance_mode',
@@ -209,7 +212,7 @@ async function run() {
         dataType: 'boolean',
         displayName: 'Chế độ bảo trì hệ thống',
         description: 'Đặt toàn bộ ứng dụng vào trạng thái bảo trì. Khách hàng sẽ không thể đăng nhập hoặc thực hiện giao dịch.',
-        groupName: 'he_thong'
+        groupName: 'system'
       },
       {
         settingKey: 'admin_audit_retention_days',
