@@ -1,6 +1,6 @@
 import { Typography, Button, Spin, Empty, Alert, Modal, Form, Input, Select } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
-import { BalanceCard } from '@/components/customer/dashboard/BalanceCard';
+import { BalanceCard } from '@/components/customer/dashboard/balance-card/BalanceCard';
 import { useAccounts } from '@/hooks/customer/useAccounts';
 
 const AVAILABLE_THEMES = [
