@@ -34,8 +34,8 @@ export function getTransactionColumns(
               }}
             >
               {isCredit
-                ? <ArrowDownOutlined style={{ color: '#059669', fontSize: 14 }} />
-                : <ArrowUpOutlined style={{ color: '#dc2626', fontSize: 14 }} />
+                ? <ArrowUpOutlined style={{ color: '#059669', fontSize: 14 }} />
+                : <ArrowDownOutlined style={{ color: '#dc2626', fontSize: 14 }} />
               }
             </div>
             <div>

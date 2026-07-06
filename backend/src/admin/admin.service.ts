@@ -48,15 +48,14 @@ export class AdminService {
     const { data, total } = await this.usersService.findAll(page, limit, search, status);
 
     const formattedData = data.map((user) => {
-      const account = user.accounts?.[0];
+      const balance = user.accounts.reduce((acc, cur) => acc.plus(new Decimal(cur.balance)), new Decimal(0));
       return {
         id: user.id,
         fullName: user.fullName,
         email: user.email,
         role: user.role,
         status: user.status,
-        accountNumber: account ? account.accountNumber : null,
-        balance: account ? account.balance : '0.00',
+        balance: balance.toFixed(2),
         createdAt: user.createdAt,
       };
     });

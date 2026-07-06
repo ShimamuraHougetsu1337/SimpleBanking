@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   if (isInitializing) {
     return (
       <div style={{ display: 'flex', height: '100vh', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
-        <Spin size="large" tip="Loading application..." />
+        <Spin size="large" description="Loading application..." />
       </div>
     );
   }

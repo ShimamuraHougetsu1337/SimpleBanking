@@ -1,4 +1,4 @@
-import { Table, Tag, Typography, Tooltip } from 'antd';
+import { Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import type { CustomerAuditLog } from '@/services/admin.service';
 import dayjs from 'dayjs';
@@ -34,10 +34,12 @@ export default function CustomerAuditLogTable({ logs, loading, pagination }: Pro
       key: 'createdAt',
       render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
       width: 170,
+      align: 'center',
     },
     {
       title: 'Customer',
       key: 'customer',
+      align: 'center',
       render: (_, record) => (
         <div>
           <Text strong>{record.customerName || 'Unknown'}</Text>
@@ -49,6 +51,7 @@ export default function CustomerAuditLogTable({ logs, loading, pagination }: Pro
       title: 'Action',
       dataIndex: 'action',
       key: 'action',
+      align: 'center',
       render: (action: string) => (
         <Tag color={actionColors[action] || 'default'}>{action}</Tag>
       ),
@@ -57,6 +60,7 @@ export default function CustomerAuditLogTable({ logs, loading, pagination }: Pro
       title: 'Status',
       dataIndex: 'status',
       key: 'status',
+      align: 'center',
       render: (status: string) => (
         <Tag color={status === 'success' ? 'success' : 'error'}>
           {status.toUpperCase()}
@@ -67,16 +71,18 @@ export default function CustomerAuditLogTable({ logs, loading, pagination }: Pro
       title: 'Transaction ID',
       dataIndex: 'transactionId',
       key: 'transactionId',
+      align: 'center',
       render: (txId) => txId ? (
-        <Tooltip title={txId}>
-          <Text style={{ fontFamily: 'monospace' }}>{txId.split('-')[0]}...</Text>
-        </Tooltip>
+        <Text copyable style={{ fontFamily: 'monospace' }}>
+          {txId}
+        </Text>
       ) : '-',
     },
     {
       title: 'IP Address',
       dataIndex: 'ipAddress',
       key: 'ipAddress',
+      align: 'center',
       render: (ip) => ip || '-',
     },
   ];

@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Form, Input, Button, Typography, Layout, Card, Alert } from 'antd';
 import { LockOutlined, UserOutlined } from '@ant-design/icons';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useLogin } from '@/hooks/customer/useAuth';
+import { useAuthStore } from '@/store/auth.store';
 
 const { Title, Text } = Typography;
 const { Content } = Layout;
@@ -11,6 +12,19 @@ export default function LoginPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [sessionExpired, setSessionExpired] = useState(false);
   const loginMutation = useLogin();
+  const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated());
+  const isAdmin = useAuthStore((s) => s.isAdmin());
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (isAdmin) {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
+    }
+  }, [isAuthenticated, isAdmin, navigate]);
 
   useEffect(() => {
     if (searchParams.get('expired') === 'true') {

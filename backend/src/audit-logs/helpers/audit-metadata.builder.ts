@@ -1,6 +1,7 @@
 import { AdminAuditAction } from '@/audit-logs/enums/admin-audit-action.enum';
 import { CustomerAuditAction } from '@/audit-logs/enums/customer-audit-action.enum';
 import type { AuditRequestContext } from './audit-context.helper';
+import { HttpException } from '@nestjs/common';
 
 export interface StandardAuditSchema {
   timestamp: string;
@@ -49,7 +50,15 @@ export class AuditMetadataBuilder {
       },
       outcome: {
         status,
-        error_code: err ? 'ERROR' : null,
+        error_code: err
+          ? err instanceof HttpException
+            ? err.getStatus().toString()
+            : err && typeof err === 'object' && 'status' in err && typeof (err as Record<string, unknown>).status === 'number'
+              ? String((err as Record<string, unknown>).status)
+              : err && typeof err === 'object' && 'statusCode' in err && typeof (err as Record<string, unknown>).statusCode === 'number'
+                ? String((err as Record<string, unknown>).statusCode)
+                : '500'
+          : null,
         error_message: err ? err.message : null,
       },
     };

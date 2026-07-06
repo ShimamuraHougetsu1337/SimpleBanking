@@ -104,7 +104,7 @@ export default function DashboardPage() {
         onCancel={() => setSettingsAccount(null)}
         footer={null}
         centered
-        destroyOnClose
+        destroyOnHidden
       >
         {settingsAccount && (
           <AccountSettingsForm

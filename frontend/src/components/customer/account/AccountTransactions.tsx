@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Card, Space, List, Typography, Modal, Descriptions, Tag } from 'antd';
+import { useState, useEffect } from 'react';
+import { Card, Space, Typography, Modal, Descriptions, Tag, Pagination, Spin } from 'antd';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/services/api';
 import { useTransactionFilters } from '@/hooks/customer/useTransactionFilters';
@@ -25,6 +25,13 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
     handleRemoveDateRange,
     handleRemoveKeyword,
   } = useTransactionFilters();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterParams]);
 
   const { data: transactions = [], isLoading } = useQuery({
     queryKey: ['transactions', accountId, filterParams],
@@ -53,8 +60,8 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
   };
 
   return (
-    <Card title="Lịch sử giao dịch" bordered={false} styles={{ body: { padding: '24px' } }}>
-      <Space direction="vertical" size="large" style={{ width: '100%' }}>
+    <Card title="Lịch sử giao dịch" variant="borderless" styles={{ body: { padding: '24px' } }}>
+      <Space orientation="vertical" size="large" style={{ width: '100%' }}>
         <TransactionFilters
           draftFilters={draftFilters}
           appliedFilters={appliedFilters}
@@ -67,62 +74,86 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
           onRemoveKeyword={handleRemoveKeyword}
         />
 
-        <List
-          dataSource={transactions}
-          loading={isLoading}
-          pagination={{ pageSize: 10, align: 'center' }}
-          renderItem={(item: any) => {
-            const isCredit = item.direction === 'credit';
-            const amountNum = Number(item.amount);
-            const formattedAmount = new Intl.NumberFormat('vi-VN', {
-              style: 'currency',
-              currency: 'VND',
-            }).format(amountNum);
+        {isLoading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '40px 0' }}>
+            <Spin size="large" description="Đang tải giao dịch..." />
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {transactions.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((item: any, idx: number) => {
+              const isCredit = item.direction === 'credit';
+              const amountNum = Number(item.amount);
+              const formattedAmount = new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND',
+              }).format(amountNum);
 
-            const counterpartAcc = item.counterpartAccount || 'Hệ thống';
-            const counterpartNm = item.counterpartName || 'Simple Bank';
+              const counterpartAcc = item.counterpartAccount || 'Hệ thống';
+              const counterpartNm = item.counterpartName || 'Simple Bank';
 
-            return (
-              <List.Item
-                onClick={() => setSelectedTx(item)}
-                style={{
-                  cursor: 'pointer',
-                  padding: '16px 20px',
-                  borderBottom: '1px solid #f1f5f9',
-                  transition: 'background-color 0.15s ease',
-                  borderRadius: 8,
-                }}
-                className="transaction-list-item"
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                  <div style={{ textAlign: 'left' }}>
-                    <Text strong style={{ fontSize: 14, color: '#334155', display: 'block', marginBottom: 2 }}>
-                      {isCredit ? `TK gửi: ${counterpartAcc}` : `TK nhận: ${counterpartAcc}`}
-                    </Text>
-                    <Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 2, color: '#475569' }}>
-                      {isCredit ? `Người gửi: ${counterpartNm}` : `Người nhận: ${counterpartNm}`}
-                    </Text>
-                    <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
-                      Thời gian: {formatDate(item.createdAt)}
-                    </Text>
-                  </div>
-                  <div>
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 16,
-                        color: isCredit ? '#10B981' : '#EF4444',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      {isCredit ? '+' : '-'}{formattedAmount}
-                    </Text>
+              return (
+                <div
+                  key={item.id || idx}
+                  onClick={() => setSelectedTx(item)}
+                  style={{
+                    cursor: 'pointer',
+                    padding: '16px 20px',
+                    border: '1px solid #f1f5f9',
+                    borderRadius: 8,
+                    background: '#ffffff',
+                    transition: 'all 0.15s ease',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                  className="transaction-list-item"
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <div style={{ textAlign: 'left' }}>
+                      <Text strong style={{ fontSize: 14, color: '#334155', display: 'block', marginBottom: 2 }}>
+                        {isCredit ? `TK gửi: ${counterpartAcc}` : `TK nhận: ${counterpartAcc}`}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 13, display: 'block', marginBottom: 2, color: '#475569' }}>
+                        {isCredit ? `Người gửi: ${counterpartNm}` : `Người nhận: ${counterpartNm}`}
+                      </Text>
+                      <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+                        Thời gian: {formatDate(item.createdAt)}
+                      </Text>
+                    </div>
+                    <div>
+                      <Text
+                        strong
+                        style={{
+                          fontSize: 16,
+                          color: isCredit ? '#10B981' : '#EF4444',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        {isCredit ? '+' : '-'}{formattedAmount}
+                      </Text>
+                    </div>
                   </div>
                 </div>
-              </List.Item>
-            );
-          }}
-        />
+              );
+            })}
+            {transactions.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8' }}>
+                Không có giao dịch nào
+              </div>
+            )}
+            {transactions.length > pageSize && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+                <Pagination
+                  current={currentPage}
+                  pageSize={pageSize}
+                  total={transactions.length}
+                  onChange={(page) => setCurrentPage(page)}
+                  showSizeChanger={false}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </Space>
 
       <Modal
@@ -131,7 +162,7 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
         onCancel={() => setSelectedTx(null)}
         footer={null}
         centered
-        destroyOnClose
+        destroyOnHidden
       >
         {selectedTx && (
           <div style={{ padding: '16px 0' }}>
