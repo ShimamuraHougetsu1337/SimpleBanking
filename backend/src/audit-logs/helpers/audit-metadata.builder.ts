@@ -79,10 +79,21 @@ export class AuditMetadataBuilder {
         meta.data_changes.new_data = { status: responseData?.['status'] ?? null };
         break;
       case AdminAuditAction.ADMIN_DEPOSIT:
+      case AdminAuditAction.ADMIN_WITHDRAW:
         meta.data_changes.new_data = {
+          accountId: ctx.params?.['id'] ?? null,
           amount: ctx.body['amount'] ?? null,
           description: ctx.body['description'] ?? null,
-          balance: responseData?.['balance'] ?? null,
+          transactionId: responseData?.['id'] ?? null,
+          status: responseData?.['status'] ?? null,
+        };
+        break;
+      case AdminAuditAction.APPROVE_TRANSACTION:
+      case AdminAuditAction.REJECT_TRANSACTION:
+        meta.data_changes.new_data = {
+          requestId: ctx.params?.['id'] ?? null,
+          transactionId: responseData?.['id'] ?? null,
+          status: responseData?.['status'] ?? null,
         };
         break;
       case AdminAuditAction.UPDATE_SETTINGS:
@@ -141,7 +152,17 @@ export class AuditMetadataBuilder {
         meta.data_changes.new_data = { attemptedStatus: ctx.body['status'] ?? null };
         break;
       case AdminAuditAction.ADMIN_DEPOSIT:
-        meta.data_changes.new_data = { attemptedAmount: ctx.body['amount'] ?? null };
+      case AdminAuditAction.ADMIN_WITHDRAW:
+        meta.data_changes.new_data = { 
+          accountId: ctx.params?.['id'] ?? null,
+          attemptedAmount: ctx.body['amount'] ?? null 
+        };
+        break;
+      case AdminAuditAction.APPROVE_TRANSACTION:
+      case AdminAuditAction.REJECT_TRANSACTION:
+        meta.data_changes.new_data = {
+          requestId: ctx.params?.['id'] ?? null,
+        };
         break;
       case AdminAuditAction.UPDATE_SETTINGS:
         meta.data_changes.new_data = { attemptedUpdates: ctx.body['updates'] ?? null };

@@ -12,7 +12,7 @@ import { GetCustomerAuditLogsQueryDto } from './dto/get-customer-audit-logs-quer
 @ApiTags('Audit Logs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.SUPERADMIN)
 @Controller('audit-logs')
 export class AuditLogsController {
   constructor(

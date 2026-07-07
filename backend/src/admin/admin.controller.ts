@@ -27,7 +27,7 @@ import { AdminAuditAction } from '@/audit-logs/enums/admin-audit-action.enum';
 @ApiTags('Admin')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.ADMIN)
+@Roles(UserRole.TELLER, UserRole.MANAGER, UserRole.SUPERADMIN)
 @Controller('admin')
 export class AdminController {
   constructor(
@@ -96,14 +96,66 @@ export class AdminController {
   }
 
   @Post('accounts/:id/deposit')
-  @ApiOperation({ summary: 'Deposit money into an account (Admin only)' })
+  @Roles(UserRole.TELLER, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Deposit money into an account (TELLER/MANAGER)' })
   @AdminLog(AdminAuditAction.ADMIN_DEPOSIT)
   async depositToAccount(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('amount') amount: string,
+    @CurrentUser() admin: User,
     @Body('description') description?: string,
   ) {
-    return this.adminService.depositToAccount(id, amount, description);
+    return this.adminService.depositToAccount(id, amount, admin.id, description);
+  }
+
+  @Post('accounts/:id/withdraw')
+  @Roles(UserRole.TELLER, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Withdraw money from an account (TELLER/MANAGER)' })
+  @AdminLog(AdminAuditAction.ADMIN_WITHDRAW)
+  async withdrawFromAccount(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('amount') amount: string,
+    @CurrentUser() admin: User,
+    @Body('description') description?: string,
+  ) {
+    return this.adminService.withdrawFromAccount(id, amount, admin.id, description);
+  }
+
+  @Post('transaction-requests/:id/approve')
+  @Roles(UserRole.MANAGER)
+  @ApiOperation({ summary: 'Approve a pending transaction request (MANAGER only)' })
+  @AdminLog(AdminAuditAction.APPROVE_TRANSACTION)
+  async approveRequest(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() admin: User,
+  ) {
+    return await this.adminService.approveRequest(id, admin.id);
+  }
+
+  @Post('transaction-requests/:id/reject')
+  @Roles(UserRole.MANAGER)
+  @ApiOperation({ summary: 'Reject a pending transaction request (MANAGER only)' })
+  @AdminLog(AdminAuditAction.REJECT_TRANSACTION)
+  async rejectRequest(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() admin: User,
+  ) {
+    return await this.adminService.rejectRequest(id, admin.id);
+  }
+
+  @Get('transaction-requests')
+  @Roles(UserRole.MANAGER, UserRole.SUPERADMIN, UserRole.TELLER)
+  @ApiOperation({ summary: 'List all transaction requests (Admin only)' })
+  async getTransactionRequests(
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+    @Query('status') status?: string,
+  ) {
+    return await this.adminService.getTransactionRequests(
+      +page,
+      +limit,
+      status,
+    );
   }
 
   @Get('transactions')
@@ -133,6 +185,7 @@ export class AdminController {
   }
 
   @Patch('settings')
+  @Roles(UserRole.SUPERADMIN)
   @ApiOperation({ summary: 'Update system settings' })
   @AdminLog(AdminAuditAction.UPDATE_SETTINGS)
   async updateSettings(

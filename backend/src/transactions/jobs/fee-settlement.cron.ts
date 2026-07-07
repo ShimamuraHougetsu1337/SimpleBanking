@@ -2,10 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { FeeLedger, FeeLedgerType } from './entities/fee-ledger.entity';
+import { FeeLedger, FeeLedgerType } from '../entities/fee-ledger.entity';
 import { Account } from '@/accounts/entities/account.entity';
 import { UserRole } from '@/users/entities/user.entity';
-import { FeeSettlementLog } from './entities/fee-settlement-log.entity';
+import { FeeSettlementLog } from '../entities/fee-settlement-log.entity';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -70,7 +70,7 @@ export class FeeSettlementCron {
       const adminAccountRef = await queryRunner.manager
         .createQueryBuilder(Account, 'account')
         .innerJoin('account.user', 'user')
-        .where('user.role = :role', { role: UserRole.ADMIN })
+        .where('user.role = :role', { role: UserRole.SUPERADMIN })
         .getOne();
 
       if (!adminAccountRef) {

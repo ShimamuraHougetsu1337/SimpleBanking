@@ -1,19 +1,23 @@
 import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
-import { TransactionsService } from './transactions.service';
+import { TransactionsService } from '../services/transactions.service';
+import { FeesService } from '../services/fees.service';
 import { User } from '@/users/entities/user.entity';
-import { TransferDto } from './dto/transfer.dto';
-import { DepositDto } from './dto/deposit.dto';
-import { WithdrawDto } from './dto/withdraw.dto';
-import { GetTransactionsQueryDto } from './dto/get-transactions-query.dto';
+import { TransferDto } from '../dto/transfer.dto';
+import { DepositDto } from '../dto/deposit.dto';
+import { WithdrawDto } from '../dto/withdraw.dto';
+import { GetTransactionsQueryDto } from '../dto/get-transactions-query.dto';
 import { CustomerLog } from '@/audit-logs/decorators/customer-log.decorator';
 import { CustomerAuditAction } from '@/audit-logs/enums/customer-audit-action.enum';
 
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
 export class TransactionsController {
-  constructor(private readonly transactionsService: TransactionsService) { }
+  constructor(
+    private readonly transactionsService: TransactionsService,
+    private readonly feesService: FeesService,
+  ) { }
 
   @Post('transfer')
   @CustomerLog(CustomerAuditAction.TRANSFER)
@@ -35,7 +39,7 @@ export class TransactionsController {
 
   @Get('transfer-fee')
   async getTransferFee() {
-    return this.transactionsService.getTransferFee();
+    return this.feesService.getTransferFee();
   }
 
   @Get()
