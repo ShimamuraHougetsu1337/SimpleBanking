@@ -45,7 +45,7 @@ export class AuditLoginHandler {
   }
 
   private async logLoginSuccess(user: any, ip: string): Promise<void> {
-    const action = user.role === UserRole.ADMIN ? AdminAuditAction.LOGIN_SUCCESS : CustomerAuditAction.LOGIN_SUCCESS;
+    const action = user.role !== UserRole.CUSTOMER ? AdminAuditAction.LOGIN_SUCCESS : CustomerAuditAction.LOGIN_SUCCESS;
     const ctx = { ip, userId: user.id, userRole: user.role, userEmail: user.email };
     const metadata = AuditMetadataBuilder.createBaseSchema(action, ctx, 'SUCCESS');
 
@@ -54,7 +54,7 @@ export class AuditLoginHandler {
       ipAddress: ip,
       metadata,
     };
-    if (user.role === UserRole.ADMIN) {
+    if (user.role !== UserRole.CUSTOMER) {
       await this.adminAuditLogsService.log({
         ...base,
         action: AdminAuditAction.LOGIN_SUCCESS,
@@ -74,12 +74,12 @@ export class AuditLoginHandler {
   }
 
   private async logLogout(user: any, ip: string): Promise<void> {
-    const action = user.role === UserRole.ADMIN ? AdminAuditAction.LOGOUT : CustomerAuditAction.LOGOUT;
+    const action = user.role !== UserRole.CUSTOMER ? AdminAuditAction.LOGOUT : CustomerAuditAction.LOGOUT;
     const ctx = { ip, userId: user.id, userRole: user.role, userEmail: user.email };
     const metadata = AuditMetadataBuilder.createBaseSchema(action, ctx, 'SUCCESS');
 
     const base = { status: AuditStatus.SUCCESS, ipAddress: ip, metadata };
-    if (user.role === UserRole.ADMIN) {
+    if (user.role !== UserRole.CUSTOMER) {
       await this.adminAuditLogsService.log({
         ...base,
         action: AdminAuditAction.LOGOUT,
@@ -111,11 +111,11 @@ export class AuditLoginHandler {
       foundRole = found?.role ?? null;
     }
 
-    const action = foundRole === UserRole.ADMIN ? AdminAuditAction.LOGIN_FAILED : CustomerAuditAction.LOGIN_FAILED;
+    const action = foundRole && foundRole !== UserRole.CUSTOMER ? AdminAuditAction.LOGIN_FAILED : CustomerAuditAction.LOGIN_FAILED;
     const ctx = { ip, userEmail: attemptedEmail ?? null };
     const metadata = AuditMetadataBuilder.createBaseSchema(action, ctx, 'FAILED', err);
 
-    if (foundRole === UserRole.ADMIN) {
+    if (foundRole && foundRole !== UserRole.CUSTOMER) {
       await this.adminAuditLogsService.log({
         status: AuditStatus.FAILED,
         action: AdminAuditAction.LOGIN_FAILED,

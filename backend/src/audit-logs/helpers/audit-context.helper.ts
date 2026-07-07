@@ -13,6 +13,7 @@ export interface AuditRequestContext {
   userEmail: string | null;
   userRole: string | null;
   body: Record<string, unknown>;
+  params: Record<string, string>;
 }
 
 export class AuditContextHelper {
@@ -30,6 +31,7 @@ export class AuditContextHelper {
       userEmail: user?.email ?? null,
       userRole: user?.role ?? null,
       body: req.body ?? {},
+      params: req.params ?? {},
     };
   }
 
