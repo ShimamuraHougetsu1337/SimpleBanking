@@ -8,13 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+---
+
+## [0.5.0] - 2026-07-07
+
 ### Added
+- **Async Fee Processing**: Implemented asynchronous transaction fee processing using BullMQ and Redis.
+- **Fee Settlement**: Added `FeeLedger` and `FeeSettlementLog` entities, a queue processor, and cron jobs for daily settlement.
+- **Infrastructure**: Added `redis` service to Docker Compose.
 - **Transaction Fee**: Added transaction fee processing in backend to deduct fee and credit the admin account.
 - Endpoint `GET /transactions/transfer-fee` to fetch current fee from system settings.
 - UI elements in `TransferReviewModal`, `TransactionDetailModal`, `TransactionColumns`, and `AdminTransactionTable` to display fee and total amount breakdown.
 - Support for `decimal` data type in `SystemSettingsService`.
 
 ### Changed
+- **Performance**: Removed synchronous fee transfer to the admin account during standard transfers to improve database lock time and reduce latency.
+- **Documentation**: Completely revamped and translated `README.md` into Vietnamese with a professional layout and structure.
 - **Daily Limit**: Updated transfer logic to only count the principal `amount` towards the daily limit, excluding the transaction fee.
 - **Frontend Refactoring**: Replaced `parseFloat` with `Number()` for fee conversions across UI components to standardize numeric handling.
 - **Seeds**: Updated `run-seeds.ts` to initialize `transfer_fee` and `daily_limit` as `decimal` types.
@@ -26,7 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [2026-07-03]
+## [0.4.0] - 2026-07-03
 
 ### Added
 - **Audit Logs**: Introduced a comprehensive audit log system for recording both admin and customer actions.
@@ -38,7 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [0.3.0] — 2026-06-30
+## [0.3.0] - 2026-06-30
 
 ### Added
 - **Deposit and Withdraw** features added to `AccountDetailPage` with responsive popup modals.
@@ -54,7 +63,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [0.2.0] — 2026-06-30
+## [0.2.0] - 2026-06-30
 
 ### Added
 - `AccountsPage` and `AccountDetailPage` to view user accounts and filter specific transaction history.`
@@ -70,7 +79,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [0.1.0] — 2026-06-29
+## [0.1.0] - 2026-06-29
 
 ### Added
 - Initialize project documentation and agent configuration assets.
@@ -100,7 +109,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 <!-- Template for subsequent entries:
 
-## [x.y.z] — YYYY-MM-DD
+## [x.y.z] - YYYY-MM-DD
 
 ### Added
 - New features added

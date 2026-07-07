@@ -1,349 +1,204 @@
-# Architecture — Simple Banking App
+# System Architecture & Design Document
 
-## System Overview
-
-Simple Banking App is an internal banking application with two user roles: **Customer** and **Admin**.
-It follows a **Client-Server** model, communicating via a REST API with JWT authentication.
+> **Simple Banking App**  
+> Version: 1.0.0 | Status: Active | Last Updated: 2026-07-07
 
 ---
 
-## Component Diagram
+## 1. Executive Summary
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                        Docker Network: banking-net                   │
-│                                                                      │
-│  ┌─────────────────┐     HTTP/HTTPS      ┌─────────────────────────┐ │
-│  │   React App     │ ◄─────────────────► │   NestJS API Server     │ │
-│  │  (Ant Design)   │   REST + JWT        │   (Port 3000)           │ │
-│  │  (Port 5173)    │                     │                         │ │
-│  │                 │                     │  ┌───────────────────┐  │ │
-│  │  Zustand        │                     │  │   AuthModule      │  │ │
-│  │  React Query    │                     │  │   UserModule      │  │ │
-│  │  Axios          │                     │  │   AccountModule   │  │ │
-│  └─────────────────┘                     │  │   TransactionMod  │  │ │
-│                                          │  │   AdminModule     │  │ │
-│                                          │  └───────┬───────────┘  │ │
-│                                          │          │ TypeORM      │ │
-│                                          └──────────┼─────────────┘  │
-│                                                     │                 │
-│                                          ┌──────────▼──────────────┐ │
-│                                          │   PostgreSQL Database   │ │
-│                                          │   (Port 5432)           │ │
-│                                          │                         │ │
-│                                          │  users                  │ │
-│                                          │  accounts               │ │
-│                                          │  transactions           │ │
-│                                          │  refresh_tokens         │ │
-│                                          └─────────────────────────┘ │
-└──────────────────────────────────────────────────────────────────────┘
-```
+**Simple Banking App** is a secure, internal banking system designed to handle core financial operations including account management, internal transfers, deposits, withdrawals, and administrative monitoring. 
+
+The system follows a robust **Client-Server RESTful Architecture**, utilizing a decoupled React frontend and a NestJS backend. It emphasizes high consistency in financial transactions (ACID properties), background job processing for auxiliary tasks, and a strict Role-Based Access Control (RBAC) security model.
 
 ---
 
-## Folder Structure
+## 2. Technology Stack
 
-```
-SimpleBankingApp/
-├── backend/                        # NestJS application
-│   ├── src/
-│   │   ├── auth/                   # AuthModule
-│   │   │   ├── dto/
-│   │   │   ├── entities/
-│   │   │   ├── guards/
-│   │   │   ├── strategies/
-│   │   │   ├── auth.constants.ts
-│   │   │   ├── auth.controller.ts
-│   │   │   ├── auth.service.ts
-│   │   │   ├── auth.utils.ts
-│   │   │   └── auth.module.ts
-│   │   ├── users/                  # UserModule
-│   │   │   ├── dto/
-│   │   │   ├── entities/
-│   │   │   ├── users.controller.ts
-│   │   │   ├── users.service.ts
-│   │   │   └── users.module.ts
-│   │   ├── accounts/               # AccountModule
-│   │   │   ├── dto/
-│   │   │   ├── entities/
-│   │   │   ├── accounts.controller.ts
-│   │   │   ├── accounts.service.ts
-│   │   │   └── accounts.module.ts
-│   │   ├── transactions/           # TransactionModule
-│   │   │   ├── dto/
-│   │   │   ├── entities/
-│   │   │   ├── transactions.controller.ts
-│   │   │   ├── transactions.service.ts
-│   │   │   └── transactions.module.ts
-│   │   ├── admin/                  # AdminModule
-│   │   │   ├── admin.controller.ts
-│   │   │   ├── admin.service.ts
-│   │   │   └── admin.module.ts
-│   │   ├── common/                 # Shared utilities
-│   │   │   ├── decorators/         # @CurrentUser, @Roles
-│   │   │   ├── filters/            # GlobalExceptionFilter
-│   │   │   ├── guards/             # RolesGuard
-│   │   │   ├── interceptors/       # TransformInterceptor, LoggingInterceptor
-│   │   │   └── pipes/              # ValidationPipe config
-│   │   ├── config/                 # Configuration
-│   │   │   ├── database.config.ts
-│   │   │   └── jwt.config.ts
-│   │   ├── database/               # DB management
-│   │   │   ├── migrations/
-│   │   │   └── seeds/
-│   │   └── main.ts
-│   ├── test/
-│   ├── .env
-│   ├── .env.example
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── frontend/                       # React application
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── LoginPage.tsx
-│   │   │   ├── RegisterPage.tsx
-│   │   │   ├── DashboardPage.tsx
-│   │   │   ├── TransferPage.tsx
-│   │   │   ├── TransactionsPage.tsx
-│   │   │   └── admin/
-│   │   │       ├── AdminSettingsPage.tsx
-│   │   │       ├── AdminTransactionsPage.tsx
-│   │   │       └── AdminUsersPage.tsx
-│   │   ├── components/
-│   │   │   ├── layout/
-│   │   │   │   ├── AppLayout.tsx
-│   │   │   │   └── AdminLayout.tsx
-│   │   │   ├── ProtectedRoute.tsx
-│   │   │   ├── AdminRoute.tsx
-│   │   │   └── shared/
-│   │   ├── services/               # Axios API layer
-│   │   │   ├── api.ts              # Axios instance + interceptors
-│   │   │   ├── auth.service.ts
-│   │   │   ├── account.service.ts
-│   │   │   └── transaction.service.ts
-│   │   ├── store/                  # Zustand stores
-│   │   │   ├── auth.store.ts
-│   │   │   └── ui.store.ts
-│   │   ├── hooks/                  # React Query hooks
-│   │   │   ├── admin/
-│   │   │   │   ├── useAdminSettings.ts
-│   │   │   │   ├── useAdminTransactions.ts
-│   │   │   │   └── useAdminUsers.ts
-│   │   │   ├── useAccount.ts
-│   │   │   └── useTransactions.ts
-│   │   ├── types/                  # TypeScript types/interfaces
-│   │   └── utils/
-│   ├── public/
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── docs/                           # Documentation
-├── docker-compose.yml
-├── .env.example
-└── README.md
+### 2.1. Core Infrastructure
+| Component | Technology | Version | Description |
+| :--- | :--- | :--- | :--- |
+| **Frontend Framework** | React + Vite | v18+ | Single Page Application (SPA) |
+| **Backend Framework** | NestJS | v10+ | Node.js modular API framework |
+| **Language** | TypeScript | v5+ | Strict typing across the full stack |
+| **Database** | PostgreSQL | v16 | Primary relational datastore |
+| **In-Memory Cache/Queue** | Redis | v7 | Backing store for BullMQ |
+| **Containerization** | Docker & Compose | — | Local development and deployment |
+
+### 2.2. Application Libraries
+| Domain | Frontend | Backend |
+| :--- | :--- | :--- |
+| **State Management** | Zustand (Client), TanStack Query v5 (Server) | — |
+| **UI/Styling** | Ant Design v5, Tailwind CSS | — |
+| **ORM / Data Access** | — | TypeORM v0.3+ |
+| **Task Queue** | — | BullMQ |
+| **Security & Auth** | Axios Interceptors | Passport, JWT, bcrypt |
+| **Validation** | React Hook Form, Zod | class-validator, class-transformer |
+
+---
+
+## 3. High-Level System Architecture
+
+The application is encapsulated within a Docker bridge network (`banking-net`). The frontend serves static assets while interacting directly with the NestJS backend via RESTful APIs. The backend orchestrates data persistence in PostgreSQL and offloads background processing to Redis via BullMQ.
+
+```mermaid
+graph TD
+    Client[Client Browser / User]
+    
+    subgraph Docker Network: banking-net
+        Nginx[Frontend: React SPA<br/>Port: 5173]
+        API[Backend: NestJS Server<br/>Port: 3000]
+        
+        DB[(PostgreSQL<br/>Port: 5432)]
+        Cache[(Redis<br/>Port: 6379)]
+    end
+
+    Client -->|Serves UI| Nginx
+    Client -->|REST API + JWT| API
+    
+    API -->|TypeORM / TCP| DB
+    API -->|BullMQ / TCP| Cache
 ```
 
 ---
 
-## NestJS Module Architecture
+## 4. Backend Architecture (NestJS)
 
-### Layered Architecture
+The backend follows a strictly layered, domain-driven module architecture.
 
+### 4.1. Layered Pattern
+
+```mermaid
+graph LR
+    C[Controller Layer<br/>HTTP Handling & Routing] --> S[Service Layer<br/>Business Logic & Validation]
+    S --> R[Repository Layer<br/>Data Access & TypeORM]
+    R --> D[(Database)]
 ```
-HTTP Request
-    │
-    ▼
-┌─────────────┐
-│  Controller │  Handle HTTP: parse request, call service, return response
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│   Service   │  Business logic: validation, orchestration
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  Repository │  Data access: TypeORM Entity operations
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  Database   │  PostgreSQL
-└─────────────┘
-```
+- **Controllers**: Responsible strictly for receiving HTTP requests, validating DTOs, and mapping responses. No business logic resides here.
+- **Services**: Contain the core business rules. They orchestrate database transactions, queue background jobs, and enforce constraints.
+- **Repositories**: Handle direct database querying and persistence.
 
-**Conventions:**
-- Controller: NO business logic. Only `@Body()`, `@Param()`, calling service, and returning response.
-- Service: NO raw DB queries. Use repository or EntityManager.
-- Repository: CRUD + queries only. NO business logic.
+### 4.2. Module Dependency Graph
 
-### Module Dependencies
+The application is highly modularized, ensuring separation of concerns:
 
-```
-AppModule
-├── ConfigModule (global)
-├── TypeOrmModule (global)
-├── AuthModule
-│   └── uses: UserModule (UserService)
-├── UserModule
-│   └── provides: UserService (used by Auth)
-├── AccountModule
-│   └── uses: UserModule
-├── TransactionModule
-│   └── uses: AccountModule
-└── AdminModule
-    └── uses: UserModule, AccountModule, TransactionModule
+```mermaid
+graph TD
+    App[AppModule] --> Config[ConfigModule]
+    App --> DB[DatabaseModule / TypeORM]
+    App --> Auth[AuthModule]
+    App --> Users[UserModule]
+    App --> Acc[AccountModule]
+    App --> Tx[TransactionModule]
+    App --> Admin[AdminModule]
+    App --> Audit[AuditLogModule]
+    App --> Tasks[TasksModule]
+    
+    Auth --> Users
+    Acc --> Users
+    Tx --> Acc
+    Admin --> Users
+    Admin --> Tx
+    Tasks --> Tx
 ```
 
 ---
 
-## Authentication & Authorization Architecture
+## 5. Frontend Architecture (React)
 
-### JWT Strategy
+### 5.1. State Management Strategy
+The frontend utilizes a bifurcated state management approach to ensure optimal performance and minimal boilerplate:
+- **Server State (TanStack Query):** Handles all asynchronous data fetching, caching, background refetching, and mutations.
+- **Client State (Zustand):** Manages ephemeral UI states (e.g., sidebar toggles, modal visibility) and session state (e.g., active user, JWT tokens).
 
-```
-Login Flow:
-  User → POST /auth/login
-       → AuthService.validateUser() → bcrypt.compare()
-       → Generate accessToken (JWT, 15m) + refreshToken (opaque UUID, 7d)
-       → Hash refreshToken → save to DB
-       → Return both tokens
+### 5.2. Routing & Access Control
+Routing is protected at the layout level using Higher-Order Components (HOCs).
 
-Protected Route Flow:
-  Request → JwtAuthGuard → JwtStrategy.validate() → decode JWT → attach user to request
-          → RolesGuard (if @Roles decorator present) → check role
-          → Controller
-
-Refresh Flow:
-  → POST /auth/refresh with refreshToken
-  → Query token hash in DB → check if is_revoked, expires_at
-  → Mark old token as is_revoked = true → generate new pair → store new refreshToken
-```
-
-### Guards
-
-| Guard | Purpose |
-|---|---|
-| `JwtAuthGuard` | Validates access token, attaches user entity to request object |
-| `RolesGuard` | Checks the role in `user.role` against values specified in the `@Roles()` decorator |
-| `RefreshTokenGuard` | Validates the refresh token for `/auth/refresh` |
-
-### Custom Decorators
-
-| Decorator | Purpose |
-|---|---|
-| `@CurrentUser()` | Extracts the user object from the request (attached by JwtAuthGuard) |
-| `@Roles('admin')` | Decorates routes to permit only specified roles |
-| `@Public()` | Bypasses JwtAuthGuard (used for register, login) |
-
----
-
-## Database Transaction Architecture
-
-### Internal Transfer Flow (Single DB Transaction)
-
-```
-TransactionService.transfer()
-  │
-  ├─ BEGIN TRANSACTION
-  │
-  ├─ SELECT * FROM accounts WHERE id = fromId FOR UPDATE  (Pessimistic Lock)
-  ├─ SELECT * FROM accounts WHERE id = toId   FOR UPDATE  (Pessimistic Lock)
-  │
-  ├─ Validate: balance sufficiency, status is active, no self-transfer
-  │
-  ├─ UPDATE accounts SET balance = balance - amount WHERE id = fromId
-  ├─ UPDATE accounts SET balance = balance + amount WHERE id = toId
-  ├─ INSERT INTO transactions (from_account_id, to_account_id, amount, ...)
-  │
-  ├─ COMMIT
-  │    └─ Return transaction record
-  │
-  └─ ROLLBACK (if any exception is thrown)
-       └─ Balances unchanged, no transaction record created
+```text
+/
+├── /login, /register             (Public Routes)
+├── /dashboard, /accounts, ...    (Protected Routes — Customers)
+├── /admin/*                      (Admin Routes — RBAC: Role = Admin)
+└── /maintenance                  (System Maintenance fallback)
 ```
 
 ---
 
-## Frontend Architecture
+## 6. Transaction Processing & Concurrency
 
-### State Management Strategy
+Financial integrity is the system's highest priority. The application employs **Pessimistic Locking** and **Idempotency Keys** to prevent race conditions (e.g., double spending) during concurrent transactions.
 
-| State Type | Tool | Examples / Usage |
-|---|---|---|
-| Auth state (user, tokens) | **Zustand** | `useAuthStore` — stores user, accessToken, set/clear auth |
-| UI state | **Zustand** | Modal open/close status, sidebar collapse |
-| Server data (GET) | **React Query** | `useAccount()`, `useTransactions()` — caching, auto-refetching |
-| Mutations (POST/PATCH) | **React Query** `useMutation` | `useTransfer()`, `useUpdateStatus()` |
+### 6.1. Internal Transfer Flow (ACID Compliant)
 
-**Why not Redux Toolkit:**
-- Excess boilerplate for an app of this size.
-- Zustand + React Query is lighter, cleaner, and extremely powerful.
-- React Query manages caching, background refetching, and stale-while-revalidate out of the box.
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API as Transaction API
+    participant DB as PostgreSQL
+    participant Queue as BullMQ
 
-### Routing
-
-```
-/ → redirect to /dashboard (if authenticated) or /login
-/login → LoginPage (public)
-/register → RegisterPage (public)
-/dashboard → DashboardPage (ProtectedRoute)
-/transfer → TransferPage (ProtectedRoute)
-/transactions → TransactionsPage (ProtectedRoute)
-/admin/users → AdminUsersPage (AdminRoute — role=admin only)
-/admin/transactions → AdminTransactionsPage (AdminRoute)
-/admin/settings → AdminSettingsPage (AdminRoute)
-```
-
----
-
-## Docker Architecture
-
-```yaml
-# docker-compose.yml structure
-services:
-  postgres:           # PostgreSQL database
-    image: postgres:16-alpine
-    volumes: [postgres_data:/var/lib/postgresql/data]
-
-  backend:            # NestJS API
-    build: ./backend
-    depends_on: [postgres]
-    environment: [from .env]
-
-  frontend:           # React (Nginx serve static files)
-    build: ./frontend  (multi-stage: build + nginx)
-    depends_on: [backend]
-
-networks:
-  banking-net: (bridge)
-
-volumes:
-  postgres_data:
+    Client->>API: POST /transfer { amount, toAccount, idempotencyKey }
+    
+    API->>DB: Verify IdempotencyKey (Prevent duplicate execution)
+    
+    Note over API,DB: BEGIN DATABASE TRANSACTION
+    
+    API->>DB: SELECT accounts FOR UPDATE (Pessimistic Lock)
+    API->>API: Validate limits, active status, sufficient balance
+    
+    API->>DB: UPDATE from_account (Deduct balance + fee)
+    API->>DB: UPDATE to_account (Add balance)
+    API->>DB: INSERT transaction_record
+    
+    Note over API,DB: COMMIT TRANSACTION
+    
+    opt If Transfer Fee > 0
+        API->>Queue: Enqueue 'insert_fee' job (Async processing)
+    end
+    
+    API-->>Client: 201 Created (Transaction Receipt)
 ```
 
 ---
 
-## Technology Stack Summary
+## 7. Security Architecture
 
-| Layer | Technology | Version |
-|---|---|---|
-| Backend Framework | NestJS | v10+ |
-| Backend Language | TypeScript | v5+ |
-| Configuration | @nestjs/config (dotenv) | v4+ |
-| ORM | TypeORM | v0.3+ |
-| Database | PostgreSQL | v16 |
-| Frontend Framework | React | v18+ |
-| Frontend Language | TypeScript | v6+ |
-| UI Library | Ant Design | v5+ |
-| Server State | React Query (TanStack) | v5 |
-| Client State | Zustand | v4+ |
-| HTTP Client | Axios | v1+ |
-| Auth | JWT (access) + Opaque (refresh) | — |
-| Password Hashing | bcrypt | — |
-| Validation | class-validator + class-transformer | — |
-| Container | Docker + docker-compose | — |
-| API Docs | Swagger (@nestjs/swagger) | — |
+### 7.1. Authentication (JWT + Opaque Tokens)
+The system uses a dual-token architecture to balance security and UX:
+- **Access Token (JWT):** Short-lived (15 minutes), stateless. Contains minimal user payload (ID, Role).
+- **Refresh Token (Opaque UUID):** Long-lived (7 days), stateful. Stored hashed in the database. Used to securely request new Access Tokens.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant API
+    participant DB
+
+    User->>API: POST /auth/login (email, password)
+    API->>DB: Fetch user by email
+    API->>API: Verify bcrypt password hash
+    API->>API: Generate JWT (Access) & UUID (Refresh)
+    API->>DB: Store hashed Refresh Token
+    API-->>User: Return Access & Refresh Tokens
+```
+
+### 7.2. Authorization (Guards)
+NestJS Guards intercept incoming requests:
+1. `JwtAuthGuard`: Validates the Bearer token signature and expiration. Attaches the `User` object to the Request.
+2. `RolesGuard`: Evaluates the attached User's role against the endpoint's `@Roles()` metadata. Rejects unauthorized access with `403 Forbidden`.
+
+---
+
+## 8. Background Processing (Tasks Module)
+
+Heavy operations or asynchronous follow-ups are decoupled from the main HTTP request-response lifecycle using **BullMQ**.
+- **Fee Processing:** Instead of delaying the client's transfer request with multiple DB inserts for system fee collection, the `insert_fee` job is queued and processed asynchronously by a background worker.
+- **Resilience:** BullMQ handles retries, delays, and backoff strategies for failed jobs.
+
+---
+
+## 9. Logging & Auditing
+
+The `AuditLogModule` tracks critical system events (e.g., Admin actions, security events).
+- Logs include: `action_type`, `user_id`, `ip_address`, `entity_type`, `entity_id`, and a JSON snapshot of the `changes`.
+- These logs are immutable and provide a secure trail for compliance and debugging.

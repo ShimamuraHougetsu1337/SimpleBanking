@@ -1,116 +1,131 @@
-# Simple Banking App
-
-An internal banking application prototype built using **NestJS**, **React**, and **PostgreSQL**.
-
----
-
-## Features
-
-### Customer Features
-- 🔐 Sign Up / Log In with secure JWT authentication (Access Token + Refresh Token Rotation).
-- 💰 Balance and account details view.
-- 💸 Internal transfer system (atomic database transactions with race condition protection).
-- 📋 Paginated transaction history with filtering capabilities.
-
-### Admin Features
-- 👥 User registry and details listing.
-- 🔒 Lock / Unlock user banking accounts.
-- 📊 Global transactions overview.
+<div align="center">
+  <h1>🏦 Ứng dụng Ngân hàng Đơn giản (Simple Banking App)</h1>
+  <p>Một nguyên mẫu ứng dụng ngân hàng nội bộ mạnh mẽ, bảo mật và hiện đại</p>
+  
+  [![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
+  [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
+  [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+  [![Docker](https://img.shields.io/badge/Docker-2CA5E0?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
+</div>
 
 ---
 
-## Tech Stack
+## 📖 Tổng quan
 
-| Layer | Technology |
-|---|---|
-| Backend | NestJS (TypeScript) + TypeORM |
-| Database | PostgreSQL 16 |
-| Frontend | React (TypeScript) + Vite + Ant Design |
-| State | Zustand + React Query (TanStack Query) |
-| Auth | JWT Access Token + Refresh Token Rotation |
-| Container | Docker + docker-compose |
+**Simple Banking App** là một ứng dụng ngân hàng nội bộ toàn diện, được thiết kế để xử lý xác thực người dùng an toàn, thực hiện các giao dịch tài chính chính xác và cung cấp quyền quản trị giám sát. Được xây dựng bằng các công nghệ web hiện đại, ứng dụng tập trung vào tính ổn định, các thao tác cơ sở dữ liệu nguyên tử (atomic transactions) và mang lại trải nghiệm người dùng mượt mà.
 
 ---
 
-## Setup & Running
+## ✨ Các tính năng chính
 
-### Requirements
+### 👤 Cổng khách hàng (Customer Portal)
+- **Xác thực bảo mật:** Truy cập thông qua JWT với cơ chế xoay vòng Refresh Token (Refresh Token Rotation).
+- **Quản lý tài khoản:** Xem số dư theo thời gian thực và thông tin chi tiết của tài khoản.
+- **Chuyển tiền nội bộ:** Hệ thống chuyển tiền được đảm bảo bởi các giao dịch nguyên tử (atomic transactions) và cơ chế chống lỗi tương tranh (race conditions).
+- **Lịch sử giao dịch:** Xem lịch sử giao dịch phân trang cùng với các tính năng lọc mạnh mẽ.
+- **Xử lý phí bất đồng bộ:** Hệ thống xử lý phí giao dịch không gây tắc nghẽn, được vận hành bởi BullMQ và Redis.
 
-- [Node.js v20+](https://nodejs.org)
+### 🛡️ Bảng điều khiển Quản trị viên (Admin Dashboard)
+- **Quản lý người dùng:** Danh sách đầy đủ và chi tiết của tất cả người dùng trong hệ thống.
+- **Kiểm soát bảo mật:** Khả năng khóa và mở khóa các tài khoản ngân hàng của người dùng.
+- **Giám sát toàn cầu:** Theo dõi và kiểm toán các giao dịch trên toàn hệ thống.
+
+---
+
+## 🛠️ Công nghệ sử dụng (Tech Stack)
+
+| Lớp kiến trúc (Architecture Layer) | Công nghệ & Công cụ (Technologies & Tools) |
+| :--- | :--- |
+| **Backend API** | NestJS (TypeScript), TypeORM |
+| **Cơ sở dữ liệu (Database)** | PostgreSQL 16 |
+| **Message Broker / Cache** | Redis, BullMQ |
+| **Frontend SPA** | React (TypeScript), Vite, Ant Design |
+| **Quản lý State** | Zustand, React Query (TanStack Query) |
+| **Xác thực (Authentication)** | JWT (Access Tokens + Refresh Token Rotation) |
+| **Hạ tầng (Infrastructure)** | Docker, Docker Compose |
+
+---
+
+## 🚀 Hướng dẫn cài đặt
+
+Làm theo các hướng dẫn dưới đây để tải về và chạy dự án trên máy tính cá nhân cho mục đích phát triển và thử nghiệm.
+
+### Yêu cầu hệ thống
+
+Hãy đảm bảo bạn đã cài đặt các phần mềm sau:
+- [Node.js](https://nodejs.org/en/) (phiên bản 20 trở lên)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- Git
 
-### Using Docker Compose (Quick Start)
+### Chạy nhanh bằng Docker Compose
+
+Cách đơn giản nhất để chạy toàn bộ hệ thống (Database, Redis, Backend và Frontend) là thông qua Docker Compose.
 
 ```bash
-# 1. Clone the repository
-git clone <repository-url>
+# 1. Clone repository về máy
+git clone https://github.com/ShimamuraHougetsu1337/SimpleBanking.git
 cd SimpleBankingApp
 
-# 2. Setup environment variables
+# 2. Thiết lập biến môi trường
 cp .env.example .env
-# Edit details inside .env if required (default details are ready for local dev)
 
-# 3. Spin up docker container services
+# 3. Khởi chạy các dịch vụ (container) ngầm
 docker-compose up -d
 
-# 4. Execute database schema migrations
+# 4. Chạy migration cho cơ sở dữ liệu
 docker-compose exec backend npm run migration:run
 
-# 5. Populate seed testing dataset
+# 5. Khởi tạo dữ liệu mẫu (Seed)
 docker-compose exec backend npm run seed
 ```
 
-**Access links:**
-- 🌐 Frontend application: http://localhost:5173
-- 🔌 Backend API server: http://localhost:3000/api
-- 📖 Swagger API docs: http://localhost:3000/api/docs
+**Các đường dẫn truy cập:**
+- 🌐 **Ứng dụng Frontend:** [http://localhost:5173](http://localhost:5173)
+- 🔌 **Backend API:** [http://localhost:3000/api](http://localhost:3000/api)
+- 📖 **Tài liệu API (Swagger):** [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
 
-### Local Environment Setup
-
-For local machine setup details without Docker wrapping, reference [`docs/DEVELOPMENT_GUIDE.md`](docs/DEVELOPMENT_GUIDE.md).
+*Để biết cách cài đặt thủ công mà không dùng Docker, vui lòng tham khảo [Hướng dẫn Phát triển](docs/DEVELOPMENT_GUIDE.md).*
 
 ---
 
-## Testing Accounts
+## 🧪 Tài khoản Thử nghiệm
 
-| User Role | Email | Password |
-|---|---|---|
-| Customer | customer1@banking.test | Test@123456 |
-| Customer | customer2@banking.test | Test@123456 |
-| Admin | admin@banking.test | Admin@123456 |
+Sử dụng các thông tin đăng nhập sau để khám phá hệ thống (sau khi đã chạy bước khởi tạo dữ liệu mẫu):
 
----
-
-## Project Documentation
-
-| File Reference | Description |
-|---|---|
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | High-level system architecture guide |
-| [DATA_MODEL.md](docs/DATA_MODEL.md) | Database schemas & relationships |
-| [API_SPEC.md](docs/API_SPEC.md) | API endpoints specification |
-| [SEQUENCE_DIAGRAMS.md](docs/SEQUENCE_DIAGRAMS.md) | Sequential processing flows mapping |
-| [SECURITY.md](docs/SECURITY.md) | Core application security measures |
-| [FRONTEND_GUIDE.md](docs/FRONTEND_GUIDE.md) | Frontend guidelines & store patterns |
-| [DEVELOPMENT_GUIDE.md](docs/DEVELOPMENT_GUIDE.md) | Development machine configurations |
-| [CHANGELOG.md](docs/CHANGELOG.md) | Sequential changes list log |
+| Vai trò (Role) | Email | Mật khẩu |
+| :--- | :--- | :--- |
+| **Customer** (Khách hàng) | `customer1@banking.test` | `Test@123456` |
+| **Customer** (Khách hàng) | `customer2@banking.test` | `Test@123456` |
+| **Admin** (Quản trị viên) | `admin@banking.test` | `Admin@123456` |
 
 ---
 
-## Project Directory Layout
+## 📂 Cấu trúc Thư mục
 
-```
+Tổng quan về cách tổ chức các thư mục trong dự án:
+
+```text
 SimpleBankingApp/
-├── backend/          # NestJS API code
-├── frontend/         # React SPA code
-├── docs/             # Technical specifications & guides
-├── .agents/          # Developer agent configs & routines
-├── docker-compose.yml
-├── .env.example
-└── README.md
+├── backend/          # Ứng dụng NestJS (Controllers, Services, Modules)
+├── frontend/         # React SPA (Components, Hooks, Pages, Store)
+├── docs/             # Các tài liệu kỹ thuật & kiến trúc
+├── .agents/          # Cấu hình & quy trình tự động cho agent
+├── docker-compose.yml# Cấu hình chạy các container
+├── .env.example      # File mẫu chứa các biến môi trường
+└── README.md         # Tài liệu dự án
 ```
 
 ---
 
-## License
+## 📚 Tài liệu Kỹ thuật
 
-MIT
+Tìm hiểu sâu hơn về kiến trúc và các quyết định thiết kế của hệ thống:
+
+- 🏛️ [Tổng quan Kiến trúc](docs/ARCHITECTURE.md)
+- 🗄️ [Mô hình Dữ liệu & Schema](docs/DATA_MODEL.md)
+- 📡 [Đặc tả API](docs/API_SPEC.md)
+- 🔄 [Sơ đồ Tuần tự (Sequence Diagrams)](docs/SEQUENCE_DIAGRAMS.md)
+- 🔐 [Thực tiễn Bảo mật](docs/SECURITY.md)
+- 💻 [Hướng dẫn Frontend](docs/FRONTEND_GUIDE.md)
+- ⚙️ [Hướng dẫn Phát triển](docs/DEVELOPMENT_GUIDE.md)
+- 📜 [Nhật ký Thay đổi (Changelog)](docs/CHANGELOG.md)
