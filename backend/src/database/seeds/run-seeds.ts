@@ -39,15 +39,35 @@ async function run() {
 
     console.log('Creating users...');
 
-    // Create Admin User
-    const adminUser = new User();
-    adminUser.fullName = 'System Administrator';
-    adminUser.email = 'admin@gmail.com';
-    adminUser.passwordHash = commonPasswordHash;
-    adminUser.role = UserRole.ADMIN;
-    adminUser.status = UserStatus.ACTIVE;
-    const savedAdmin = await queryRunner.manager.save(User, adminUser);
-    console.log(`Admin user created with ID: ${savedAdmin.id}`);
+    // Create SuperAdmin User
+    const superAdminUser = new User();
+    superAdminUser.fullName = 'System Administrator';
+    superAdminUser.email = 'admin@gmail.com';
+    superAdminUser.passwordHash = commonPasswordHash;
+    superAdminUser.role = UserRole.SUPERADMIN;
+    superAdminUser.status = UserStatus.ACTIVE;
+    const savedAdmin = await queryRunner.manager.save(User, superAdminUser);
+    console.log(`SuperAdmin user created with ID: ${savedAdmin.id}`);
+
+    // Create Teller User
+    const tellerUser = new User();
+    tellerUser.fullName = 'Teller 01';
+    tellerUser.email = 'teller@gmail.com';
+    tellerUser.passwordHash = commonPasswordHash;
+    tellerUser.role = UserRole.TELLER;
+    tellerUser.status = UserStatus.ACTIVE;
+    const savedTeller = await queryRunner.manager.save(User, tellerUser);
+    console.log(`Teller user created with ID: ${savedTeller.id}`);
+
+    // Create Manager User
+    const managerUser = new User();
+    managerUser.fullName = 'Manager 01';
+    managerUser.email = 'manager@gmail.com';
+    managerUser.passwordHash = commonPasswordHash;
+    managerUser.role = UserRole.MANAGER;
+    managerUser.status = UserStatus.ACTIVE;
+    const savedManager = await queryRunner.manager.save(User, managerUser);
+    console.log(`Manager user created with ID: ${savedManager.id}`);
 
     // Create Customer User
     const customerUser = new User();
@@ -221,6 +241,14 @@ async function run() {
         displayName: 'Thời gian lưu Customer Audit Log (ngày)',
         description: 'Số ngày lưu trữ nhật ký hoạt động của khách hàng.',
         groupName: 'audit'
+      },
+      {
+        settingKey: 'high_value_transaction_threshold',
+        settingValue: '500000000',
+        dataType: 'decimal',
+        displayName: 'Hạn mức phê duyệt (Nạp/Rút nội bộ)',
+        description: 'Các giao dịch Nạp/Rút nội bộ vượt hạn mức này sẽ yêu cầu Quản lý phê duyệt (Nguyên tắc 4 mắt).',
+        groupName: 'transaction'
       }
     ];
 

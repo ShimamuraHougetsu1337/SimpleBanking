@@ -13,7 +13,9 @@ import { RefreshToken } from '@/auth/entities/refresh-token.entity';
 /** Enum representing user authorization roles. */
 export enum UserRole {
   CUSTOMER = 'customer',
-  ADMIN = 'admin',
+  TELLER = 'teller',
+  MANAGER = 'manager',
+  SUPERADMIN = 'superadmin',
 }
 
 /** Enum representing user account lifecycle status. */

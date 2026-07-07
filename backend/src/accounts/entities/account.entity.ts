@@ -40,6 +40,9 @@ export class Account {
   @Column({ type: 'numeric', precision: 18, scale: 2, default: 0.0 })
   balance: string;
 
+  @Column({ name: 'hold_balance', type: 'numeric', precision: 18, scale: 2, default: 0.0 })
+  holdBalance: string;
+
   @Column({ name: 'used_daily_limit', type: 'numeric', precision: 18, scale: 2, default: 0.0 })
   usedDailyLimit: string;
 
