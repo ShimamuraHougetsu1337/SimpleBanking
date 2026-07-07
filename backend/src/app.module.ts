@@ -10,7 +10,8 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { AdminModule } from './admin/admin.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
-import { ScheduleModule } from '@nestjs/schedule/dist/schedule.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { BullModule } from '@nestjs/bullmq';
 import { APP_GUARD } from '@nestjs/core';
 import { MaintenanceGuard } from './common/guards/maintenance.guard';
 import databaseConfig from './config/database.config';
@@ -35,6 +36,18 @@ import databaseConfig from './config/database.config';
     }),
 
     AuthModule,
+
+    // BullMQ setup for Redis Queue
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST', 'localhost'),
+          port: parseInt(configService.get<string>('REDIS_PORT', '6379'), 10),
+        },
+      }),
+      inject: [ConfigService],
+    }),
     UsersModule,
     AccountsModule,
     TransactionsModule,

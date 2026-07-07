@@ -1,10 +1,11 @@
 import { Injectable, BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Brackets, Repository, DataSource } from 'typeorm';
 import { TransactionsHelper } from './transactions.helper';
 import { Transaction, TransactionType } from './entities/transaction.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
-import { UserRole } from '@/users/entities/user.entity';
 import { TransferDto } from './dto/transfer.dto';
 import { DepositDto } from './dto/deposit.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
@@ -18,6 +19,7 @@ export class TransactionsService {
     private readonly transactionRepository: Repository<Transaction>,
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly transactionsHelper: TransactionsHelper,
+    @InjectQueue('fee_queue') private readonly feeQueue: Queue,
   ) { }
 
   // ===========================================================================
@@ -174,19 +176,10 @@ export class TransactionsService {
     const existing = await this.transactionsHelper.checkIdempotency(dto.idempotencyKey);
     if (existing) return existing;
 
-    return this.transactionsHelper.executeTransaction(async (manager) => {
+    const transactionResult = await this.transactionsHelper.executeTransaction(async (manager) => {
       // Find fee
       const feeSetting = await manager.findOne(SystemSetting, { where: { settingKey: 'transfer_fee' } });
       const feeValue = new Decimal(feeSetting?.settingValue || 0);
-
-      let adminAccountRef: Account | null = null;
-      if (feeValue.gt(0)) {
-        adminAccountRef = await manager.createQueryBuilder(Account, 'account')
-          .innerJoin('account.user', 'user')
-          .where('user.role = :role', { role: UserRole.ADMIN })
-          .getOne();
-        if (!adminAccountRef) throw new NotFoundException('Admin account not found for fee collection');
-      }
 
       // Resolve destination account first without locking to get its ID
       const toAccountRef = await manager.findOne(Account, {
@@ -206,9 +199,6 @@ export class TransactionsService {
 
       // Ensure consistent locking order and avoid deadlocks
       const accountIdsToLock = [fromAccountId, toAccountId];
-      if (adminAccountRef && adminAccountRef.id !== fromAccountId && adminAccountRef.id !== toAccountId) {
-        accountIdsToLock.push(adminAccountRef.id);
-      }
 
       accountIdsToLock.sort();
 
@@ -220,7 +210,6 @@ export class TransactionsService {
 
       const fromAccount = lockedAccounts.get(fromAccountId);
       const toAccount = lockedAccounts.get(toAccountId);
-      const adminAccount = adminAccountRef ? lockedAccounts.get(adminAccountRef.id) : null;
 
       if (!fromAccount || fromAccount.userId !== currentUserId || fromAccount.status !== AccountStatus.ACTIVE) throw new NotFoundException('Source account not found or is locked');
       if (!toAccount) throw new NotFoundException('Destination account not found');
@@ -253,11 +242,7 @@ export class TransactionsService {
       await this.transactionsHelper.updateAccountBalance(manager, fromAccount.id, totalAmount, 'subtract');
       await this.transactionsHelper.updateAccountBalance(manager, toAccount.id, amount, 'add');
 
-      if (adminAccount && feeValue.gt(0)) {
-        await this.transactionsHelper.updateAccountBalance(manager, adminAccount.id, feeValue, 'add');
-      }
-
-      return this.transactionsHelper.createAndSaveTransaction(manager, {
+      const transactionResult = await this.transactionsHelper.createAndSaveTransaction(manager, {
         fromAccountId: fromAccount.id,
         toAccountId: toAccount.id,
         amount: dto.amount,
@@ -267,7 +252,18 @@ export class TransactionsService {
         idempotencyKey: dto.idempotencyKey,
         type: TransactionType.TRANSFER,
       });
+      return transactionResult;
     });
+
+    if (new Decimal(transactionResult.fee).gt(0)) {
+      await this.feeQueue.add('insert_fee', {
+        transactionId: transactionResult.id,
+        amount: transactionResult.fee,
+        type: 'credit',
+      });
+    }
+
+    return transactionResult;
   }
 
   async adminDeposit(accountId: string, amountStr: string, description: string, idempotencyKey: string): Promise<Transaction> {
