@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, SelectQueryBuilder, Brackets } from 'typeorm';
-import { Transaction, TransactionStatus } from './entities/transaction.entity';
+import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import Decimal from 'decimal.js';
 
@@ -43,7 +43,7 @@ export class TransactionsHelper {
     return account;
   }
 
-  validateAmount(amountStr: string | number, balanceStr?: string | number): Decimal {
+  validateAmount(amountStr: string | number, balanceStr?: string | number, holdBalanceStr?: string | number): Decimal {
     const amount = new Decimal(amountStr);
     if (amount.lte(0)) {
       throw new BadRequestException('Amount must be greater than 0');
@@ -53,8 +53,10 @@ export class TransactionsHelper {
     }
     if (balanceStr !== undefined) {
       const balance = new Decimal(balanceStr);
-      if (amount.gt(balance)) {
-        throw new UnprocessableEntityException('Số dư tài khoản không đủ');
+      const holdBalance = new Decimal(holdBalanceStr || 0);
+      const availableBalance = balance.minus(holdBalance);
+      if (amount.gt(availableBalance)) {
+        throw new UnprocessableEntityException('Số dư tài khoản khả dụng không đủ');
       }
     }
     return amount;

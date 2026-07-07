@@ -3,12 +3,12 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Brackets, Repository, DataSource } from 'typeorm';
-import { TransactionsHelper } from './transactions.helper';
-import { Transaction, TransactionType } from './entities/transaction.entity';
+import { TransactionsHelper } from '../helpers/transactions.helper';
+import { Transaction, TransactionType } from '../entities/transaction.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
-import { TransferDto } from './dto/transfer.dto';
-import { DepositDto } from './dto/deposit.dto';
-import { WithdrawDto } from './dto/withdraw.dto';
+import { TransferDto } from '../dto/transfer.dto';
+import { DepositDto } from '../dto/deposit.dto';
+import { WithdrawDto } from '../dto/withdraw.dto';
 import { SystemSetting } from '@/admin/entities/system-setting.entity';
 import Decimal from 'decimal.js';
 
@@ -129,6 +129,8 @@ export class TransactionsService {
     return { data, total, stats };
   }
 
+
+
   async getWeeklyVolume() {
     const today = new Date();
     const last7Days = new Date();
@@ -159,14 +161,7 @@ export class TransactionsService {
     }));
   }
 
-  // ===========================================================================
-  // FEE METHOD
-  // ===========================================================================
 
-  async getTransferFee(): Promise<{ fee: string }> {
-    const feeSetting = await this.dataSource.getRepository(SystemSetting).findOne({ where: { settingKey: 'transfer_fee' } });
-    return { fee: feeSetting?.settingValue || '0.00' };
-  }
 
   // ===========================================================================
   // TRANSACTION METHODS (WRITE)
@@ -266,27 +261,7 @@ export class TransactionsService {
     return transactionResult;
   }
 
-  async adminDeposit(accountId: string, amountStr: string, description: string, idempotencyKey: string): Promise<Transaction> {
-    const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
-    if (existing) return existing;
 
-    return this.transactionsHelper.executeTransaction(async (manager) => {
-      const account = await this.transactionsHelper.getAccountWithLock(manager, accountId);
-      const amount = this.transactionsHelper.validateAmount(amountStr);
-
-      await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
-
-      return this.transactionsHelper.createAndSaveTransaction(manager, {
-        toAccountId: accountId,
-        amount: amountStr,
-        fee: '0.00',
-        totalAmount: amountStr,
-        description,
-        idempotencyKey,
-        type: TransactionType.DEPOSIT,
-      });
-    });
-  }
 
   async deposit(dto: DepositDto, currentUserId: string): Promise<Transaction> {
     const existing = await this.transactionsHelper.checkIdempotency(dto.idempotencyKey);
