@@ -14,9 +14,10 @@ Use this skill when the user triggers the `/commit_message` command or asks you 
    - The agent MUST run `git status` and `git diff` (and/or `git diff --cached`) in the terminal using the `run_command` tool to read the current unstaged and staged changes.
    - If no changes are found, output: *"No changes detected in the git working tree."*
 
-2. **Verify Branch Name**:
+2. **Verify & Enforce Branch Name**:
    - Run `git branch --show-current` to check the current branch name.
-   - Suggest a **meaningful branch name** if the current one is too generic (like `main`, `master`, `dev`) or not suitable for the changes represent a specific task. Use patterns like `feature/feature-name`, `bugfix/issue-name`, or `refactor/refactor-name`.
+   - **CRITICAL**: You MUST NOT commit directly to `main` or `master`. If the current branch is `main` or `master`, you MUST automatically create and switch to a new branch using `git checkout -b <branch_name>` before making any commits.
+   - Suggest or generate a **meaningful branch name** based on the changes. Use patterns like `feature/feature-name`, `bugfix/issue-name`, or `refactor/refactor-name`.
 
 3. **Analyze and Split Commits**:
    - Group changes logically.
