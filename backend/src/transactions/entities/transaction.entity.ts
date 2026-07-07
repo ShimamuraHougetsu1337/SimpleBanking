@@ -74,4 +74,7 @@ export class Transaction {
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
+
+  @Column({ name: 'request_id', type: 'uuid', nullable: true })
+  requestId: string | null;
 }

@@ -2,7 +2,8 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { UsersService } from '@/users/users.service';
 import { UserStatus } from '@/users/entities/user.entity';
 import { AccountsService } from '@/accounts/accounts.service';
-import { TransactionsService } from '@/transactions/transactions.service';
+import { TransactionsService } from '@/transactions/services/transactions.service';
+import { TransactionRequestsService } from '@/transactions/services/transaction-requests.service';
 import { AccountStatus } from '@/accounts/entities/account.entity';
 import { v4 as uuidv4 } from 'uuid';
 import Decimal from 'decimal.js';
@@ -13,6 +14,7 @@ export class AdminService {
     private readonly usersService: UsersService,
     private readonly accountsService: AccountsService,
     private readonly transactionsService: TransactionsService,
+    private readonly transactionRequestsService: TransactionRequestsService,
   ) { }
 
   async getDashboardStats() {
@@ -133,15 +135,40 @@ export class AdminService {
     };
   }
 
-  async depositToAccount(id: string, amount: string, description?: string) {
+  async depositToAccount(id: string, amount: string, currentUserId: string, description?: string) {
     const idempotencyKey = uuidv4();
-    const tx = await this.transactionsService.adminDeposit(
+    const tx = await this.transactionRequestsService.adminDeposit(
       id,
       amount,
       description || 'Admin Deposit',
-      idempotencyKey
+      idempotencyKey,
+      currentUserId
     );
     return tx;
+  }
+
+  async withdrawFromAccount(id: string, amount: string, currentUserId: string, description?: string) {
+    const idempotencyKey = uuidv4();
+    const tx = await this.transactionRequestsService.adminWithdraw(
+      id,
+      amount,
+      description || 'Admin Withdraw',
+      idempotencyKey,
+      currentUserId
+    );
+    return tx;
+  }
+
+  async approveRequest(requestId: string, currentUserId: string) {
+    return await this.transactionRequestsService.approveRequest(requestId, currentUserId);
+  }
+
+  async rejectRequest(requestId: string, currentUserId: string) {
+    return await this.transactionRequestsService.rejectRequest(requestId, currentUserId);
+  }
+
+  async getTransactionRequests(page: number = 1, limit: number = 10, status?: string) {
+    return await this.transactionRequestsService.findAllRequests(page, limit, status);
   }
 
   async getTransactions(page: number = 1, limit: number = 10, search?: string, startDate?: string, endDate?: string, type?: string) {
