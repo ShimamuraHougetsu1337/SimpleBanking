@@ -12,12 +12,14 @@ export enum TransactionType {
   TRANSFER = 'transfer',
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
+  REVERSAL = 'reversal',
 }
 
 export enum TransactionStatus {
-  SUCCESS = 'success',
+  COMPLETED = 'completed',
   FAILED = 'failed',
   PENDING = 'pending',
+  REVERSED = 'reversed',
 }
 
 @Entity('transactions')
@@ -77,4 +79,11 @@ export class Transaction {
 
   @Column({ name: 'request_id', type: 'uuid', nullable: true })
   requestId: string | null;
+
+  /**
+   * References the original transaction when this is a REVERSAL type.
+   * Null for all non-reversal transactions.
+   */
+  @Column({ name: 'original_transaction_id', type: 'uuid', nullable: true })
+  originalTransactionId: string | null;
 }

@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, SelectQueryBuilder, Brackets } from 'typeorm';
 import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
+import { LedgerEntry, LedgerEntryType } from '../entities/ledger-entry.entity';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -62,7 +63,15 @@ export class TransactionsHelper {
     return amount;
   }
 
-  async updateAccountBalance(manager: EntityManager, accountId: string, amount: Decimal, operation: 'add' | 'subtract') {
+  /**
+   * Updates an account balance and returns the new balance after the operation.
+   */
+  async updateAccountBalance(
+    manager: EntityManager,
+    accountId: string,
+    amount: Decimal,
+    operation: 'add' | 'subtract',
+  ): Promise<Decimal> {
     const sign = operation === 'add' ? '+' : '-';
     await manager
       .createQueryBuilder()
@@ -70,12 +79,68 @@ export class TransactionsHelper {
       .set({ balance: () => `balance ${sign} ${amount.toFixed(2)}` })
       .where('id = :id', { id: accountId })
       .execute();
+
+    const updated = await manager.findOne(Account, { where: { id: accountId } });
+    return new Decimal(updated?.balance ?? 0);
+  }
+
+  /**
+   * Creates a DEBIT + CREDIT pair of ledger entries for a transfer.
+   * Must be called within the same QueryRunner transaction as the balance update.
+   */
+  async createLedgerEntriesForTransfer(
+    manager: EntityManager,
+    transactionId: string,
+    debitAccountId: string,
+    creditAccountId: string,
+    amount: Decimal,
+    debitBalanceAfter: Decimal,
+    creditBalanceAfter: Decimal,
+  ): Promise<void> {
+    const amountStr = amount.toFixed(2);
+    const debitEntry = manager.create(LedgerEntry, {
+      accountId: debitAccountId,
+      transactionId,
+      type: LedgerEntryType.DEBIT,
+      amount: amountStr,
+      balanceAfter: debitBalanceAfter.toFixed(2),
+    });
+    const creditEntry = manager.create(LedgerEntry, {
+      accountId: creditAccountId,
+      transactionId,
+      type: LedgerEntryType.CREDIT,
+      amount: amountStr,
+      balanceAfter: creditBalanceAfter.toFixed(2),
+    });
+    await manager.save(LedgerEntry, [debitEntry, creditEntry]);
+  }
+
+  /**
+   * Creates a single ledger entry for a deposit (CREDIT) or withdrawal (DEBIT).
+   * Must be called within the same QueryRunner transaction as the balance update.
+   */
+  async createSingleLedgerEntry(
+    manager: EntityManager,
+    transactionId: string,
+    accountId: string,
+    type: LedgerEntryType,
+    amount: Decimal,
+    balanceAfter: Decimal,
+  ): Promise<void> {
+    const entry = manager.create(LedgerEntry, {
+      accountId,
+      transactionId,
+      type,
+      amount: amount.toFixed(2),
+      balanceAfter: balanceAfter.toFixed(2),
+    });
+    await manager.save(LedgerEntry, entry);
   }
 
   async createAndSaveTransaction(manager: EntityManager, data: Partial<Transaction>): Promise<Transaction> {
     const transaction = manager.create(Transaction, {
       ...data,
-      status: TransactionStatus.SUCCESS,
+      status: TransactionStatus.COMPLETED,
     });
     return manager.save(Transaction, transaction);
   }

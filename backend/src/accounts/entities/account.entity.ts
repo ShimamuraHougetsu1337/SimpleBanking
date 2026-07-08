@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -61,6 +62,14 @@ export class Account {
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
+
+  /**
+   * Soft-delete column. When set, this account is logically closed
+   * but all transaction history and ledger entries are preserved.
+   * TypeORM automatically excludes soft-deleted accounts from all find queries.
+   */
+  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
+  deletedAt: Date | null;
 
   @OneToMany(
     () => Transaction,

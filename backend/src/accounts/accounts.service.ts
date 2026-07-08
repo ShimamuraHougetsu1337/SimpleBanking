@@ -51,6 +51,13 @@ export class AccountsService {
     });
   }
 
+  async findByIdAdmin(id: string): Promise<Account | null> {
+    return this.accountRepository.findOne({
+      where: { id },
+      relations: { user: true },
+    });
+  }
+
   async updateAccount(
     id: string,
     userId: string,
@@ -60,6 +67,7 @@ export class AccountsService {
     if (!account) {
       throw new NotFoundException('Account not found');
     }
+
     Object.assign(account, updateData);
     return this.accountRepository.save(account);
   }
@@ -97,8 +105,22 @@ export class AccountsService {
     if (!account) {
       throw new NotFoundException(`Account with ID "${id}" not found`);
     }
+
     account.status = status;
     return this.accountRepository.save(account);
+  }
+
+  /**
+   * Soft-deletes an account by setting deleted_at.
+   * The record is preserved in the database for regulatory compliance.
+   * All existing transactions and ledger entries remain intact.
+   */
+  async softDelete(id: string): Promise<void> {
+    const account = await this.accountRepository.findOne({ where: { id } });
+    if (!account) {
+      throw new NotFoundException(`Account with ID "${id}" not found`);
+    }
+    await this.accountRepository.softDelete(id);
   }
 
   async createAccount(user: User, createAccountDto: CreateAccountDto): Promise<Account> {

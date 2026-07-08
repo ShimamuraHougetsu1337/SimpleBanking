@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TransactionsController } from './controllers/transactions.controller';
+import { ReversalController } from './controllers/reversal.controller';
 import { TransactionsService } from './services/transactions.service';
 import { TransactionRequestsService } from './services/transaction-requests.service';
 import { FeesService } from './services/fees.service';
+import { ReversalService } from './services/reversal.service';
 import { TransactionsHelper } from './helpers/transactions.helper';
 import { Transaction } from './entities/transaction.entity';
+import { LedgerEntry } from './entities/ledger-entry.entity';
 import { FeeLedger } from './entities/fee-ledger.entity';
 import { FeeSettlementLog } from './entities/fee-settlement-log.entity';
 import { AccountsModule } from '@/accounts/accounts.module';
@@ -13,26 +16,29 @@ import { BullModule } from '@nestjs/bullmq';
 
 import { FeeQueueProcessor } from './jobs/fee-queue.processor';
 import { FeeSettlementCron } from './jobs/fee-settlement.cron';
+import { LedgerService } from './services/ledger.service';
 
 import { TransactionRequest } from './entities/transaction-request.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionRequest, FeeLedger, FeeSettlementLog]),
+    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeLedger, FeeSettlementLog]),
     BullModule.registerQueue({
       name: 'fee_queue',
     }),
     AccountsModule,
   ],
-  controllers: [TransactionsController],
+  controllers: [TransactionsController, ReversalController],
   providers: [
     TransactionsService, 
     TransactionRequestsService, 
     FeesService, 
-    TransactionsHelper, 
+    TransactionsHelper,
+    LedgerService,
+    ReversalService,
     FeeQueueProcessor, 
     FeeSettlementCron
   ],
-  exports: [TransactionsService, TransactionRequestsService],
+  exports: [TransactionsService, TransactionRequestsService, LedgerService],
 })
 export class TransactionsModule {}
