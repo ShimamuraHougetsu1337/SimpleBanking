@@ -172,8 +172,8 @@ export class TransactionsService {
   // TRANSACTION METHODS (WRITE)
   // ===========================================================================
 
-  async transfer(dto: TransferDto, currentUserId: string): Promise<Transaction> {
-    const existing = await this.transactionsHelper.checkIdempotency(dto.idempotencyKey);
+  async transfer(dto: TransferDto, currentUserId: string, idempotencyKey: string): Promise<Transaction> {
+    const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existing) return existing;
 
     const transactionResult = await this.transactionsHelper.executeTransaction(async (manager) => {
@@ -255,7 +255,7 @@ export class TransactionsService {
         fee: feeValue.toFixed(2),
         totalAmount: totalAmount.toFixed(2),
         description: dto.description,
-        idempotencyKey: dto.idempotencyKey,
+        idempotencyKey,
         type: TransactionType.TRANSFER,
       });
 
@@ -318,8 +318,8 @@ export class TransactionsService {
 
 
 
-  async deposit(dto: DepositDto, currentUserId: string): Promise<Transaction> {
-    const existing = await this.transactionsHelper.checkIdempotency(dto.idempotencyKey);
+  async deposit(dto: DepositDto, currentUserId: string, idempotencyKey: string): Promise<Transaction> {
+    const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existing) return existing;
 
     return this.transactionsHelper.executeTransaction(async (manager) => {
@@ -334,7 +334,7 @@ export class TransactionsService {
         fee: '0.00',
         totalAmount: dto.amount.toString(),
         description: dto.description || 'Deposit',
-        idempotencyKey: dto.idempotencyKey,
+        idempotencyKey,
         type: TransactionType.DEPOSIT,
       });
 
@@ -352,8 +352,8 @@ export class TransactionsService {
     });
   }
 
-  async withdraw(dto: WithdrawDto, currentUserId: string): Promise<Transaction> {
-    const existing = await this.transactionsHelper.checkIdempotency(dto.idempotencyKey);
+  async withdraw(dto: WithdrawDto, currentUserId: string, idempotencyKey: string): Promise<Transaction> {
+    const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existing) return existing;
 
     return this.transactionsHelper.executeTransaction(async (manager) => {
@@ -368,7 +368,7 @@ export class TransactionsService {
         fee: '0.00',
         totalAmount: dto.amount.toString(),
         description: dto.description || 'Withdraw',
-        idempotencyKey: dto.idempotencyKey,
+        idempotencyKey,
         type: TransactionType.WITHDRAW,
       });
 

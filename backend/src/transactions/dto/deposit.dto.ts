@@ -10,9 +10,5 @@ export class DepositDto {
   amount: number;
 
   @IsString()
-  @IsNotEmpty()
-  idempotencyKey: string;
-
-  @IsString()
   description?: string;
 }

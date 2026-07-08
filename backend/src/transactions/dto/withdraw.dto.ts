@@ -10,9 +10,5 @@ export class WithdrawDto {
   amount: number;
 
   @IsString()
-  @IsNotEmpty()
-  idempotencyKey: string;
-
-  @IsString()
   description?: string;
 }

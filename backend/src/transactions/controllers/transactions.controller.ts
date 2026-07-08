@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Query, Headers, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { TransactionsService } from '../services/transactions.service';
@@ -10,6 +10,7 @@ import { WithdrawDto } from '../dto/withdraw.dto';
 import { GetTransactionsQueryDto } from '../dto/get-transactions-query.dto';
 import { CustomerLog } from '@/audit-logs/decorators/customer-log.decorator';
 import { CustomerAuditAction } from '@/audit-logs/enums/customer-audit-action.enum';
+import { isUUID } from 'class-validator';
 
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
@@ -21,20 +22,50 @@ export class TransactionsController {
 
   @Post('transfer')
   @CustomerLog(CustomerAuditAction.TRANSFER)
-  async transfer(@CurrentUser() user: User, @Body() dto: TransferDto) {
-    return this.transactionsService.transfer(dto, user.id);
+  async transfer(
+    @CurrentUser() user: User,
+    @Body() dto: TransferDto,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
+  ) {
+    if (!idempotencyKey) {
+      throw new BadRequestException('X-Idempotency-Key header is required');
+    }
+    if (!isUUID(idempotencyKey, '4')) {
+      throw new BadRequestException('X-Idempotency-Key must be a valid UUID v4');
+    }
+    return this.transactionsService.transfer(dto, user.id, idempotencyKey);
   }
 
   @Post('deposit')
   @CustomerLog(CustomerAuditAction.DEPOSIT)
-  async deposit(@CurrentUser() user: User, @Body() dto: DepositDto) {
-    return this.transactionsService.deposit(dto, user.id);
+  async deposit(
+    @CurrentUser() user: User,
+    @Body() dto: DepositDto,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
+  ) {
+    if (!idempotencyKey) {
+      throw new BadRequestException('X-Idempotency-Key header is required');
+    }
+    if (!isUUID(idempotencyKey, '4')) {
+      throw new BadRequestException('X-Idempotency-Key must be a valid UUID v4');
+    }
+    return this.transactionsService.deposit(dto, user.id, idempotencyKey);
   }
 
   @Post('withdraw')
   @CustomerLog(CustomerAuditAction.WITHDRAW)
-  async withdraw(@CurrentUser() user: User, @Body() dto: WithdrawDto) {
-    return this.transactionsService.withdraw(dto, user.id);
+  async withdraw(
+    @CurrentUser() user: User,
+    @Body() dto: WithdrawDto,
+    @Headers('x-idempotency-key') idempotencyKey?: string,
+  ) {
+    if (!idempotencyKey) {
+      throw new BadRequestException('X-Idempotency-Key header is required');
+    }
+    if (!isUUID(idempotencyKey, '4')) {
+      throw new BadRequestException('X-Idempotency-Key must be a valid UUID v4');
+    }
+    return this.transactionsService.withdraw(dto, user.id, idempotencyKey);
   }
 
   @Get('transfer-fee')

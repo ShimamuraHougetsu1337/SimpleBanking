@@ -17,11 +17,12 @@ export function useWithdraw() {
     retry: (failureCount, error) => shouldRetryMutation(failureCount, error, 2),
     retryDelay: (retryAttempt) => Math.min(1000 * 2 ** retryAttempt, 10000),
     mutationFn: async (variables: WithdrawVariables) => {
-      const payload = {
-        ...variables,
-        idempotencyKey: uuidv4(),
-      };
-      const res = await api.post('/transactions/withdraw', payload);
+      const idempotencyKey = uuidv4();
+      const res = await api.post('/transactions/withdraw', variables, {
+        headers: {
+          'X-Idempotency-Key': idempotencyKey,
+        },
+      });
       return res.data;
     },
     onSuccess: (_, variables) => {

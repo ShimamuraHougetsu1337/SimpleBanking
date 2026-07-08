@@ -6,7 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
-## [Unreleased]
+## [2026-07-08]
+
+### Added
+- **System Revenue Account (`SYS_REVENUE`)**: Introduced a dedicated real account belonging to `SYSTEM_CORE` user (`system@banking.local`) to hold swept fees from standard transfers.
+- **Account View Tabs**: Added "Tài khoản khách hàng" (Customer Accounts) and "Tài khoản hệ thống" (System Accounts) tabs on the admin accounts page.
+- **Transaction Details Modal**: Added a details modal popup (icon button) on the admin transaction table, displaying detailed transaction info (including "Original Transaction ID" for reversals and a quick copy function).
+- **User Update Timestamp**: Displayed the "Ngày cập nhật" (Updated At) date-time column on the admin users management page, which defaults to `createdAt` upon user creation.
+
+### Changed
+- **Double-Entry Fee Settlement Routing**: Refactored `fee-settlement.cron.ts` to sweep fees from `SYS_FEE_SUSPENSE` into the newly created `SYS_REVENUE` treasury account.
+- **Virtual Fee Suspense Sink**: Replaced custom `fee_ledger` tables and Redis queues with real-time credit ledger entries to `SYS_FEE_SUSPENSE` (an insert-only ledger account with `0.00` sentinel balance).
+- **System Guards & Protections**: Enforced strict validation preventing soft deletes, freezing, or editing system accounts (`SYS_FEE_SUSPENSE`, `SYS_REVENUE`) or system users (`SYSTEM_CORE`).
+- **UI Clean-up**: Hidden or disabled sensitive admin operations (deposit/freeze) for system accounts in the admin UI. Removed description and reversal columns from the main admin transaction list table in favor of the details modal.
 
 ---
 
