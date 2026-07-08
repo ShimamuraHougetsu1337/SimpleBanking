@@ -1,11 +1,11 @@
 import {
-  ConflictException,
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsRelations } from 'typeorm';
+import { Repository, FindOptionsRelations, OptimisticLockVersionMismatchError } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserStatus, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -82,7 +82,16 @@ export class UsersService {
     }
 
     user.status = status;
-    return this.userRepository.save(user);
+    try {
+      return await this.userRepository.save(user);
+    } catch (error) {
+      if (error instanceof OptimisticLockVersionMismatchError) {
+        throw new ConflictException(
+          'Thông tin người dùng đã được cập nhật bởi một phiên làm việc khác. Vui lòng tải lại trang.',
+        );
+      }
+      throw error;
+    }
   }
 
   /**
@@ -153,7 +162,16 @@ export class UsersService {
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.phoneNumber !== undefined) user.phoneNumber = dto.phoneNumber;
 
-    return this.userRepository.save(user);
+    try {
+      return await this.userRepository.save(user);
+    } catch (error) {
+      if (error instanceof OptimisticLockVersionMismatchError) {
+        throw new ConflictException(
+          'Thông tin người dùng đã được cập nhật bởi một phiên làm việc khác. Vui lòng tải lại trang.',
+        );
+      }
+      throw error;
+    }
   }
 
   async changePassword(id: string, oldPassword: string, newPassword: string): Promise<void> {
@@ -166,7 +184,16 @@ export class UsersService {
       throw new ConflictException('Incorrect old password');
     }
     user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
-    await this.userRepository.save(user);
+    try {
+      await this.userRepository.save(user);
+    } catch (error) {
+      if (error instanceof OptimisticLockVersionMismatchError) {
+        throw new ConflictException(
+          'Thông tin người dùng đã được cập nhật bởi một phiên làm việc khác. Vui lòng tải lại trang.',
+        );
+      }
+      throw error;
+    }
   }
 
   async softDelete(id: string): Promise<void> {
