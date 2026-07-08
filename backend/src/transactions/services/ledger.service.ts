@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { EntityManager } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { LedgerEntry, LedgerEntryType } from '../entities/ledger-entry.entity';
 import Decimal from 'decimal.js';
 
@@ -9,6 +10,11 @@ import Decimal from 'decimal.js';
  */
 @Injectable()
 export class LedgerService {
+  constructor(
+    @InjectRepository(LedgerEntry)
+    private readonly repo: Repository<LedgerEntry>,
+  ) {}
+
   /**
    * Creates a pair of ledger entries (DEBIT + CREDIT) for a transfer transaction.
    * Must be called inside an active TypeORM QueryRunner transaction.
@@ -84,5 +90,24 @@ export class LedgerService {
       .getRawOne<{ balance: string | null }>();
 
     return new Decimal(result?.balance ?? 0);
+  }
+
+  async getEntriesByAccount(accountId: string, page: number = 1, limit: number = 50) {
+    const [data, total] = await this.repo.findAndCount({
+      where: { accountId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+      relations: { transaction: true },
+    });
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }

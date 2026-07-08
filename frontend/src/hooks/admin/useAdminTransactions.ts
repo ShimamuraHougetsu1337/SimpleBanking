@@ -1,7 +1,8 @@
 import { useState, useDeferredValue } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
 import { adminService, type AdminTransaction } from '@/services/admin.service';
+import { message } from 'antd';
 
 export function useAdminTransactions() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +31,20 @@ export function useAdminTransactions() {
     staleTime: 10000,
   });
 
+  const queryClient = useQueryClient();
+
+  const reverseMutation = useMutation({
+    mutationFn: (transactionId: string) => adminService.reverseTransaction(transactionId),
+    onSuccess: () => {
+      message.success('Transaction reversed successfully');
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.transactions.all });
+    },
+    onError: (err: any) => {
+      const errMsg = err.response?.data?.message || 'Failed to reverse transaction';
+      message.error(errMsg);
+    },
+  });
+
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setPage(1); // Reset page
@@ -56,6 +71,10 @@ export function useAdminTransactions() {
     }
   };
 
+  const handleReverseTransaction = (transactionId: string) => {
+    reverseMutation.mutate(transactionId);
+  };
+
   const transactions = data?.data ?? [];
 
   return {
@@ -70,6 +89,7 @@ export function useAdminTransactions() {
     handleTypeFilterChange,
     handleDateRangeChange,
     handlePageChange,
+    handleReverseTransaction,
     stats: {
       totalVolume: data?.meta?.totalVolume ?? '0',
       successfulCount: data?.meta?.successfulCount ?? 0,

@@ -30,6 +30,8 @@ async function run() {
     // Truncate tables in order to avoid foreign key constraint violations
     await queryRunner.query('TRUNCATE TABLE system_settings CASCADE;');
     await queryRunner.query('TRUNCATE TABLE transactions CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE ledger_entries CASCADE;');
+    await queryRunner.query('TRUNCATE TABLE fee_settlement_logs CASCADE;');
     await queryRunner.query('TRUNCATE TABLE refresh_tokens CASCADE;');
     await queryRunner.query('TRUNCATE TABLE accounts CASCADE;');
     await queryRunner.query('TRUNCATE TABLE users CASCADE;');
@@ -78,6 +80,30 @@ async function run() {
     customerUser.status = UserStatus.ACTIVE;
     const savedCustomer = await queryRunner.manager.save(User, customerUser);
     console.log(`Customer user created with ID: ${savedCustomer.id}`);
+
+    // =========================================================================
+    // Create SYSTEM_CORE internal user + SYS_FEE_SUSPENSE account
+    // This account is used by the double-entry ledger to accumulate transaction
+    // fees without creating DB lock contention. It must ALWAYS exist.
+    // =========================================================================
+    const systemUser = new User();
+    systemUser.fullName = 'SYSTEM_CORE';
+    systemUser.email = 'system@banking.local';
+    systemUser.passwordHash = await bcrypt.hash(`system_internal_${Date.now()}`, BCRYPT_SALT_ROUNDS);
+    systemUser.role = UserRole.SUPERADMIN;
+    systemUser.status = UserStatus.ACTIVE;
+    const savedSystemUser = await queryRunner.manager.save(User, systemUser);
+    console.log(`SYSTEM_CORE user created with ID: ${savedSystemUser.id}`);
+
+    const suspenseAccount = new Account();
+    suspenseAccount.user = savedSystemUser;
+    suspenseAccount.accountNumber = 'SYS_FEE_SUSPENSE';
+    suspenseAccount.name = 'Tài khoản Treo Phí Hệ Thống';
+    suspenseAccount.balance = '0.00';
+    suspenseAccount.currency = 'VND';
+    suspenseAccount.status = AccountStatus.ACTIVE;
+    await queryRunner.manager.save(Account, suspenseAccount);
+    console.log('SYS_FEE_SUSPENSE account created.');
 
     console.log('Creating accounts...');
 

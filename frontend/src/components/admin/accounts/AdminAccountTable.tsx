@@ -1,5 +1,6 @@
 import { Table, Typography, Tag, Space, ConfigProvider, Button, Tooltip } from 'antd';
-import { LockOutlined, UnlockOutlined, DollarOutlined } from '@ant-design/icons';
+import { LockOutlined, UnlockOutlined, DollarOutlined, BookOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import type { AdminAccount } from '@/services/admin.service';
 
 const { Text } = Typography;
@@ -31,6 +32,8 @@ export const AdminAccountTable = ({
   onUnfreezeAccount,
   onOpenDepositModal,
 }: AdminAccountTableProps) => {
+  const navigate = useNavigate();
+
   const columns = [
     {
       title: 'Số tài khoản',
@@ -90,6 +93,14 @@ export const AdminAccountTable = ({
       align: 'center' as const,
       render: (record: AdminAccount) => (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+          <Button
+            type="text"
+            icon={<BookOutlined />}
+            onClick={() => navigate(`/admin/accounts/${record.id}/ledger`)}
+            style={{ color: '#8B5CF6' }}
+          >
+            Sổ cái
+          </Button>
           <Button
             type="text"
             icon={<DollarOutlined />}

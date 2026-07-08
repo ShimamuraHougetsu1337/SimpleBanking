@@ -1,6 +1,4 @@
 import { Injectable, BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Brackets, Repository, DataSource } from 'typeorm';
 import { TransactionsHelper } from '../helpers/transactions.helper';
@@ -20,7 +18,6 @@ export class TransactionsService {
     private readonly transactionRepository: Repository<Transaction>,
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly transactionsHelper: TransactionsHelper,
-    @InjectQueue('fee_queue') private readonly feeQueue: Queue,
   ) { }
 
   // ===========================================================================
@@ -118,7 +115,7 @@ export class TransactionsService {
     const statsQuery = query.clone();
     const rawStats: { totalVolume: string | null; successfulCount: string | null; failedCount: string | null } | undefined = await statsQuery
       .select('SUM(CAST(tx.amount AS NUMERIC))', 'totalVolume')
-      .addSelect(`SUM(CASE WHEN tx.status = 'success' THEN 1 ELSE 0 END)`, 'successfulCount')
+      .addSelect(`SUM(CASE WHEN tx.status = 'completed' THEN 1 ELSE 0 END)`, 'successfulCount')
       .addSelect(`SUM(CASE WHEN tx.status = 'failed' THEN 1 ELSE 0 END)`, 'failedCount')
       .getRawOne();
 
@@ -242,7 +239,13 @@ export class TransactionsService {
           .execute();
       }
 
-      const debitBalanceAfter = await this.transactionsHelper.updateAccountBalance(manager, fromAccount.id, totalAmount, 'subtract');
+      const debitBalanceAfterAmount = await this.transactionsHelper.updateAccountBalance(manager, fromAccount.id, amount, 'subtract');
+
+      let debitBalanceAfterFee = debitBalanceAfterAmount;
+      if (feeValue.gt(0)) {
+        debitBalanceAfterFee = await this.transactionsHelper.updateAccountBalance(manager, fromAccount.id, feeValue, 'subtract');
+      }
+
       const creditBalanceAfter = await this.transactionsHelper.updateAccountBalance(manager, toAccount.id, amount, 'add');
 
       const transactionResult = await this.transactionsHelper.createAndSaveTransaction(manager, {
@@ -256,27 +259,59 @@ export class TransactionsService {
         type: TransactionType.TRANSFER,
       });
 
-      // Record double-entry ledger: DEBIT sender (totalAmount incl. fee), CREDIT receiver (amount only)
-      await this.transactionsHelper.createLedgerEntriesForTransfer(
-        manager,
-        transactionResult.id,
-        fromAccount.id,
-        toAccount.id,
-        totalAmount,
-        debitBalanceAfter,
-        creditBalanceAfter,
-      );
+      // Build ledger entries: Debit sender (amount), Debit sender (fee), Credit receiver, Credit suspense (fee)
+      const suspenseAccountId = await this.transactionsHelper.getSuspenseAccountId();
+
+      const ledgerEntries: {
+        accountId: string;
+        transactionId: string;
+        type: LedgerEntryType;
+        amount: Decimal;
+        balanceAfter: Decimal;
+      }[] = [
+          // 1. Ghi nợ người gửi — số tiền gốc
+          {
+            accountId: fromAccount.id,
+            transactionId: transactionResult.id,
+            type: LedgerEntryType.DEBIT,
+            amount,
+            balanceAfter: debitBalanceAfterAmount,
+          },
+        ];
+
+      if (feeValue.gt(0)) {
+        // 2. Ghi nợ người gửi — phí giao dịch
+        ledgerEntries.push({
+          accountId: fromAccount.id,
+          transactionId: transactionResult.id,
+          type: LedgerEntryType.DEBIT,
+          amount: feeValue,
+          balanceAfter: debitBalanceAfterFee,
+        });
+
+        // 3. Ghi có SYS_FEE_SUSPENSE — phí thu được (INSERT-only, no lock)
+        ledgerEntries.push({
+          accountId: suspenseAccountId,
+          transactionId: transactionResult.id,
+          type: LedgerEntryType.CREDIT,
+          amount: feeValue,
+          balanceAfter: new Decimal(0), // sentinel — suspense balance is computed via SUM query
+        });
+      }
+
+      // 4. Ghi có người nhận — số tiền gốc
+      ledgerEntries.push({
+        accountId: toAccount.id,
+        transactionId: transactionResult.id,
+        type: LedgerEntryType.CREDIT,
+        amount,
+        balanceAfter: creditBalanceAfter,
+      });
+
+      await this.transactionsHelper.createLedgerEntries(manager, ledgerEntries);
 
       return transactionResult;
     });
-
-    if (new Decimal(transactionResult.fee).gt(0)) {
-      await this.feeQueue.add('insert_fee', {
-        transactionId: transactionResult.id,
-        amount: transactionResult.fee,
-        type: 'credit',
-      });
-    }
 
     return transactionResult;
   }
@@ -303,14 +338,15 @@ export class TransactionsService {
         type: TransactionType.DEPOSIT,
       });
 
-      await this.transactionsHelper.createSingleLedgerEntry(
-        manager,
-        tx.id,
-        account.id,
-        LedgerEntryType.CREDIT,
-        amount,
-        balanceAfter,
-      );
+      await this.transactionsHelper.createLedgerEntries(manager, [
+        {
+          accountId: account.id,
+          transactionId: tx.id,
+          type: LedgerEntryType.CREDIT,
+          amount,
+          balanceAfter,
+        },
+      ]);
 
       return tx;
     });
@@ -336,14 +372,15 @@ export class TransactionsService {
         type: TransactionType.WITHDRAW,
       });
 
-      await this.transactionsHelper.createSingleLedgerEntry(
-        manager,
-        tx.id,
-        account.id,
-        LedgerEntryType.DEBIT,
-        amount,
-        balanceAfter,
-      );
+      await this.transactionsHelper.createLedgerEntries(manager, [
+        {
+          accountId: account.id,
+          transactionId: tx.id,
+          type: LedgerEntryType.DEBIT,
+          amount,
+          balanceAfter,
+        },
+      ]);
 
       return tx;
     });

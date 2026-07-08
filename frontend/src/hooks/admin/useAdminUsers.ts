@@ -11,15 +11,17 @@ export function useAdminUsers() {
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [includeDeleted, setIncludeDeleted] = useState(false);
 
   // Fetch paginated users from the admin API
   const { data, isLoading, error } = useQuery({
-    queryKey: queryKeys.admin.users.list({ page, limit: pageSize, search: deferredSearchQuery }),
+    queryKey: queryKeys.admin.users.list({ page, limit: pageSize, search: deferredSearchQuery, includeDeleted }),
     queryFn: () =>
       adminService.getUsers({
         page,
         limit: pageSize,
         search: deferredSearchQuery || undefined,
+        includeDeleted,
       }),
     placeholderData: (previousData) => previousData,
     staleTime: 10000,
@@ -51,6 +53,19 @@ export function useAdminUsers() {
     },
   });
 
+  // Mutation to soft delete user
+  const deleteMutation = useMutation({
+    mutationFn: (userId: string) => adminService.softDeleteUser(userId),
+    onSuccess: () => {
+      message.success('User soft deleted successfully');
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.users.all });
+    },
+    onError: (err: any) => {
+      const errMsg = err.response?.data?.message || 'Failed to delete user';
+      message.error(errMsg);
+    },
+  });
+
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setPage(1);
@@ -71,6 +86,10 @@ export function useAdminUsers() {
     unlockMutation.mutate(userId);
   };
 
+  const handleDeleteUser = (userId: string) => {
+    deleteMutation.mutate(userId);
+  };
+
 
   return {
     users: data?.data ?? [],
@@ -78,10 +97,13 @@ export function useAdminUsers() {
     page,
     pageSize,
     searchQuery,
+    includeDeleted,
+    setIncludeDeleted,
     handleSearchChange,
     handlePageChange,
     handleLockUser,
     handleUnlockUser,
+    handleDeleteUser,
     isLoading,
     error,
   };

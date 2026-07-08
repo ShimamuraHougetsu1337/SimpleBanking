@@ -3,6 +3,7 @@ import {
   Get,
   Patch,
   Post,
+  Delete,
   Body,
   Param,
   Query,
@@ -39,12 +40,15 @@ export class AdminController {
 
   @Get('users')
   @ApiOperation({ summary: 'List all users in the system (Admin only)' })
-  async getUsers(@Query() query: GetUsersQueryDto) {
+  async getUsers(
+    @Query() query: GetUsersQueryDto,
+  ) {
     return this.adminService.getUsers(
       query.page,
       query.limit,
       query.search,
       query.status,
+      query.includeDeleted
     );
   }
 
@@ -85,6 +89,21 @@ export class AdminController {
     return this.adminService.updateUserStatus(id, dto.status, admin.id);
   }
 
+  @Get('users/:id/history')
+  @ApiOperation({ summary: 'Get history of user profile changes' })
+  async getUserHistory(@Param('id', ParseUUIDPipe) id: string) {
+    return this.adminService.getUserHistory(id);
+  }
+
+  @Delete('users/:id')
+  @Roles(UserRole.SUPERADMIN)
+  @ApiOperation({ summary: 'Soft delete a user account (SuperAdmin only)' })
+  @AdminLog(AdminAuditAction.DELETE_USER)
+  async softDeleteUser(@Param('id', ParseUUIDPipe) id: string) {
+    await this.adminService.softDeleteUser(id);
+    return { message: 'User deleted successfully' };
+  }
+
   @Get('dashboard-stats')
   @ApiOperation({ summary: 'Get overall dashboard statistics' })
   async getDashboardStats() {
@@ -105,6 +124,14 @@ export class AdminController {
       search,
       status as AccountStatus, // Cast to AccountStatus
     );
+  }
+
+  @Get('accounts/:id/ledger')
+  @ApiOperation({ summary: 'Get ledger entries for an account' })
+  async getAccountLedger(
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.adminService.getAccountLedger(id);
   }
 
   @Patch('accounts/:id/status')

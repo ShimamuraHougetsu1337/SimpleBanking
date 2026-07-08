@@ -18,6 +18,8 @@ import {
   LockOutlined,
   UnlockOutlined,
   EyeOutlined,
+  HistoryOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { useAdminUsers, type AdminUser } from '@/hooks/admin/useAdminUsers';
 import { useCreateUser } from '@/hooks/admin/useCreateUser';
@@ -25,6 +27,8 @@ import { useAuthStore } from '@/store/auth.store';
 import { UserRole } from '@/constants/roles';
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
+import { UserHistoryModal } from '@/components/admin/users/UserHistoryModal';
+import { Switch } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -46,11 +50,15 @@ export default function AdminUsersPage() {
     handlePageChange,
     handleLockUser,
     handleUnlockUser,
+    handleDeleteUser,
+    includeDeleted,
+    setIncludeDeleted,
     isLoading,
   } = useAdminUsers();
 
   const currentUser = useAuthStore((s) => s.user);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [historyUserId, setHistoryUserId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [form] = Form.useForm();
   const createUserMutation = useCreateUser();
@@ -143,9 +151,15 @@ export default function AdminUsersPage() {
             icon={<EyeOutlined />}
             onClick={() => setSelectedUser(record)}
             style={{ color: '#3B82F6' }}
-          >
-            Chi tiết
-          </Button>
+            title="Chi tiết"
+          />
+          <Button
+            type="text"
+            icon={<HistoryOutlined />}
+            onClick={() => setHistoryUserId(record.id)}
+            style={{ color: '#8B5CF6' }}
+            title="Lịch sử"
+          />
           {currentUser?.role !== UserRole.SUPERADMIN ? (
             <Tooltip title="Chỉ Super Admin mới được thực hiện thao tác này">
               <span>
@@ -180,6 +194,23 @@ export default function AdminUsersPage() {
               Mở khóa
             </Button>
           )}
+          {currentUser?.role === UserRole.SUPERADMIN && (
+            <Button
+              danger
+              type="text"
+              icon={<DeleteOutlined />}
+              onClick={() => Modal.confirm({
+                title: 'Xác nhận xóa người dùng?',
+                content: 'Hành động này sẽ vô hiệu hóa hoàn toàn người dùng (Xóa mềm). Bạn có chắc chắn không?',
+                okText: 'Xóa',
+                okType: 'danger',
+                cancelText: 'Hủy',
+                onOk: () => handleDeleteUser(record.id)
+              })}
+              style={{ display: 'inline-flex', alignItems: 'center' }}
+              title="Xóa mềm"
+            />
+          )}
         </div>
       ),
     },
@@ -197,6 +228,10 @@ export default function AdminUsersPage() {
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
           />
+          <Space size={8}>
+            <Switch checked={includeDeleted} onChange={(checked) => setIncludeDeleted(checked)} />
+            <Text type="secondary">Hiển thị đã xóa</Text>
+          </Space>
           {currentUser?.role === UserRole.SUPERADMIN && (
             <Button type="primary" style={{ borderRadius: 8, height: 40 }} onClick={() => setIsCreateModalOpen(true)}>Tạo Admin (Teller/Manager)</Button>
           )}
@@ -237,6 +272,12 @@ export default function AdminUsersPage() {
           />
         </ConfigProvider>
       </Card>
+
+      <UserHistoryModal 
+        open={!!historyUserId} 
+        userId={historyUserId} 
+        onClose={() => setHistoryUserId(null)} 
+      />
 
       <Modal
         open={!!selectedUser}

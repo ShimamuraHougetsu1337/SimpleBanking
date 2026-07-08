@@ -111,9 +111,15 @@ export class TransactionRequestsService {
       });
       const savedTx = await manager.save(Transaction, transaction);
 
-      await this.transactionsHelper.createSingleLedgerEntry(
-        manager, savedTx.id, accountId, LedgerEntryType.CREDIT, amount, balanceAfterDeposit,
-      );
+      await this.transactionsHelper.createLedgerEntries(manager, [
+        {
+          accountId,
+          transactionId: savedTx.id,
+          type: LedgerEntryType.CREDIT,
+          amount,
+          balanceAfter: balanceAfterDeposit,
+        }
+      ]);
 
       // Link transaction back
       savedRequest.transactionId = savedTx.id;
@@ -181,9 +187,15 @@ export class TransactionRequestsService {
       });
       const savedTx = await manager.save(Transaction, transaction);
 
-      await this.transactionsHelper.createSingleLedgerEntry(
-        manager, savedTx.id, accountId, LedgerEntryType.DEBIT, amount, balanceAfterWithdraw,
-      );
+      await this.transactionsHelper.createLedgerEntries(manager, [
+        {
+          accountId,
+          transactionId: savedTx.id,
+          type: LedgerEntryType.DEBIT,
+          amount,
+          balanceAfter: balanceAfterWithdraw,
+        }
+      ]);
 
       savedRequest.transactionId = savedTx.id;
       await manager.save(TransactionRequest, savedRequest);
@@ -260,9 +272,15 @@ export class TransactionRequestsService {
 
       const savedTx = await manager.save(Transaction, transaction);
 
-      await this.transactionsHelper.createSingleLedgerEntry(
-        manager, savedTx.id, account.id, ledgerType, amount, balanceAfterApproval,
-      );
+      await this.transactionsHelper.createLedgerEntries(manager, [
+        {
+          accountId: account.id,
+          transactionId: savedTx.id,
+          type: ledgerType,
+          amount,
+          balanceAfter: balanceAfterApproval,
+        }
+      ]);
 
       request.transactionId = savedTx.id;
       await manager.save(TransactionRequest, request);
