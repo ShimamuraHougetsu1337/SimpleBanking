@@ -10,4 +10,5 @@ export class CreateCustomerAuditLogDto {
   transactionId?: string | null;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
+  userAgent?: string | null;
 }

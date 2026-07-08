@@ -133,11 +133,14 @@ export class AdminService {
   }
 
   async updateAccountStatus(id: string, status: AccountStatus) {
+    // Fetch old status BEFORE update so audit log can record accurate before/after
+    const before = await this.accountsService.findByIdAdmin(id);
     const account = await this.accountsService.updateStatus(id, status);
     return {
       id: account.id,
       accountNumber: account.accountNumber,
       status: account.status,
+      oldStatus: before?.status ?? null,  // consumed by audit interceptor, not exposed to UI
     };
   }
 

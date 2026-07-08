@@ -33,6 +33,9 @@ export class AdminAuditLog {
   @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress: string | null;
 
+  @Column({ name: 'user_agent', type: 'varchar', length: 500, nullable: true })
+  userAgent: string | null;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 }

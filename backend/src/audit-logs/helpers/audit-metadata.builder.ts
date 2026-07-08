@@ -75,7 +75,7 @@ export class AuditMetadataBuilder {
       case AdminAuditAction.UNLOCK_USER:
       case AdminAuditAction.FREEZE_ACCOUNT:
       case AdminAuditAction.UNFREEZE_ACCOUNT:
-        meta.data_changes.old_data = { status: responseData?.['status'] === 'locked' ? 'active' : 'locked' };
+        meta.data_changes.old_data = { status: responseData?.['oldStatus'] ?? null };
         meta.data_changes.new_data = { status: responseData?.['status'] ?? null };
         break;
       case AdminAuditAction.ADMIN_DEPOSIT:
