@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, OptimisticLockVersionMismatchError } from 'typeorm';
 import { SystemSetting } from './entities/system-setting.entity';
 
 export interface ParsedSystemSetting extends Omit<SystemSetting, 'settingValue'> {
@@ -28,6 +28,8 @@ export class SystemSettingsService {
         return parseInt(value, 10);
       case 'float':
         return parseFloat(value);
+      case 'string':
+        return value;
       case 'boolean':
         return value === 'true';
       case 'json':
@@ -36,39 +38,30 @@ export class SystemSettingsService {
         } catch {
           return null;
         }
-      case 'decimal':
-      case 'string':
       default:
         return value;
     }
   }
 
-  private serializeValue(value: any, type: string): string {
-    switch (type) {
-      case 'boolean':
-        return value ? 'true' : 'false';
-      case 'json':
-        return JSON.stringify(value);
-      case 'int':
-      case 'float':
-      case 'decimal':
-      case 'string':
-      default:
-        return String(value);
+  private serializeValue(value: unknown, type: string): string {
+    if (type === 'json') {
+      return JSON.stringify(value);
     }
+    return String(value);
   }
 
   async getAllSettings(): Promise<ParsedSystemSetting[]> {
     const settings = await this.settingsRepo.find();
     return settings.map((s) => ({
       settingKey: s.settingKey,
-      value: this.parseValue(s.settingValue, s.dataType),
-      dataType: s.dataType,
       displayName: s.displayName,
       description: s.description,
+      dataType: s.dataType,
       groupName: s.groupName,
+      value: this.parseValue(s.settingValue, s.dataType),
       updatedBy: s.updatedBy,
       updatedAt: s.updatedAt,
+      version: s.version,
     }));
   }
 
@@ -97,7 +90,16 @@ export class SystemSettingsService {
       }
     }
 
-    await this.settingsRepo.save(settings);
+    try {
+      await this.settingsRepo.save(settings);
+    } catch (error) {
+      if (error instanceof OptimisticLockVersionMismatchError) {
+        throw new ConflictException(
+          'Cấu hình cài đặt đã bị thay đổi bởi một phiên làm việc khác. Vui lòng tải lại trang.',
+        );
+      }
+      throw error;
+    }
     return { settings: await this.getAllSettings(), oldValues, newValues };
   }
 }

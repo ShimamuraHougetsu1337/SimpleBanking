@@ -1,4 +1,4 @@
-import { Entity, PrimaryColumn, Column, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryColumn, Column, UpdateDateColumn, VersionColumn } from 'typeorm';
 
 @Entity('system_settings')
 export class SystemSetting {
@@ -25,4 +25,7 @@ export class SystemSetting {
 
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamptz' })
   updatedAt: Date;
+
+  @VersionColumn({ name: 'version', default: 1 })
+  version: number;
 }

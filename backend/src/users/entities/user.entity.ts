@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   OneToMany,
+  VersionColumn,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Account } from '@/accounts/entities/account.entity';
@@ -70,6 +71,9 @@ export class User {
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
+
+  @VersionColumn({ name: 'version', default: 1 })
+  version: number;
 
   /**
    * Soft-delete column. When set, this user is logically deleted
