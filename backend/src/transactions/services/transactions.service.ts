@@ -5,6 +5,7 @@ import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Brackets, Repository, DataSource } from 'typeorm';
 import { TransactionsHelper } from '../helpers/transactions.helper';
 import { Transaction, TransactionType } from '../entities/transaction.entity';
+import { LedgerEntryType } from '../entities/ledger-entry.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { TransferDto } from '../dto/transfer.dto';
 import { DepositDto } from '../dto/deposit.dto';
@@ -241,8 +242,8 @@ export class TransactionsService {
           .execute();
       }
 
-      await this.transactionsHelper.updateAccountBalance(manager, fromAccount.id, totalAmount, 'subtract');
-      await this.transactionsHelper.updateAccountBalance(manager, toAccount.id, amount, 'add');
+      const debitBalanceAfter = await this.transactionsHelper.updateAccountBalance(manager, fromAccount.id, totalAmount, 'subtract');
+      const creditBalanceAfter = await this.transactionsHelper.updateAccountBalance(manager, toAccount.id, amount, 'add');
 
       const transactionResult = await this.transactionsHelper.createAndSaveTransaction(manager, {
         fromAccountId: fromAccount.id,
@@ -254,6 +255,18 @@ export class TransactionsService {
         idempotencyKey: dto.idempotencyKey,
         type: TransactionType.TRANSFER,
       });
+
+      // Record double-entry ledger: DEBIT sender (totalAmount incl. fee), CREDIT receiver (amount only)
+      await this.transactionsHelper.createLedgerEntriesForTransfer(
+        manager,
+        transactionResult.id,
+        fromAccount.id,
+        toAccount.id,
+        totalAmount,
+        debitBalanceAfter,
+        creditBalanceAfter,
+      );
+
       return transactionResult;
     });
 
@@ -278,9 +291,9 @@ export class TransactionsService {
       const account = await this.transactionsHelper.getAccountWithLock(manager, dto.accountId, currentUserId);
       const amount = this.transactionsHelper.validateAmount(dto.amount);
 
-      await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
+      const balanceAfter = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
 
-      return this.transactionsHelper.createAndSaveTransaction(manager, {
+      const tx = await this.transactionsHelper.createAndSaveTransaction(manager, {
         toAccountId: account.id,
         amount: dto.amount.toString(),
         fee: '0.00',
@@ -289,6 +302,17 @@ export class TransactionsService {
         idempotencyKey: dto.idempotencyKey,
         type: TransactionType.DEPOSIT,
       });
+
+      await this.transactionsHelper.createSingleLedgerEntry(
+        manager,
+        tx.id,
+        account.id,
+        LedgerEntryType.CREDIT,
+        amount,
+        balanceAfter,
+      );
+
+      return tx;
     });
   }
 
@@ -300,9 +324,9 @@ export class TransactionsService {
       const account = await this.transactionsHelper.getAccountWithLock(manager, dto.accountId, currentUserId);
       const amount = this.transactionsHelper.validateAmount(dto.amount, account.balance);
 
-      await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'subtract');
+      const balanceAfter = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'subtract');
 
-      return this.transactionsHelper.createAndSaveTransaction(manager, {
+      const tx = await this.transactionsHelper.createAndSaveTransaction(manager, {
         fromAccountId: account.id,
         amount: dto.amount.toString(),
         fee: '0.00',
@@ -311,6 +335,17 @@ export class TransactionsService {
         idempotencyKey: dto.idempotencyKey,
         type: TransactionType.WITHDRAW,
       });
+
+      await this.transactionsHelper.createSingleLedgerEntry(
+        manager,
+        tx.id,
+        account.id,
+        LedgerEntryType.DEBIT,
+        amount,
+        balanceAfter,
+      );
+
+      return tx;
     });
   }
 

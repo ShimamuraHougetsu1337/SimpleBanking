@@ -3,6 +3,7 @@ import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { TransactionsHelper } from '../helpers/transactions.helper';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
+import { LedgerEntryType } from '../entities/ledger-entry.entity';
 import { TransactionRequest, TransactionRequestType, TransactionRequestStatus } from '../entities/transaction-request.entity';
 import { Account } from '@/accounts/entities/account.entity';
 import { SystemSetting } from '@/admin/entities/system-setting.entity';
@@ -96,7 +97,7 @@ export class TransactionRequestsService {
       });
       const savedRequest = await manager.save(TransactionRequest, request);
 
-      await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
+      const balanceAfterDeposit = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
 
       const transaction = manager.create(Transaction, {
         toAccountId: accountId,
@@ -105,10 +106,14 @@ export class TransactionRequestsService {
         totalAmount: amountStr,
         description,
         type: TransactionType.DEPOSIT,
-        status: TransactionStatus.SUCCESS,
+        status: TransactionStatus.COMPLETED,
         requestId: savedRequest.id,
       });
       const savedTx = await manager.save(Transaction, transaction);
+
+      await this.transactionsHelper.createSingleLedgerEntry(
+        manager, savedTx.id, accountId, LedgerEntryType.CREDIT, amount, balanceAfterDeposit,
+      );
 
       // Link transaction back
       savedRequest.transactionId = savedTx.id;
@@ -162,7 +167,7 @@ export class TransactionRequestsService {
       });
       const savedRequest = await manager.save(TransactionRequest, request);
 
-      await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'subtract');
+      const balanceAfterWithdraw = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'subtract');
 
       const transaction = manager.create(Transaction, {
         fromAccountId: accountId,
@@ -171,10 +176,14 @@ export class TransactionRequestsService {
         totalAmount: amountStr,
         description,
         type: TransactionType.WITHDRAW,
-        status: TransactionStatus.SUCCESS,
+        status: TransactionStatus.COMPLETED,
         requestId: savedRequest.id,
       });
       const savedTx = await manager.save(Transaction, transaction);
+
+      await this.transactionsHelper.createSingleLedgerEntry(
+        manager, savedTx.id, accountId, LedgerEntryType.DEBIT, amount, balanceAfterWithdraw,
+      );
 
       savedRequest.transactionId = savedTx.id;
       await manager.save(TransactionRequest, savedRequest);
@@ -205,8 +214,10 @@ export class TransactionRequestsService {
       const account = await this.transactionsHelper.getAccountWithLock(manager, request.accountId);
       const amount = new Decimal(request.amount);
 
-      let fromAccountId = null;
-      let toAccountId = null;
+      let fromAccountId: string | null = null;
+      let toAccountId: string | null = null;
+      let ledgerType: LedgerEntryType;
+      let balanceAfterApproval: Decimal;
 
       if (request.type === TransactionRequestType.WITHDRAW) {
         // Need to deduct from both holdBalance and balance
@@ -220,11 +231,15 @@ export class TransactionRequestsService {
           .where('id = :id', { id: account.id })
           .execute();
 
+        const updatedAccount = await manager.findOne(Account, { where: { id: account.id } });
+        balanceAfterApproval = new Decimal(updatedAccount?.balance ?? 0);
         fromAccountId = account.id;
+        ledgerType = LedgerEntryType.DEBIT;
       } else {
         // Deposit
-        await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
+        balanceAfterApproval = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
         toAccountId = account.id;
+        ledgerType = LedgerEntryType.CREDIT;
       }
 
       request.status = TransactionRequestStatus.APPROVED;
@@ -239,11 +254,15 @@ export class TransactionRequestsService {
         totalAmount: request.amount,
         description: request.description,
         type: request.type === TransactionRequestType.WITHDRAW ? TransactionType.WITHDRAW : TransactionType.DEPOSIT,
-        status: TransactionStatus.SUCCESS,
+        status: TransactionStatus.COMPLETED,
         requestId: request.id,
       });
 
       const savedTx = await manager.save(Transaction, transaction);
+
+      await this.transactionsHelper.createSingleLedgerEntry(
+        manager, savedTx.id, account.id, ledgerType, amount, balanceAfterApproval,
+      );
 
       request.transactionId = savedTx.id;
       await manager.save(TransactionRequest, request);

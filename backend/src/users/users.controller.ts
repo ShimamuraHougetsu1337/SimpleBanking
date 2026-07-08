@@ -29,7 +29,7 @@ export class UsersController {
     @CurrentUser() user: User,
     @Body() dto: UpdateProfileDto,
   ) {
-    return this.usersService.updateProfile(user.id, dto.fullName);
+    return this.usersService.updateProfile(user.id, dto);
   }
 
   @Patch('me/password')

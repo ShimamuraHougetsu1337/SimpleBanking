@@ -9,4 +9,5 @@ export class CreateAdminAuditLogDto {
   status: AuditStatus;
   metadata?: Record<string, unknown> | null;
   ipAddress?: string | null;
+  userAgent?: string | null;
 }

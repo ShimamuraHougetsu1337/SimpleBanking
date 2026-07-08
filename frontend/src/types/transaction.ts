@@ -14,7 +14,7 @@ export interface TransactionRecord {
 
 export const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   completed: { color: 'green', label: 'Thành công' },
-  success: { color: 'green', label: 'Thành công' },
   failed: { color: 'red', label: 'Thất bại' },
   pending: { color: 'orange', label: 'Đang xử lý' },
+  reversed: { color: 'purple', label: 'Đã hoàn tiền' },
 };

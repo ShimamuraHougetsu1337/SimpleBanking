@@ -68,6 +68,7 @@ export class AuditInterceptor implements NestInterceptor {
             status: AuditStatus.SUCCESS,
             metadata: AuditMetadataBuilder.buildAdminSuccessMetadata(adminAction, ctx, responseData as Record<string, unknown>),
             ipAddress: ctx.ip,
+            userAgent: ctx.userAgent,
           });
         }
 
@@ -84,6 +85,7 @@ export class AuditInterceptor implements NestInterceptor {
             // Luôn ghi lại schema chuẩn mới
             metadata: AuditMetadataBuilder.buildCustomerSuccessMetadata(customerAction, ctx, responseData as Record<string, unknown> | null),
             ipAddress: ctx.ip,
+            userAgent: ctx.userAgent,
           });
         }
       }),
@@ -102,6 +104,7 @@ export class AuditInterceptor implements NestInterceptor {
             status: AuditStatus.FAILED,
             metadata: AuditMetadataBuilder.buildAdminFailMetadata(adminAction, ctx, err),
             ipAddress: ctx.ip,
+            userAgent: ctx.userAgent,
           });
         }
         // --- Customer Action Failed ---
@@ -115,6 +118,7 @@ export class AuditInterceptor implements NestInterceptor {
             transactionId: null,
             metadata: AuditMetadataBuilder.buildCustomerFailMetadata(customerAction, ctx, err),
             ipAddress: ctx.ip,
+            userAgent: ctx.userAgent,
           });
         }
         throw err;
