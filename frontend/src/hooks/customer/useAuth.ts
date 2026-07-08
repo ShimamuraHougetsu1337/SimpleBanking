@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { App } from 'antd';
 import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
+import { UserRole } from '@/constants/roles';
 import { getErrorMessage } from '@/utils/error';
 
 export function useLogin() {
@@ -20,7 +21,8 @@ export function useLogin() {
       message.success('Login successful!');
 
       // Redirect based on role
-      if (data.user.role === 'admin') {
+      const role = data.user.role;
+      if ([UserRole.TELLER, UserRole.MANAGER, UserRole.SUPERADMIN].includes(role)) {
         navigate('/admin/users');
       } else {
         navigate('/dashboard');

@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '../../services/api';
 import { shouldRetryMutation } from '../../utils/retryUtils';
 
@@ -22,8 +23,9 @@ export function useTransfer() {
     },
     onSuccess: () => {
       // Invalidate both accounts and transactions to refresh balance and history
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
     },
   });
 }

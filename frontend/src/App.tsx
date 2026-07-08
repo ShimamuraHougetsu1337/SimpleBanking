@@ -10,6 +10,7 @@ import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminAccountsPage from './pages/admin/AdminAccountsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
+import AdminTransactionRequestsPage from './pages/admin/AdminTransactionRequestsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAuditLogsPage from './pages/admin/AdminAuditLogsPage';
 import MaintenancePage from './pages/MaintenancePage';
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
       { path: 'users', element: <AdminUsersPage /> },
       { path: 'accounts', element: <AdminAccountsPage /> },
       { path: 'transactions', element: <AdminTransactionsPage /> },
+      { path: 'transaction-requests', element: <AdminTransactionRequestsPage /> },
       { path: 'audit-logs', element: <AdminAuditLogsPage /> },
       { path: 'settings', element: <AdminSettingsPage /> },
     ],

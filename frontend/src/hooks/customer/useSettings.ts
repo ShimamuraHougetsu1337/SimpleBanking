@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import { App } from 'antd';
 import api from '@/services/api';
 import { useAuthStore } from '@/store/auth.store';
@@ -6,7 +7,7 @@ import { getErrorMessage } from '@/utils/error';
 
 export function useProfile() {
   return useQuery({
-    queryKey: ['profile'],
+    queryKey: queryKeys.settings.profile,
     queryFn: async () => {
       const { data } = await api.get('/users/me');
       return data;
@@ -37,7 +38,7 @@ export function useUpdateProfile() {
           accessToken
         );
       }
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.settings.profile });
     },
     onError: (error) => {
       message.error(getErrorMessage(error));

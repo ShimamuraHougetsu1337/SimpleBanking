@@ -2,6 +2,7 @@ import { Layout, Typography, Avatar, Divider, Space } from 'antd';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useLogout } from '@/hooks/customer/useAuth';
 import { useAuthStore } from '@/store/auth.store';
+import { UserRole } from '@/constants/roles';
 import {
   TeamOutlined,
   TransactionOutlined,
@@ -17,22 +18,30 @@ import {
 const { Header, Sider, Content } = Layout;
 const { Title } = Typography;
 
-const navGroups = [
-  {
-    items: [
-      { key: '/admin/dashboard', label: 'Bảng điều khiển', icon: <DashboardOutlined /> },
-      { key: '/admin/users', label: 'Quản lý người dùng', icon: <TeamOutlined /> },
-      { key: '/admin/accounts', label: 'Quản lý tài khoản', icon: <BankOutlined /> },
-      { key: '/admin/transactions', label: 'Lịch sử giao dịch', icon: <TransactionOutlined /> },
-      { key: '/admin/audit-logs', label: 'Nhật ký hệ thống', icon: <DatabaseOutlined /> },
-    ]
-  }
-];
+const getNavGroups = (role?: string) => {
+  const items = [
+    { key: '/admin/dashboard', label: 'Bảng điều khiển', icon: <DashboardOutlined /> },
+    { key: '/admin/users', label: 'Quản lý người dùng', icon: <TeamOutlined /> },
+    { key: '/admin/accounts', label: 'Quản lý tài khoản', icon: <BankOutlined /> },
+    { key: '/admin/transactions', label: 'Lịch sử giao dịch', icon: <TransactionOutlined /> },
+    { key: '/admin/transaction-requests', label: 'Yêu cầu giao dịch', icon: <TransactionOutlined /> },
+  ];
 
-const bottomItems = [
-  { key: '/admin/settings', label: 'Cài đặt hệ thống', icon: <SettingOutlined /> },
-  { key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, isDanger: true },
-];
+  if (role === UserRole.SUPERADMIN) {
+    items.push({ key: '/admin/audit-logs', label: 'Nhật ký hệ thống', icon: <DatabaseOutlined /> });
+  }
+
+  return [{ items }];
+};
+
+const getBottomItems = (role?: string) => {
+  const items = [];
+  if (role === UserRole.SUPERADMIN) {
+    items.push({ key: '/admin/settings', label: 'Cài đặt hệ thống', icon: <SettingOutlined /> });
+  }
+  items.push({ key: 'logout', label: 'Đăng xuất', icon: <LogoutOutlined />, isDanger: true });
+  return items;
+};
 
 export function AdminLayout() {
   const navigate = useNavigate();
@@ -69,7 +78,7 @@ export function AdminLayout() {
 
           {/* Navigation Groups */}
           <div className="sidebar-scrollable" style={{ flex: 1, overflowY: 'auto', padding: '0 12px' }}>
-            {navGroups.map((group, idx) => (
+            {getNavGroups(user?.role).map((group, idx) => (
               <div key={idx}>
                 {group.items.map(item => {
                   const isActive = location.pathname === item.key;
@@ -91,7 +100,7 @@ export function AdminLayout() {
           {/* Bottom Settings & Logout */}
           <div style={{ padding: '0 12px 24px' }}>
             <Divider style={{ margin: '12px 0' }} />
-            {bottomItems.map(item => {
+            {getBottomItems(user?.role).map(item => {
               const isActive = location.pathname === item.key;
               const isDanger = item.isDanger;
               return (

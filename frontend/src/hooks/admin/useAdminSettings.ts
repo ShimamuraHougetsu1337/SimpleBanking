@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { message } from 'antd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import { adminService, type SystemSetting } from '../../services/admin.service';
 
 export function useAdminSettings() {
@@ -8,7 +9,7 @@ export function useAdminSettings() {
   const [pendingUpdates, setPendingUpdates] = useState<Record<string, any>>({});
 
   const { data: serverSettings = [], isLoading } = useQuery({
-    queryKey: ['adminSettings'],
+    queryKey: queryKeys.admin.settings.all,
     queryFn: async () => {
       try {
         return await adminService.getSettings();
@@ -40,8 +41,8 @@ export function useAdminSettings() {
       }
       return await adminService.updateSettings(pendingUpdates);
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(['adminSettings'], data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.settings.all });
       setPendingUpdates({});
       message.success({
         content: 'Cấu hình hệ thống đã được cập nhật thành công.',

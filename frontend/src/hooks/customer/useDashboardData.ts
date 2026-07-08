@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '@/services/api';
 import type { Transaction } from '@/components/customer/dashboard/recent-transactions/RecentTransactions';
 
@@ -18,7 +19,7 @@ export interface Account {
 
 export const useDashboardData = () => {
   const { data: accountsData, isLoading: loadingAccounts, error: errorAccounts } = useQuery({
-    queryKey: ['accounts', 'me'],
+    queryKey: queryKeys.accounts.me(),
     queryFn: async () => {
       const { data } = await api.get('/accounts/me');
       return data as Account[];
@@ -26,7 +27,7 @@ export const useDashboardData = () => {
   });
 
   const { data: txByAccountData, isLoading: loadingTx, error: errorTx } = useQuery({
-    queryKey: ['dashboard', 'transactions', accountsData?.map((a: Account) => a.id)],
+    queryKey: queryKeys.dashboard.transactions(accountsData?.map((a: Account) => a.id)),
     queryFn: async () => {
       if (!accountsData || accountsData.length === 0) return {};
 
