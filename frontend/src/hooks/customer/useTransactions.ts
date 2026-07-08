@@ -1,4 +1,5 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '../../services/api';
 
 export interface UseTransactionsParams {
@@ -12,7 +13,7 @@ export interface UseTransactionsParams {
 
 export function useTransactions(params: UseTransactionsParams = {}) {
   return useQuery({
-    queryKey: ['transactions', params],
+    queryKey: queryKeys.transactions.list(params),
     queryFn: async () => {
       // Send all filter fields as flat top-level query params so NestJS
       // ValidationPipe can whitelist and parse them without bracket notation issues.
