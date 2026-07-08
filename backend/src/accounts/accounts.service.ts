@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Account, AccountStatus } from './entities/account.entity';
 import { User } from '@/users/entities/user.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { SystemAccount } from '@/common/enums/system-account.enum';
 
 @Injectable()
 export class AccountsService {
@@ -72,10 +73,22 @@ export class AccountsService {
     return this.accountRepository.save(account);
   }
 
-  async findAll(page: number = 1, limit: number = 10, search?: string, status?: AccountStatus) {
+  async findAll(
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    status?: AccountStatus,
+    type: 'customer' | 'system' | 'all' = 'customer',
+  ) {
     const query = this.accountRepository.createQueryBuilder('account')
       .leftJoinAndSelect('account.user', 'user')
       .orderBy('account.createdAt', 'DESC');
+
+    if (type === 'system') {
+      query.andWhere('account.accountNumber LIKE :sysPrefix', { sysPrefix: 'SYS_%' });
+    } else if (type === 'customer') {
+      query.andWhere('account.accountNumber NOT LIKE :sysPrefix', { sysPrefix: 'SYS_%' });
+    }
 
     if (search) {
       query.andWhere(
@@ -106,6 +119,14 @@ export class AccountsService {
       throw new NotFoundException(`Account with ID "${id}" not found`);
     }
 
+    const isSystemAccount =
+      account.accountNumber === (SystemAccount.FEE_SUSPENSE as string) ||
+      account.accountNumber === (SystemAccount.REVENUE as string);
+
+    if (isSystemAccount) {
+      throw new BadRequestException('Không được phép khóa hoặc thay đổi trạng thái của tài khoản hệ thống');
+    }
+
     account.status = status;
     return this.accountRepository.save(account);
   }
@@ -120,6 +141,15 @@ export class AccountsService {
     if (!account) {
       throw new NotFoundException(`Account with ID "${id}" not found`);
     }
+
+    const isSystemAccount =
+      account.accountNumber === (SystemAccount.FEE_SUSPENSE as string) ||
+      account.accountNumber === (SystemAccount.REVENUE as string);
+
+    if (isSystemAccount) {
+      throw new BadRequestException('Không được phép xóa tài khoản hệ thống');
+    }
+
     await this.accountRepository.softDelete(id);
   }
 
