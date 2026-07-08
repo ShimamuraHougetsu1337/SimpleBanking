@@ -1,10 +1,11 @@
-import { Table, Typography, Tag, Space, ConfigProvider } from 'antd';
+import { Table, Typography, Tag, Space, ConfigProvider, Button, Modal } from 'antd';
+import { RollbackOutlined } from '@ant-design/icons';
 import { formatVnd } from '@/utils/format';
 import type { AdminTransaction } from '@/services/admin.service';
 
 const { Text } = Typography;
 
-export const ADMIN_TRANSACTION_COLUMNS = [
+export const getColumns = (onReverse: (id: string) => void) => [
   {
     title: 'Transaction ID',
     dataIndex: 'id',
@@ -124,6 +125,33 @@ export const ADMIN_TRANSACTION_COLUMNS = [
       );
     },
   },
+  {
+    title: 'Hành động',
+    key: 'action',
+    align: 'center' as const,
+    render: (record: AdminTransaction) => {
+      // Only allow reversal for completed transfers that are not already reversed
+      const isReversible = record.status === 'completed' && record.type === 'transfer';
+      if (!isReversible) return null;
+
+      return (
+        <Button
+          type="text"
+          danger
+          icon={<RollbackOutlined />}
+          onClick={() => Modal.confirm({
+            title: 'Xác nhận hoàn tác giao dịch?',
+            content: `Bạn có chắc chắn muốn hoàn tác giao dịch ${record.id} không? Hành động này sẽ tạo ra một giao dịch bù trừ mới.`,
+            okText: 'Hoàn tác',
+            okType: 'danger',
+            cancelText: 'Hủy',
+            onOk: () => onReverse(record.id)
+          })}
+          title="Hoàn tác"
+        />
+      );
+    },
+  },
 ];
 
 interface AdminTransactionTableProps {
@@ -132,6 +160,7 @@ interface AdminTransactionTableProps {
   pageSize: number;
   total: number;
   onPageChange: (page: number, pageSize: number) => void;
+  onReverse: (id: string) => void;
 }
 
 export const AdminTransactionTable = ({
@@ -140,6 +169,7 @@ export const AdminTransactionTable = ({
   pageSize,
   total,
   onPageChange,
+  onReverse,
 }: AdminTransactionTableProps) => (
   <ConfigProvider
     theme={{
@@ -156,7 +186,7 @@ export const AdminTransactionTable = ({
     }}
   >
     <Table
-      columns={ADMIN_TRANSACTION_COLUMNS}
+      columns={getColumns(onReverse)}
       dataSource={transactions}
       rowKey="id"
       pagination={{

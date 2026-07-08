@@ -12,4 +12,5 @@ export enum AdminAuditAction {
   FREEZE_ACCOUNT = 'freeze_account',
   UNFREEZE_ACCOUNT = 'unfreeze_account',
   UPDATE_SETTINGS = 'update_settings',
+  DELETE_USER = 'delete_user',
 }
