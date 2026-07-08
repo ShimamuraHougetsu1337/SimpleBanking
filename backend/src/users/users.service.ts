@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsRelations } from 'typeorm';
@@ -10,6 +11,7 @@ import { User, UserStatus, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { UserHistoryService } from './services/user-history.service';
+import { SystemAccount } from '@/common/enums/system-account.enum';
 
 /** bcrypt work factor — min 10 as specified in DATA_MODEL.md */
 const BCRYPT_SALT_ROUNDS = 10;
@@ -75,6 +77,10 @@ export class UsersService {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
 
+    if (user.email === (SystemAccount.EMAIL as string)) {
+      throw new BadRequestException('Không được phép khóa hoặc thay đổi trạng thái của tài khoản hệ thống');
+    }
+
     user.status = status;
     return this.userRepository.save(user);
   }
@@ -88,6 +94,7 @@ export class UsersService {
     limit: number,
     search?: string,
     status?: UserStatus,
+    includeDeleted: boolean = false,
   ): Promise<{ data: User[]; total: number }> {
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
@@ -95,6 +102,10 @@ export class UsersService {
       .orderBy('user.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
+
+    if (includeDeleted) {
+      queryBuilder.withDeleted();
+    }
 
     if (status) {
       queryBuilder.andWhere('user.status = :status', { status });
@@ -141,7 +152,7 @@ export class UsersService {
     if (dto.fullName !== undefined) user.fullName = dto.fullName;
     if (dto.email !== undefined) user.email = dto.email;
     if (dto.phoneNumber !== undefined) user.phoneNumber = dto.phoneNumber;
-    
+
     return this.userRepository.save(user);
   }
 
@@ -156,6 +167,19 @@ export class UsersService {
     }
     user.passwordHash = await bcrypt.hash(newPassword, BCRYPT_SALT_ROUNDS);
     await this.userRepository.save(user);
+  }
+
+  async softDelete(id: string): Promise<void> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with id "${id}" not found`);
+    }
+
+    if (user.email === (SystemAccount.EMAIL as string)) {
+      throw new BadRequestException('Không được phép xóa tài khoản hệ thống');
+    }
+
+    await this.userRepository.softDelete(id);
   }
 }
 
