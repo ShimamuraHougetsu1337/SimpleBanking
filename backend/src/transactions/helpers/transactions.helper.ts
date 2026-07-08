@@ -4,13 +4,37 @@ import { DataSource, EntityManager, SelectQueryBuilder, Brackets } from 'typeorm
 import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { LedgerEntry, LedgerEntryType } from '../entities/ledger-entry.entity';
+import { SystemAccount } from '@/common/enums/system-account.enum';
 import Decimal from 'decimal.js';
 
 @Injectable()
 export class TransactionsHelper {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
-  ) {}
+  ) { }
+
+  /** Cached suspense account ID — loaded once on first use. */
+  private suspenseAccountId: string | null = null;
+
+  /**
+   * Returns the ID of the SYS_FEE_SUSPENSE internal account.
+   * The result is cached in memory after the first DB lookup.
+   */
+  async getSuspenseAccountId(): Promise<string> {
+    if (this.suspenseAccountId) return this.suspenseAccountId;
+
+    const account = await this.dataSource.getRepository(Account).findOne({
+      where: { accountNumber: SystemAccount.FEE_SUSPENSE as string },
+      withDeleted: false,
+    });
+
+    if (!account) {
+      throw new Error(`${SystemAccount.FEE_SUSPENSE} account not found. Please run the seed script.`);
+    }
+
+    this.suspenseAccountId = account.id;
+    return this.suspenseAccountId;
+  }
 
   async executeTransaction<T>(operation: (manager: EntityManager) => Promise<T>): Promise<T> {
     const queryRunner = this.dataSource.createQueryRunner();
@@ -65,6 +89,8 @@ export class TransactionsHelper {
 
   /**
    * Updates an account balance and returns the new balance after the operation.
+   * If the accountId belongs to the SYS_FEE_SUSPENSE account, this is a no-op
+   * (no DB lock, no balance update) and returns Decimal(0) as a sentinel.
    */
   async updateAccountBalance(
     manager: EntityManager,
@@ -72,6 +98,12 @@ export class TransactionsHelper {
     amount: Decimal,
     operation: 'add' | 'subtract',
   ): Promise<Decimal> {
+    const suspenseId = await this.getSuspenseAccountId();
+    if (accountId === suspenseId) {
+      // Suspense account: INSERT-only ledger entries, never update balance to avoid lock contention.
+      return new Decimal(0);
+    }
+
     const sign = operation === 'add' ? '+' : '-';
     await manager
       .createQueryBuilder()
@@ -85,56 +117,29 @@ export class TransactionsHelper {
   }
 
   /**
-   * Creates a DEBIT + CREDIT pair of ledger entries for a transfer.
-   * Must be called within the same QueryRunner transaction as the balance update.
+   * Creates multiple ledger entries in bulk.
+   * For entries targeting SYS_FEE_SUSPENSE, balanceAfter is stored as 0.00
+   * because the suspense account balance is computed dynamically from ledger_entries SUM.
    */
-  async createLedgerEntriesForTransfer(
+  async createLedgerEntries(
     manager: EntityManager,
-    transactionId: string,
-    debitAccountId: string,
-    creditAccountId: string,
-    amount: Decimal,
-    debitBalanceAfter: Decimal,
-    creditBalanceAfter: Decimal,
+    entries: {
+      accountId: string;
+      transactionId: string | null;
+      type: LedgerEntryType;
+      amount: Decimal;
+      balanceAfter: Decimal;
+    }[]
   ): Promise<void> {
-    const amountStr = amount.toFixed(2);
-    const debitEntry = manager.create(LedgerEntry, {
-      accountId: debitAccountId,
-      transactionId,
-      type: LedgerEntryType.DEBIT,
-      amount: amountStr,
-      balanceAfter: debitBalanceAfter.toFixed(2),
-    });
-    const creditEntry = manager.create(LedgerEntry, {
-      accountId: creditAccountId,
-      transactionId,
-      type: LedgerEntryType.CREDIT,
-      amount: amountStr,
-      balanceAfter: creditBalanceAfter.toFixed(2),
-    });
-    await manager.save(LedgerEntry, [debitEntry, creditEntry]);
-  }
-
-  /**
-   * Creates a single ledger entry for a deposit (CREDIT) or withdrawal (DEBIT).
-   * Must be called within the same QueryRunner transaction as the balance update.
-   */
-  async createSingleLedgerEntry(
-    manager: EntityManager,
-    transactionId: string,
-    accountId: string,
-    type: LedgerEntryType,
-    amount: Decimal,
-    balanceAfter: Decimal,
-  ): Promise<void> {
-    const entry = manager.create(LedgerEntry, {
-      accountId,
-      transactionId,
-      type,
-      amount: amount.toFixed(2),
-      balanceAfter: balanceAfter.toFixed(2),
-    });
-    await manager.save(LedgerEntry, entry);
+    const suspenseId = await this.getSuspenseAccountId();
+    const records = entries.map(e => manager.create(LedgerEntry, {
+      accountId: e.accountId,
+      transactionId: e.transactionId,
+      type: e.type,
+      amount: e.amount.toFixed(2),
+      balanceAfter: e.accountId === suspenseId ? '0.00' : e.balanceAfter.toFixed(2),
+    }));
+    await manager.save(LedgerEntry, records);
   }
 
   async createAndSaveTransaction(manager: EntityManager, data: Partial<Transaction>): Promise<Transaction> {
