@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Virtual Fee Suspense Sink**: Replaced custom `fee_ledger` tables and Redis queues with real-time credit ledger entries to `SYS_FEE_SUSPENSE` (an insert-only ledger account with `0.00` sentinel balance).
 - **System Guards & Protections**: Enforced strict validation preventing soft deletes, freezing, or editing system accounts (`SYS_FEE_SUSPENSE`, `SYS_REVENUE`) or system users (`SYSTEM_CORE`).
 - **UI Clean-up**: Hidden or disabled sensitive admin operations (deposit/freeze) for system accounts in the admin UI. Removed description and reversal columns from the main admin transaction list table in favor of the details modal.
+- **Transaction Request Locking**: Applied pessimistic locking (`pessimistic_write`) to `TransactionRequest` row retrieval during approval and rejection to eliminate race conditions.
 - **Concurrency Protection**: Updated `UsersService` and `SystemSettingsService` to catch `OptimisticLockVersionMismatchError` and throw `ConflictException` upon update conflicts.
 
 ---

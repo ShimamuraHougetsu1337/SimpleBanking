@@ -209,6 +209,7 @@ export class TransactionRequestsService {
       const request = await manager.findOne(TransactionRequest, {
         where: { id: requestId },
         relations: { account: true },
+        lock: { mode: 'pessimistic_write' },
       });
 
       if (!request) {
@@ -293,6 +294,7 @@ export class TransactionRequestsService {
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const request = await manager.findOne(TransactionRequest, {
         where: { id: requestId },
+        lock: { mode: 'pessimistic_write' },
       });
 
       if (!request) {
