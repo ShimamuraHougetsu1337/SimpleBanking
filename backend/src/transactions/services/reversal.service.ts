@@ -7,7 +7,7 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Transaction, TransactionStatus, TransactionType } from '../entities/transaction.entity';
-import { LedgerEntry, LedgerEntryType } from '../entities/ledger-entry.entity';
+import { LedgerEntryType } from '../entities/ledger-entry.entity';
 import { Account } from '@/accounts/entities/account.entity';
 import { TransactionsHelper } from '../helpers/transactions.helper';
 import Decimal from 'decimal.js';
@@ -84,31 +84,40 @@ export class ReversalService {
         throw new NotFoundException('One or both accounts involved in this transaction no longer exist');
       }
 
-      // Check destination (original sender) has enough balance for the refund
-      const reversalAmount = new Decimal(original.totalAmount); // Refund full amount including fee
+      // Check destination (original receiver) has enough balance for the deduction
+      const originalReceiverDeduction = new Decimal(original.amount);
+      
       const receiverBalance = new Decimal(toAccount.balance);
-      if (reversalAmount.gt(receiverBalance)) {
+      if (originalReceiverDeduction.gt(receiverBalance)) {
         throw new UnprocessableEntityException(
           'Insufficient balance in destination account to complete the reversal',
         );
       }
 
-      // Debit the original receiver (they give back the money)
+      // Debit the original receiver (they give back the money they got)
       const toBalanceAfter = await this.transactionsHelper.updateAccountBalance(
-        manager, toAccount.id, reversalAmount, 'subtract',
+        manager, toAccount.id, originalReceiverDeduction, 'subtract',
       );
 
-      // Credit the original sender (they get refunded)
-      const fromBalanceAfter = await this.transactionsHelper.updateAccountBalance(
-        manager, fromAccount.id, reversalAmount, 'add',
+      // Credit the original sender (they get refunded amount)
+      const fromBalanceAfterAmount = await this.transactionsHelper.updateAccountBalance(
+        manager, fromAccount.id, originalReceiverDeduction, 'add',
       );
+      
+      let fromBalanceAfterFee = fromBalanceAfterAmount;
+      const originalFee = new Decimal(original.fee);
+      if (originalFee.gt(0)) {
+        fromBalanceAfterFee = await this.transactionsHelper.updateAccountBalance(
+          manager, fromAccount.id, originalFee, 'add',
+        );
+      }
 
       // Create the reversal transaction (new record, do not mutate original)
       const reversalTx = manager.create(Transaction, {
         fromAccountId: toAccount.id,   // Reversal flows opposite direction
         toAccountId: fromAccount.id,
-        amount: original.totalAmount,
-        fee: '0.00',
+        amount: original.amount,
+        fee: original.fee,
         totalAmount: original.totalAmount,
         description: `Reversal of transaction ${original.id}`,
         type: TransactionType.REVERSAL,
@@ -117,23 +126,53 @@ export class ReversalService {
       });
       const savedReversal = await manager.save(Transaction, reversalTx);
 
+      const suspenseAccountId = await this.transactionsHelper.getSuspenseAccountId();
+
+      const ledgerEntries: {
+        accountId: string;
+        transactionId: string;
+        type: LedgerEntryType;
+        amount: Decimal;
+        balanceAfter: Decimal;
+      }[] = [
+        {
+          accountId: toAccount.id, // Ghi nợ người nhận gốc (trả lại số tiền đã nhận)
+          transactionId: savedReversal.id,
+          type: LedgerEntryType.DEBIT,
+          amount: originalReceiverDeduction,
+          balanceAfter: toBalanceAfter,
+        },
+        {
+          accountId: fromAccount.id, // Ghi có người gửi gốc (hoàn tiền gốc)
+          transactionId: savedReversal.id,
+          type: LedgerEntryType.CREDIT,
+          amount: originalReceiverDeduction,
+          balanceAfter: fromBalanceAfterAmount,
+        }
+      ];
+
+      if (originalFee.gt(0)) {
+        // Ghi có người gửi gốc (hoàn phí)
+        ledgerEntries.push({
+          accountId: fromAccount.id,
+          transactionId: savedReversal.id,
+          type: LedgerEntryType.CREDIT,
+          amount: originalFee,
+          balanceAfter: fromBalanceAfterFee,
+        });
+
+        // Ghi nợ SYS_FEE_SUSPENSE — đảo ngược khoản phí đã ghi có trước đó (INSERT-only, no lock)
+        ledgerEntries.push({
+          accountId: suspenseAccountId,
+          transactionId: savedReversal.id,
+          type: LedgerEntryType.DEBIT,
+          amount: originalFee,
+          balanceAfter: new Decimal(0), // sentinel
+        });
+      }
+
       // Write double-entry ledger for the reversal
-      const reversalAmountStr = reversalAmount.toFixed(2);
-      const debitEntry = manager.create(LedgerEntry, {
-        accountId: toAccount.id,
-        transactionId: savedReversal.id,
-        type: LedgerEntryType.DEBIT,
-        amount: reversalAmountStr,
-        balanceAfter: toBalanceAfter.toFixed(2),
-      });
-      const creditEntry = manager.create(LedgerEntry, {
-        accountId: fromAccount.id,
-        transactionId: savedReversal.id,
-        type: LedgerEntryType.CREDIT,
-        amount: reversalAmountStr,
-        balanceAfter: fromBalanceAfter.toFixed(2),
-      });
-      await manager.save(LedgerEntry, [debitEntry, creditEntry]);
+      await this.transactionsHelper.createLedgerEntries(manager, ledgerEntries);
 
       // Mark the original transaction as REVERSED (status update only — immutable ledger unchanged)
       await manager

@@ -38,12 +38,12 @@ export class LedgerEntry {
   account: Account;
 
   @Index()
-  @Column({ name: 'transaction_id', type: 'uuid' })
-  transactionId: string;
+  @Column({ name: 'transaction_id', type: 'uuid', nullable: true })
+  transactionId: string | null;
 
-  @ManyToOne(() => Transaction, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Transaction, { onDelete: 'RESTRICT', nullable: true })
   @JoinColumn({ name: 'transaction_id' })
-  transaction: Transaction;
+  transaction: Transaction | null;
 
   @Column({ type: 'enum', enum: LedgerEntryType })
   type: LedgerEntryType;

@@ -9,36 +9,27 @@ import { ReversalService } from './services/reversal.service';
 import { TransactionsHelper } from './helpers/transactions.helper';
 import { Transaction } from './entities/transaction.entity';
 import { LedgerEntry } from './entities/ledger-entry.entity';
-import { FeeLedger } from './entities/fee-ledger.entity';
 import { FeeSettlementLog } from './entities/fee-settlement-log.entity';
 import { AccountsModule } from '@/accounts/accounts.module';
-import { BullModule } from '@nestjs/bullmq';
-
-import { FeeQueueProcessor } from './jobs/fee-queue.processor';
 import { FeeSettlementCron } from './jobs/fee-settlement.cron';
 import { LedgerService } from './services/ledger.service';
-
 import { TransactionRequest } from './entities/transaction-request.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeLedger, FeeSettlementLog]),
-    BullModule.registerQueue({
-      name: 'fee_queue',
-    }),
+    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeSettlementLog]),
     AccountsModule,
   ],
   controllers: [TransactionsController, ReversalController],
   providers: [
-    TransactionsService, 
-    TransactionRequestsService, 
-    FeesService, 
+    TransactionsService,
+    TransactionRequestsService,
+    FeesService,
     TransactionsHelper,
     LedgerService,
     ReversalService,
-    FeeQueueProcessor, 
-    FeeSettlementCron
+    FeeSettlementCron,
   ],
   exports: [TransactionsService, TransactionRequestsService, LedgerService],
 })
-export class TransactionsModule {}
+export class TransactionsModule { }
