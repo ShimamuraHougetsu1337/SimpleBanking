@@ -1,11 +1,12 @@
 import { create } from 'zustand';
+import { UserRole } from '@/constants/roles';
 
 export interface User {
   id: string;
   full_name: string;
   fullName?: string;
   email: string;
-  role: 'customer' | 'admin';
+  role: UserRole;
   status: string;
 }
 
@@ -34,5 +35,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   isAuthenticated: () => !!get().accessToken,
-  isAdmin: () => get().user?.role === 'admin',
+  isAdmin: () => {
+    const role = get().user?.role;
+    return role === UserRole.TELLER || role === UserRole.MANAGER || role === UserRole.SUPERADMIN;
+  },
 }));

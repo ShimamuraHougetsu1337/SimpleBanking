@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Typography, Table, ConfigProvider } from 'antd';
+import { Card, Typography, Table, ConfigProvider, Pagination } from 'antd';
 import { useTransactions } from '@/hooks/customer/useTransactions';
 import { useTransactionFilters } from '@/hooks/customer/useTransactionFilters';
 import { TransactionFilters } from '@/components/customer/transactions/filters/TransactionFilters';
@@ -100,20 +100,7 @@ export default function TransactionsPage() {
               onClick: () => setSelectedTransaction(record),
               style: { cursor: 'pointer' },
             })}
-            pagination={{
-              current: page,
-              pageSize: PAGE_SIZE,
-              total: data?.meta?.total ?? 0,
-              onChange: setPage,
-              showSizeChanger: true,
-              showTotal: (total) => (
-                <Text style={{ color: '#64748b', fontSize: 13 }}>
-                  {total} giao dịch{isFilterActive ? ' (đã lọc)' : ''}
-                </Text>
-              ),
-              placement: ['bottomCenter'] as any,
-              style: { padding: '16px 24px', margin: 0 },
-            }}
+            pagination={false}
             locale={{
               emptyText: (
                 <div style={{ padding: '48px 0', textAlign: 'center' }}>
@@ -128,6 +115,19 @@ export default function TransactionsPage() {
           />
         </ConfigProvider>
       </Card>
+
+      {/* External Pagination to prevent local slicing */}
+      {data?.meta?.total > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+          <Pagination
+            current={page}
+            pageSize={PAGE_SIZE}
+            total={data.meta.total}
+            onChange={setPage}
+            showSizeChanger={false}
+          />
+        </div>
+      )}
 
       {/* Transaction detail modal */}
       {selectedTransaction && (

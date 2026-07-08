@@ -10,6 +10,8 @@ import {
   Modal,
   Descriptions,
   Tooltip,
+  Form,
+  Select,
 } from 'antd';
 import {
   SearchOutlined,
@@ -18,6 +20,9 @@ import {
   EyeOutlined,
 } from '@ant-design/icons';
 import { useAdminUsers, type AdminUser } from '@/hooks/admin/useAdminUsers';
+import { useCreateUser } from '@/hooks/admin/useCreateUser';
+import { useAuthStore } from '@/store/auth.store';
+import { UserRole } from '@/constants/roles';
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 
@@ -44,7 +49,28 @@ export default function AdminUsersPage() {
     isLoading,
   } = useAdminUsers();
 
+  const currentUser = useAuthStore((s) => s.user);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [form] = Form.useForm();
+  const createUserMutation = useCreateUser();
+
+  const handleCreateUser = (values: Record<string, unknown>) => {
+    createUserMutation.mutate(
+      {
+        fullName: values.fullName,
+        email: values.email,
+        password: values.password,
+        role: currentUser?.role === UserRole.SUPERADMIN ? values.role : UserRole.CUSTOMER,
+      },
+      {
+        onSuccess: () => {
+          setIsCreateModalOpen(false);
+          form.resetFields();
+        },
+      }
+    );
+  };
 
   const formatVND = (amount: string) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(Number(amount));
@@ -68,7 +94,7 @@ export default function AdminUsersPage() {
       key: 'role',
       align: 'center' as const,
       render: (role: string) => (
-        <Tag variant="filled" color={role === 'admin' ? 'purple' : 'default'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
+        <Tag variant="filled" color={role !== UserRole.CUSTOMER ? 'purple' : 'default'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
           {role.toUpperCase()}
         </Tag>
       ),
@@ -91,7 +117,7 @@ export default function AdminUsersPage() {
       align: 'center' as const,
       render: (balance: string, record: AdminUser) => (
         <Text strong style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
-          {record.role !== 'admin' ? formatVND(balance) : '-'}
+          {record.role === UserRole.CUSTOMER ? formatVND(balance) : '-'}
         </Text>
       ),
     },
@@ -120,8 +146,8 @@ export default function AdminUsersPage() {
           >
             Chi tiết
           </Button>
-          {record.role === 'admin' ? (
-            <Tooltip title="Không thể thực hiện thao tác này">
+          {currentUser?.role !== UserRole.SUPERADMIN ? (
+            <Tooltip title="Chỉ Super Admin mới được thực hiện thao tác này">
               <span>
                 <Button
                   danger
@@ -171,7 +197,13 @@ export default function AdminUsersPage() {
             value={searchQuery}
             onChange={(e: ChangeEvent<HTMLInputElement>) => handleSearchChange(e.target.value)}
           />
-          <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Xuất CSV</Button>
+          {currentUser?.role === UserRole.SUPERADMIN && (
+            <Button type="primary" style={{ borderRadius: 8, height: 40 }} onClick={() => setIsCreateModalOpen(true)}>Tạo Admin (Teller/Manager)</Button>
+          )}
+          {currentUser?.role === UserRole.TELLER && (
+            <Button type="primary" style={{ borderRadius: 8, height: 40 }} onClick={() => setIsCreateModalOpen(true)}>Tạo Customer</Button>
+          )}
+          <Button style={{ borderRadius: 8, height: 40 }}>Xuất CSV</Button>
         </Space>
       </div>
 
@@ -220,7 +252,7 @@ export default function AdminUsersPage() {
             <Descriptions.Item label="Họ và tên">{selectedUser.fullName}</Descriptions.Item>
             <Descriptions.Item label="Email">{selectedUser.email}</Descriptions.Item>
             <Descriptions.Item label="Vai trò">
-              <Tag color={selectedUser.role === 'admin' ? 'purple' : 'blue'}>
+              <Tag color={selectedUser.role !== UserRole.CUSTOMER ? 'purple' : 'blue'}>
                 {selectedUser.role.toUpperCase()}
               </Tag>
             </Descriptions.Item>
@@ -231,7 +263,7 @@ export default function AdminUsersPage() {
             </Descriptions.Item>
             <Descriptions.Item label="Số dư hiện tại">
               <span style={{ fontWeight: 600, color: '#1e293b' }}>
-                {selectedUser.role !== 'admin' ? formatVND(selectedUser.balance) : '-'}
+                {selectedUser.role === UserRole.CUSTOMER ? formatVND(selectedUser.balance) : '-'}
               </span>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
@@ -239,6 +271,61 @@ export default function AdminUsersPage() {
             </Descriptions.Item>
           </Descriptions>
         )}
+      </Modal>
+
+      <Modal
+        open={isCreateModalOpen}
+        onCancel={() => {
+          setIsCreateModalOpen(false);
+          form.resetFields();
+        }}
+        title={<span style={{ fontSize: 18, fontWeight: 600, color: '#1e293b' }}>Thêm Người Dùng Mới</span>}
+        okText="Tạo mới"
+        cancelText="Hủy"
+        onOk={() => form.submit()}
+        confirmLoading={createUserMutation.isPending}
+      >
+        <Form form={form} layout="vertical" onFinish={handleCreateUser} style={{ marginTop: 16 }}>
+          <Form.Item
+            name="fullName"
+            label="Họ và tên"
+            rules={[{ required: true, message: 'Vui lòng nhập họ và tên' }]}
+          >
+            <Input placeholder="Nhập họ và tên" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            label="Email"
+            rules={[
+              { required: true, message: 'Vui lòng nhập email' },
+              { type: 'email', message: 'Email không hợp lệ' },
+            ]}
+          >
+            <Input placeholder="Nhập email" />
+          </Form.Item>
+          <Form.Item
+            name="password"
+            label="Mật khẩu"
+            rules={[
+              { required: true, message: 'Vui lòng nhập mật khẩu' },
+              { min: 6, message: 'Mật khẩu phải có ít nhất 6 ký tự' },
+            ]}
+          >
+            <Input.Password placeholder="Nhập mật khẩu (Mật khẩu phải có ít nhất 6 ký tự)" />
+          </Form.Item>
+          {currentUser?.role === UserRole.SUPERADMIN && (
+            <Form.Item
+              name="role"
+              label="Vai trò"
+              rules={[{ required: true, message: 'Vui lòng chọn vai trò' }]}
+            >
+              <Select placeholder="Chọn vai trò">
+                <Select.Option value={UserRole.TELLER}>Giao dịch viên (Teller)</Select.Option>
+                <Select.Option value={UserRole.MANAGER}>Quản lý (Manager)</Select.Option>
+              </Select>
+            </Form.Item>
+          )}
+        </Form>
       </Modal>
     </div>
   );

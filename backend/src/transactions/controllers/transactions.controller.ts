@@ -48,6 +48,7 @@ export class TransactionsController {
     @Query() query: GetTransactionsQueryDto,
   ) {
     const limit = query.limit ? parseInt(query.limit, 10) : 10;
+    const page = query.page ? parseInt(query.page, 10) : 1;
 
     // Map flat query params into the filter record expected by the service
     const filter: Record<string, string> = {};
@@ -55,8 +56,9 @@ export class TransactionsController {
     if (query.fromDate) filter.fromDate = query.fromDate;
     if (query.toDate) filter.toDate = query.toDate;
 
-    const data = await this.transactionsService.getTransactionsForUser(
+    const { data, total } = await this.transactionsService.getTransactionsForUser(
       user.id,
+      page,
       limit,
       query.accountId,
       Object.keys(filter).length > 0 ? filter : undefined,
@@ -65,10 +67,10 @@ export class TransactionsController {
     return {
       data,
       meta: {
-        page: 1,
+        page,
         limit,
-        total: data.length,
-        totalPages: 1,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     };
   }

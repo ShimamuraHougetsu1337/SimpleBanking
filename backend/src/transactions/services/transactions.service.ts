@@ -28,6 +28,7 @@ export class TransactionsService {
 
   async getTransactionsForUser(
     userId: string,
+    page: number = 1,
     limit: number = 10,
     accountId?: string,
     filter?: Record<string, string>,
@@ -68,12 +69,13 @@ export class TransactionsService {
       query.andWhere('tx.createdAt <= :toDate', { toDate });
     }
 
-    const transactions = await query
+    const [transactions, total] = await query
       .orderBy('tx.createdAt', 'DESC')
+      .skip((page - 1) * limit)
       .take(limit)
-      .getMany();
+      .getManyAndCount();
 
-    return transactions.flatMap((tx) => {
+    const data = transactions.flatMap((tx) => {
       if (accountId) {
         if (tx.fromAccountId === accountId) return this.transactionsHelper.mapToResult(tx, 'debit', tx.toAccount);
         if (tx.toAccountId === accountId) return this.transactionsHelper.mapToResult(tx, 'credit', tx.fromAccount);
@@ -93,9 +95,11 @@ export class TransactionsService {
       if (isToUser) return this.transactionsHelper.mapToResult(tx, 'credit', tx.fromAccount);
       return [];
     });
+
+    return { data, total };
   }
 
-  async findAll(page: number = 1, limit: number = 10, search?: string, startDate?: string, endDate?: string, type?: string) {
+  async findAll(page: number = 1, limit: number = 10, search?: string, startDate?: string, endDate?: string, type?: string, tellerId?: string) {
     const query = this.transactionRepository.createQueryBuilder('tx')
       .leftJoinAndSelect('tx.fromAccount', 'fromAccount')
       .leftJoinAndSelect('tx.toAccount', 'toAccount')
@@ -106,6 +110,9 @@ export class TransactionsService {
     if (startDate) query.andWhere('tx.createdAt >= :startDate', { startDate });
     if (endDate) query.andWhere('tx.createdAt <= :endDate', { endDate });
     if (type) query.andWhere('tx.type = :type', { type });
+    if (tellerId) {
+      query.andWhere('tx.requestId IN (SELECT id FROM transaction_requests WHERE created_by_id = :tellerId)', { tellerId });
+    }
 
     const statsQuery = query.clone();
     const rawStats: { totalVolume: string | null; successfulCount: string | null; failedCount: string | null } | undefined = await statsQuery
