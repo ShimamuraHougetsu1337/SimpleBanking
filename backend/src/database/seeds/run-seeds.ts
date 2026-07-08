@@ -150,7 +150,7 @@ async function run() {
     tx1.fee = '0.00';
     tx1.totalAmount = '12000000.00';
     tx1.type = TransactionType.DEPOSIT;
-    tx1.status = TransactionStatus.SUCCESS;
+    tx1.status = TransactionStatus.COMPLETED;
     tx1.description = 'Initial cash deposit';
     tx1.createdAt = threeDaysAgo;
     await queryRunner.manager.save(Transaction, tx1);
@@ -165,7 +165,7 @@ async function run() {
     tx2.fee = '0.00';
     tx2.totalAmount = '2000000.00';
     tx2.type = TransactionType.TRANSFER;
-    tx2.status = TransactionStatus.SUCCESS;
+    tx2.status = TransactionStatus.COMPLETED;
     tx2.description = 'Transfer to savings account';
     tx2.createdAt = twoDaysAgo;
     await queryRunner.manager.save(Transaction, tx2);
@@ -180,7 +180,7 @@ async function run() {
     tx3.fee = '0.00';
     tx3.totalAmount = '3500000.00';
     tx3.type = TransactionType.DEPOSIT;
-    tx3.status = TransactionStatus.SUCCESS;
+    tx3.status = TransactionStatus.COMPLETED;
     tx3.description = 'Cash deposit via ATM';
     tx3.createdAt = oneDayAgo;
     await queryRunner.manager.save(Transaction, tx3);
@@ -195,7 +195,7 @@ async function run() {
     tx4.fee = '0.00';
     tx4.totalAmount = '500000.00';
     tx4.type = TransactionType.WITHDRAW;
-    tx4.status = TransactionStatus.SUCCESS;
+    tx4.status = TransactionStatus.COMPLETED;
     tx4.description = 'ATM cash withdrawal';
     tx4.createdAt = fewHoursAgo;
     await queryRunner.manager.save(Transaction, tx4);
