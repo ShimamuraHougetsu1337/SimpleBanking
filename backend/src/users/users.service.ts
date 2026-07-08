@@ -8,6 +8,8 @@ import { Repository, FindOptionsRelations } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User, UserStatus, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UserHistoryService } from './services/user-history.service';
 
 /** bcrypt work factor — min 10 as specified in DATA_MODEL.md */
 const BCRYPT_SALT_ROUNDS = 10;
@@ -22,6 +24,7 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly userHistoryService: UserHistoryService,
   ) { }
 
   /**
@@ -116,12 +119,29 @@ export class UsersService {
     return this.userRepository.count({ where: { status } });
   }
 
-  async updateProfile(id: string, fullName: string): Promise<User> {
+  async updateProfile(id: string, dto: UpdateProfileDto): Promise<User> {
     const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
-    user.fullName = fullName;
+
+    // Ghi lại lịch sử các trường nhạy cảm
+    for (const field of ['fullName', 'email', 'phoneNumber'] as const) {
+      if (dto[field] !== undefined && dto[field] !== user[field]) {
+        await this.userHistoryService.record(
+          id,
+          id, // Khách hàng tự đổi (người đổi = chính họ)
+          field,
+          user[field] ?? null,
+          dto[field] ?? null,
+        );
+      }
+    }
+
+    if (dto.fullName !== undefined) user.fullName = dto.fullName;
+    if (dto.email !== undefined) user.email = dto.email;
+    if (dto.phoneNumber !== undefined) user.phoneNumber = dto.phoneNumber;
+    
     return this.userRepository.save(user);
   }
 

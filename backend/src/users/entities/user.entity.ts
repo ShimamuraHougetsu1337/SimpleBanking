@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
   OneToMany,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
@@ -42,6 +43,9 @@ export class User {
   @Column({ length: 255, unique: true })
   email: string;
 
+  @Column({ name: 'phone_number', type: 'varchar', length: 20, nullable: true })
+  phoneNumber: string | null;
+
   /** Stored as bcrypt hash (cost ≥ 10). Never exposed in API responses. */
   @Exclude()
   @Column({ name: 'password_hash', length: 255 })
@@ -66,6 +70,14 @@ export class User {
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt: Date;
+
+  /**
+   * Soft-delete column. When set, this user is logically deleted
+   * but the record is preserved for audit and regulatory compliance.
+   * TypeORM automatically excludes soft-deleted records from all find queries.
+   */
+  @DeleteDateColumn({ type: 'timestamptz', name: 'deleted_at', nullable: true })
+  deletedAt: Date | null;
 
   /**
    * Lazy relations — declared here so TypeORM can build the schema.
