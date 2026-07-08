@@ -23,6 +23,8 @@ import { SystemSettingsService } from './system-settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { AdminLog } from '@/audit-logs/decorators/admin-log.decorator';
 import { AdminAuditAction } from '@/audit-logs/enums/admin-audit-action.enum';
+import { CreateUserAdminDto } from './dto/create-user-admin.dto';
+import { ForbiddenException } from '@nestjs/common';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -44,6 +46,26 @@ export class AdminController {
       query.search,
       query.status,
     );
+  }
+
+  @Post('users')
+  @Roles(UserRole.SUPERADMIN, UserRole.TELLER)
+  @ApiOperation({ summary: 'Create a new user (SuperAdmin creates admin, Teller creates customer)' })
+  @AdminLog(AdminAuditAction.CREATE_USER)
+  async createUser(@Body() dto: CreateUserAdminDto, @CurrentUser() admin: User) {
+    if (admin.role === UserRole.SUPERADMIN) {
+      if (dto.role === UserRole.CUSTOMER) {
+        throw new ForbiddenException('SuperAdmin cannot create customer accounts');
+      }
+    } else if (admin.role === UserRole.TELLER) {
+      if (dto.role !== UserRole.CUSTOMER) {
+        throw new ForbiddenException('Teller can only create customer accounts');
+      }
+    } else {
+      throw new ForbiddenException('You are not allowed to create users');
+    }
+
+    return await this.adminService.createUser(dto);
   }
 
   @Get('users/:id')
@@ -150,11 +172,14 @@ export class AdminController {
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
     @Query('status') status?: string,
+    @CurrentUser() admin?: User,
   ) {
+    const tellerId = admin?.role === UserRole.TELLER ? admin.id : undefined;
     return await this.adminService.getTransactionRequests(
       +page,
       +limit,
       status,
+      tellerId,
     );
   }
 
@@ -167,7 +192,9 @@ export class AdminController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('type') type?: string,
+    @CurrentUser() admin?: User,
   ) {
+    const tellerId = admin?.role === UserRole.TELLER ? admin.id : undefined;
     return this.adminService.getTransactions(
       +page,
       +limit,
@@ -175,6 +202,7 @@ export class AdminController {
       startDate,
       endDate,
       type,
+      tellerId,
     );
   }
 

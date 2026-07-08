@@ -6,6 +6,7 @@ export enum AdminAuditAction {
   UNLOCK_USER = 'unlock_user',
   ADMIN_DEPOSIT = 'admin_deposit',
   ADMIN_WITHDRAW = 'admin_withdraw',
+  CREATE_USER = 'create_user',
   APPROVE_TRANSACTION = 'approve_transaction',
   REJECT_TRANSACTION = 'reject_transaction',
   FREEZE_ACCOUNT = 'freeze_account',
