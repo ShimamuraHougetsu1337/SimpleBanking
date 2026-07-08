@@ -18,7 +18,12 @@ export function useTransfer() {
     retry: (failureCount, error) => shouldRetryMutation(failureCount, error, 2),
     retryDelay: (retryAttempt) => Math.min(1000 * 2 ** retryAttempt, 10000),
     mutationFn: async (payload: TransferPayload) => {
-      const { data } = await api.post('/transactions/transfer', payload);
+      const { idempotencyKey, ...body } = payload;
+      const { data } = await api.post('/transactions/transfer', body, {
+        headers: {
+          'X-Idempotency-Key': idempotencyKey,
+        },
+      });
       return data;
     },
     onSuccess: () => {

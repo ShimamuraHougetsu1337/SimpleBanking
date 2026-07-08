@@ -97,20 +97,21 @@ transactions
 
 ---
 
-## Table: `fee_ledger`
+## Table: `ledger_entries`
 
 | Field              | Type                                   | Constraint              | Description                                          |
 |--------------------|----------------------------------------|-------------------------|------------------------------------------------------|
 | `id`               | `uuid`                                 | PRIMARY KEY             |                                                      |
-| `transaction_id`   | `uuid`                                 | FK → transactions.id, NULLABLE | Transaction that incurred the fee             |
-| `amount`           | `numeric(18,2)`                        | NOT NULL                | Fee amount                                           |
-| `type`             | `enum('credit','debit')`               | NOT NULL, DEFAULT 'credit' | credit (collected) or debit (settled)          |
-| `description`      | `varchar(255)`                         | NULLABLE                | Additional details                                   |
-| `created_at`       | `timestamp with time zone`             | NOT NULL, DEFAULT NOW() |                                                      |
+| `account_id`       | `uuid`                                 | FK → accounts.id, NOT NULL | Associated account                                 |
+| `transaction_id`   | `uuid`                                 | FK → transactions.id, NULLABLE | Transaction that triggered this entry            |
+| `type`             | `enum('debit','credit')`               | NOT NULL                | debit (reduced balance) or credit (increased balance)|
+| `amount`           | `numeric(18,2)`                        | NOT NULL                | Movement amount (always positive)                    |
+| `balance_after`    | `numeric(18,2)`                        | NOT NULL                | Cached account balance immediately after execution   |
+| `created_at`       | `timestamp with time zone`             | NOT NULL, DEFAULT NOW() | Immutable time of record creation                     |
 
 **Indexes:**
+- `INDEX` on `account_id`
 - `INDEX` on `transaction_id`
-- `INDEX` on `created_at`
 
 ---
 

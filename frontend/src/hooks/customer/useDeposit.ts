@@ -17,11 +17,12 @@ export function useDeposit() {
     retry: (failureCount, error) => shouldRetryMutation(failureCount, error, 2),
     retryDelay: (retryAttempt) => Math.min(1000 * 2 ** retryAttempt, 10000),
     mutationFn: async (variables: DepositVariables) => {
-      const payload = {
-        ...variables,
-        idempotencyKey: uuidv4(),
-      };
-      const res = await api.post('/transactions/deposit', payload);
+      const idempotencyKey = uuidv4();
+      const res = await api.post('/transactions/deposit', variables, {
+        headers: {
+          'X-Idempotency-Key': idempotencyKey,
+        },
+      });
       return res.data;
     },
     onSuccess: (_, variables) => {
