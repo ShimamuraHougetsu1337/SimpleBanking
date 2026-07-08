@@ -141,6 +141,21 @@ export default function AdminUsersPage() {
       ),
     },
     {
+      title: 'Ngày cập nhật',
+      dataIndex: 'updatedAt',
+      key: 'updatedAt',
+      align: 'center' as const,
+      render: (date: string) => {
+        if (!date) return '-';
+        const d = new Date(date);
+        return (
+          <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>
+            {d.toLocaleDateString('vi-VN')} {d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+          </Text>
+        );
+      },
+    },
+    {
       title: 'Hành động',
       key: 'action',
       align: 'center' as const,

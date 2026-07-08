@@ -117,12 +117,14 @@ export class AdminController {
     @Query('limit') limit: string = '10',
     @Query('search') search?: string,
     @Query('status') status?: string,
+    @Query('type') type?: 'customer' | 'system' | 'all',
   ) {
     return this.adminService.getAccounts(
       +page,
       +limit,
       search,
-      status as AccountStatus, // Cast to AccountStatus
+      status as AccountStatus,
+      type,
     );
   }
 

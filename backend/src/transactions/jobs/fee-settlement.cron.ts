@@ -3,7 +3,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Account } from '@/accounts/entities/account.entity';
-import { UserRole } from '@/users/entities/user.entity';
 import { FeeSettlementLog } from '../entities/fee-settlement-log.entity';
 import { LedgerEntry, LedgerEntryType } from '../entities/ledger-entry.entity';
 import { TransactionsHelper } from '../helpers/transactions.helper';
@@ -73,25 +72,14 @@ export class FeeSettlementCron {
 
       this.logger.log(`Found ${pendingAmount.toFixed(2)} in new unsettled fees. Processing payout...`);
 
-      // 3. Tìm và khóa tài khoản vận hành của SUPERADMIN (tài khoản thực, không phải suspense)
-      const adminAccountRef = await queryRunner.manager
-        .createQueryBuilder(Account, 'account')
-        .innerJoin('account.user', 'user')
-        .where('user.role = :role', { role: UserRole.SUPERADMIN })
-        .andWhere('account.accountNumber != :suspenseNumber', { suspenseNumber: SystemAccount.FEE_SUSPENSE as string })
-        .getOne();
-
-      if (!adminAccountRef) {
-        throw new Error('Admin operational account not found for fee settlement');
-      }
-
-      const adminAccount = await queryRunner.manager.findOne(Account, {
-        where: { id: adminAccountRef.id },
+      // 3. Tìm và khóa tài khoản doanh thu hệ thống (SYS_REVENUE)
+      const revenueAccount = await queryRunner.manager.findOne(Account, {
+        where: { accountNumber: SystemAccount.REVENUE as string },
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (!adminAccount) {
-        throw new Error('Could not lock admin account');
+      if (!revenueAccount) {
+        throw new Error('SYS_REVENUE system account not found for fee settlement');
       }
 
       // 4. Ghi Nợ (DEBIT) vào Suspense Account — cấn trừ số tiền đã gom
@@ -105,32 +93,32 @@ export class FeeSettlementCron {
       });
       await queryRunner.manager.save(LedgerEntry, suspenseDebitEntry);
 
-      // 5. Cộng tiền thực vào tài khoản SUPERADMIN
+      // 5. Cộng tiền thực vào tài khoản doanh thu hệ thống (SYS_REVENUE)
       await queryRunner.manager
         .createQueryBuilder()
         .update(Account)
         .set({ balance: () => `balance + ${pendingAmount.toFixed(2)}` })
-        .where('id = :id', { id: adminAccount.id })
+        .where('id = :id', { id: revenueAccount.id })
         .execute();
 
-      const updatedAdmin = await queryRunner.manager.findOne(Account, { where: { id: adminAccount.id } });
-      const adminBalanceAfter = new Decimal(updatedAdmin?.balance ?? 0);
+      const updatedRevenue = await queryRunner.manager.findOne(Account, { where: { id: revenueAccount.id } });
+      const revenueBalanceAfter = new Decimal(updatedRevenue?.balance ?? 0);
 
-      // 6. Ghi Có (CREDIT) vào Sổ cái (ledger_entries) của tài khoản SUPERADMIN
-      const adminCreditEntry = queryRunner.manager.create(LedgerEntry, {
-        accountId: adminAccount.id,
+      // 6. Ghi Có (CREDIT) vào Sổ cái (ledger_entries) của tài khoản SYS_REVENUE
+      const revenueCreditEntry = queryRunner.manager.create(LedgerEntry, {
+        accountId: revenueAccount.id,
         transactionId: null, // Lệnh quyết toán nội bộ
         type: LedgerEntryType.CREDIT,
         amount: pendingAmount.toFixed(2),
-        balanceAfter: adminBalanceAfter.toFixed(2),
+        balanceAfter: revenueBalanceAfter.toFixed(2),
       });
-      await queryRunner.manager.save(LedgerEntry, adminCreditEntry);
+      await queryRunner.manager.save(LedgerEntry, revenueCreditEntry);
 
       // 7. Cập nhật lại mốc thời gian chốt sổ
       await updateWatermark();
 
       await queryRunner.commitTransaction();
-      this.logger.log(`Successfully settled ${pendingAmount.toFixed(2)} to admin account.`);
+      this.logger.log(`Successfully settled ${pendingAmount.toFixed(2)} to system revenue account.`);
 
     } catch (error) {
       this.logger.error('Failed to process fee settlement', error);

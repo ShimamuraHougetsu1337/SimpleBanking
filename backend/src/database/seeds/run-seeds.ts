@@ -105,6 +105,16 @@ async function run() {
     await queryRunner.manager.save(Account, suspenseAccount);
     console.log('SYS_FEE_SUSPENSE account created.');
 
+    const revenueAccount = new Account();
+    revenueAccount.user = savedSystemUser;
+    revenueAccount.accountNumber = 'SYS_REVENUE';
+    revenueAccount.name = 'Tài khoản Doanh thu Hệ thống';
+    revenueAccount.balance = '0.00';
+    revenueAccount.currency = 'VND';
+    revenueAccount.status = AccountStatus.ACTIVE;
+    await queryRunner.manager.save(Account, revenueAccount);
+    console.log('SYS_REVENUE account created.');
+
     console.log('Creating accounts...');
 
     // Create Admin Account

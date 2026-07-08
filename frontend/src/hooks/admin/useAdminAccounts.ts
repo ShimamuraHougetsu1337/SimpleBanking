@@ -11,14 +11,16 @@ export function useAdminAccounts() {
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [type, setType] = useState<'customer' | 'system'>('customer');
 
   const { data, isLoading, error } = useQuery({
-    queryKey: queryKeys.admin.accounts.list({ page, limit: pageSize, search: deferredSearchQuery }),
+    queryKey: [...queryKeys.admin.accounts.all, { page, limit: pageSize, search: deferredSearchQuery, type }],
     queryFn: () =>
       adminService.getAccounts({
         page,
         limit: pageSize,
         search: deferredSearchQuery || undefined,
+        type,
       }),
     placeholderData: (previousData) => previousData,
     staleTime: 10000,
@@ -74,6 +76,11 @@ export function useAdminAccounts() {
     }
   };
 
+  const handleTypeChange = (newType: 'customer' | 'system') => {
+    setType(newType);
+    setPage(1);
+  };
+
   const handleFreezeAccount = (accountId: string) => {
     freezeMutation.mutate(accountId);
   };
@@ -92,6 +99,8 @@ export function useAdminAccounts() {
     page,
     pageSize,
     searchQuery,
+    type,
+    handleTypeChange,
     handleSearchChange,
     handlePageChange,
     handleFreezeAccount,

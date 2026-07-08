@@ -66,6 +66,7 @@ export class AdminService {
         status: user.status,
         balance: balance.toFixed(2),
         createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       };
     });
 
@@ -131,8 +132,14 @@ export class AdminService {
     };
   }
 
-  async getAccounts(page: number = 1, limit: number = 10, search?: string, status?: AccountStatus) {
-    const { data, total } = await this.accountsService.findAll(page, limit, search, status);
+  async getAccounts(
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    status?: AccountStatus,
+    type?: 'customer' | 'system' | 'all',
+  ) {
+    const { data, total } = await this.accountsService.findAll(page, limit, search, status, type);
     return {
       data: data.map(acc => ({
         id: acc.id,
@@ -214,6 +221,7 @@ export class AdminService {
         toAccount: tx.toAccount?.accountNumber || null,
         toUserName: tx.toAccount?.user?.fullName || null,
         createdAt: tx.createdAt,
+        originalTransactionId: tx.originalTransactionId,
       })),
       meta: {
         page,
