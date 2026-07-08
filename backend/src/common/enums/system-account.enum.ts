@@ -16,5 +16,6 @@ export enum SystemAccount {
    * This account must NEVER be locked, frozen, or soft-deleted.
    */
   FEE_SUSPENSE = 'SYS_FEE_SUSPENSE',
+  REVENUE = 'SYS_REVENUE',
   EMAIL = 'system@banking.local'
 }
