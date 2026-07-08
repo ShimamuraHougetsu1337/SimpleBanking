@@ -9,6 +9,7 @@ export interface AdminUser {
   accountNumber: string | null;
   balance: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface GetUsersParams {
@@ -63,6 +64,7 @@ export interface AdminTransaction {
   toAccount: string | null;
   toUserName: string | null;
   createdAt: string;
+  originalTransactionId: string | null;
 }
 
 export interface GetTransactionsResponse {
@@ -196,7 +198,7 @@ export const adminService = {
     return data;
   },
 
-  async getAccounts(params?: { page?: number; limit?: number; search?: string; status?: string }): Promise<GetAccountsResponse> {
+  async getAccounts(params?: { page?: number; limit?: number; search?: string; status?: string; type?: 'customer' | 'system' | 'all' }): Promise<GetAccountsResponse> {
     const { data } = await api.get('/admin/accounts', { params });
     return data;
   },

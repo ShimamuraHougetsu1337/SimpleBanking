@@ -1,4 +1,4 @@
-import { Card, Typography, Space, Input } from 'antd';
+import { Card, Typography, Space, Input, Tabs } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useAdminAccounts } from '@/hooks/admin/useAdminAccounts';
 import type { AdminAccount } from '@/services/admin.service';
@@ -23,6 +23,8 @@ export default function AdminAccountsPage() {
     page,
     pageSize,
     searchQuery,
+    type,
+    handleTypeChange,
     handleSearchChange,
     handlePageChange,
     handleFreezeAccount,
@@ -60,6 +62,16 @@ export default function AdminAccountsPage() {
         </Space>
       </div>
 
+      <Tabs
+        activeKey={type}
+        onChange={(key) => handleTypeChange(key as 'customer' | 'system')}
+        items={[
+          { key: 'customer', label: 'Tài khoản khách hàng' },
+          { key: 'system', label: 'Tài khoản hệ thống' },
+        ]}
+        style={{ marginBottom: 16 }}
+      />
+
       <Card style={CARD_SHADOW_STYLE} styles={{ body: { padding: 0, overflow: 'hidden' } }}>
         <AdminAccountTable
           accounts={accounts}
@@ -71,6 +83,7 @@ export default function AdminAccountsPage() {
           onFreezeAccount={handleFreezeAccount}
           onUnfreezeAccount={handleUnfreezeAccount}
           onOpenDepositModal={openDepositModal}
+          isSystemTab={type === 'system'}
         />
       </Card>
 
