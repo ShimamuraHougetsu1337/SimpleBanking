@@ -1,5 +1,6 @@
 import { useState, useDeferredValue } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import { adminService, type AdminAccount } from '@/services/admin.service';
 import { message } from 'antd';
 
@@ -12,7 +13,7 @@ export function useAdminAccounts() {
   const [pageSize, setPageSize] = useState(10);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['adminAccounts', { page, limit: pageSize, search: deferredSearchQuery }],
+    queryKey: queryKeys.admin.accounts.list({ page, limit: pageSize, search: deferredSearchQuery }),
     queryFn: () =>
       adminService.getAccounts({
         page,
@@ -27,10 +28,10 @@ export function useAdminAccounts() {
     mutationFn: (accountId: string) => adminService.updateAccountStatus(accountId, 'locked'),
     onSuccess: () => {
       message.success('Account frozen successfully');
-      void queryClient.invalidateQueries({ queryKey: ['adminAccounts'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.accounts.all });
     },
-    onError: (err: any) => {
-      const errMsg = err.response?.data?.message || 'Failed to freeze account';
+    onError: (err: unknown) => {
+      const errMsg = (err as any).response?.data?.message || 'Failed to freeze account';
       message.error(errMsg);
     },
   });
@@ -39,10 +40,10 @@ export function useAdminAccounts() {
     mutationFn: (accountId: string) => adminService.updateAccountStatus(accountId, 'active'),
     onSuccess: () => {
       message.success('Account unfrozen successfully');
-      void queryClient.invalidateQueries({ queryKey: ['adminAccounts'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.accounts.all });
     },
-    onError: (err: any) => {
-      const errMsg = err.response?.data?.message || 'Failed to unfreeze account';
+    onError: (err: unknown) => {
+      const errMsg = (err as any).response?.data?.message || 'Failed to unfreeze account';
       message.error(errMsg);
     },
   });
@@ -52,11 +53,11 @@ export function useAdminAccounts() {
       adminService.depositToAccount(accountId, amount, description),
     onSuccess: () => {
       message.success('Deposit successful');
-      void queryClient.invalidateQueries({ queryKey: ['adminAccounts'] });
-      void queryClient.invalidateQueries({ queryKey: ['adminStats'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.accounts.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.stats.dashboard });
     },
-    onError: (err: any) => {
-      const errMsg = err.response?.data?.message || 'Failed to deposit';
+    onError: (err: unknown) => {
+      const errMsg = (err as any).response?.data?.message || 'Failed to deposit';
       message.error(errMsg);
     },
   });

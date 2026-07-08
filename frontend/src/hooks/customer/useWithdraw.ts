@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '@/services/api';
 import { v4 as uuidv4 } from 'uuid';
 import { shouldRetryMutation } from '@/utils/retryUtils';
@@ -24,10 +25,10 @@ export function useWithdraw() {
       return res.data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['accounts', 'me'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['account', variables.accountId] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'transactions'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.me() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.detail(variables.accountId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
     },
   });
 }

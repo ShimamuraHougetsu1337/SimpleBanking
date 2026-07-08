@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '../../services/api';
 
 interface UpdateAccountPayload {
@@ -16,7 +17,7 @@ export function useUpdateAccount(accountId: string) {
     },
     onSuccess: () => {
       // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
     },
   });
 }

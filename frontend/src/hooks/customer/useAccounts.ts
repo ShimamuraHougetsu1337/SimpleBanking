@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Form, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '@/services/api';
 import { useCreateAccount } from '@/hooks/customer/useCreateAccount';
 
@@ -24,7 +25,7 @@ export function useAccounts() {
   const createAccount = useCreateAccount();
 
   const { data: accounts, isLoading, error } = useQuery<Account[]>({
-    queryKey: ['accounts', 'me'],
+    queryKey: queryKeys.accounts.me(),
     queryFn: async () => {
       const res = await api.get('/accounts/me');
       return res.data;

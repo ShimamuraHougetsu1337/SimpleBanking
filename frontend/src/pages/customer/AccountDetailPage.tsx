@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Spin, Empty, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '@/services/api';
 import { AccountTransactions } from '@/components/customer/account/transactions/AccountTransactions';
 
@@ -10,7 +11,7 @@ export default function AccountDetailPage() {
   const navigate = useNavigate();
 
   const { data: account, isLoading: accountLoading } = useQuery({
-    queryKey: ['account', id],
+    queryKey: queryKeys.accounts.detail(id || ''),
     queryFn: async () => {
       if (!id) return null;
       const res = await api.get(`/accounts/${id}`);

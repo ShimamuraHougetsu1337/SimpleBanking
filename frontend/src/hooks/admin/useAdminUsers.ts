@@ -1,5 +1,6 @@
 import { useState, useDeferredValue } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import { adminService, type AdminUser } from '@/services/admin.service';
 import { message } from 'antd';
 
@@ -13,7 +14,7 @@ export function useAdminUsers() {
 
   // Fetch paginated users from the admin API
   const { data, isLoading, error } = useQuery({
-    queryKey: ['adminUsers', { page, limit: pageSize, search: deferredSearchQuery }],
+    queryKey: queryKeys.admin.users.list({ page, limit: pageSize, search: deferredSearchQuery }),
     queryFn: () =>
       adminService.getUsers({
         page,
@@ -29,7 +30,7 @@ export function useAdminUsers() {
     mutationFn: (userId: string) => adminService.updateUserStatus(userId, 'locked'),
     onSuccess: () => {
       message.success('User locked successfully');
-      void queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.users.all });
     },
     onError: (err: any) => {
       const errMsg = err.response?.data?.message || 'Failed to lock user';
@@ -42,7 +43,7 @@ export function useAdminUsers() {
     mutationFn: (userId: string) => adminService.updateUserStatus(userId, 'active'),
     onSuccess: () => {
       message.success('User unlocked successfully');
-      void queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.users.all });
     },
     onError: (err: any) => {
       const errMsg = err.response?.data?.message || 'Failed to unlock user';

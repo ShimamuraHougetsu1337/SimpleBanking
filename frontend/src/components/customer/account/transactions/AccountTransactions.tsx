@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, Space, Typography, Modal, Descriptions, Tag, Pagination, Spin } from 'antd';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '@/services/api';
 import { useTransactionFilters } from '@/hooks/customer/useTransactionFilters';
 import { TransactionFilters } from '@/components/customer/transactions/filters/TransactionFilters';
@@ -37,7 +38,13 @@ export function AccountTransactions({ accountId }: AccountTransactionsProps) {
   }
 
   const { data: transactions = [], isLoading } = useQuery({
-    queryKey: ['transactions', accountId, filterParams],
+    queryKey: queryKeys.transactions.byAccount(accountId, {
+      page: currentPage,
+      limit: pageSize,
+      fromDate: filterParams.fromDate,
+      toDate: filterParams.toDate,
+      search: filterParams.search
+    }),
     queryFn: async () => {
       if (!accountId) return [];
       const params: any = { accountId, limit: 50 };

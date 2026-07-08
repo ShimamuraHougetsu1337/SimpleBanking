@@ -204,5 +204,25 @@ export const adminService = {
   async getCustomerAuditLogs(params?: GetAuditLogsParams): Promise<GetCustomerAuditLogsResponse> {
     const { data } = await api.get('/audit-logs/customer', { params });
     return data;
+  },
+
+  async getTransactionRequests(params?: { page?: number; limit?: number; status?: string }): Promise<any> {
+    const { data } = await api.get('/admin/transaction-requests', { params });
+    return data;
+  },
+
+  async approveTransactionRequest(id: string): Promise<unknown> {
+    const { data } = await api.post(`/admin/transaction-requests/${id}/approve`);
+    return data;
+  },
+
+  async rejectTransactionRequest(id: string): Promise<unknown> {
+    const { data } = await api.post(`/admin/transaction-requests/${id}/reject`);
+    return data;
+  },
+
+  async createUser(payload: Record<string, unknown>): Promise<unknown> {
+    const { data } = await api.post('/admin/users', payload);
+    return data;
   }
 };

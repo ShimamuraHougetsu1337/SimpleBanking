@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import { adminService } from '@/services/admin.service';
 import { message } from 'antd';
 
 export function useAdminStats() {
   const { data: stats, isLoading: loading, refetch } = useQuery({
-    queryKey: ['adminDashboardStats'],
+    queryKey: queryKeys.admin.stats.dashboard,
     queryFn: async () => {
       try {
         const data = await adminService.getDashboardStats();

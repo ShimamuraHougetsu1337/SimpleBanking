@@ -17,7 +17,7 @@ export class TransactionRequestsService {
     private readonly transactionsHelper: TransactionsHelper,
   ) { }
 
-  async findAllRequests(page: number = 1, limit: number = 10, status?: string) {
+  async findAllRequests(page: number = 1, limit: number = 10, status?: string, tellerId?: string) {
     const query = this.transactionRequestRepository.createQueryBuilder('req')
       .leftJoinAndSelect('req.account', 'account')
       .leftJoinAndSelect('account.user', 'user')
@@ -26,6 +26,10 @@ export class TransactionRequestsService {
 
     if (status) {
       query.andWhere('req.status = :status', { status });
+    }
+
+    if (tellerId) {
+      query.andWhere('req.createdById = :tellerId', { tellerId });
     }
 
     const [data, total] = await query

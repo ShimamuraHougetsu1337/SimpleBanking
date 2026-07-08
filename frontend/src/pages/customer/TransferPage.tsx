@@ -5,6 +5,7 @@ import { useTransfer } from '../../hooks/customer/useTransfer';
 import { v4 as uuidv4 } from 'uuid';
 import { getErrorMessage } from '../../utils/error';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import api from '../../services/api';
 import { TransferForm } from '../../components/customer/transfer/TransferForm';
 import { TransferReviewModal } from '../../components/customer/transfer/TransferReviewModal';
@@ -27,7 +28,7 @@ export default function TransferPage() {
   } | null>(null);
 
   const { data: accounts, isLoading: isLoadingAccounts } = useQuery({
-    queryKey: ['accounts', 'me'],
+    queryKey: queryKeys.accounts.me(),
     queryFn: async () => {
       const { data } = await api.get('/accounts/me');
       return data;
@@ -35,7 +36,7 @@ export default function TransferPage() {
   });
 
   const { data: feeData } = useQuery({
-    queryKey: ['transferFee'],
+    queryKey: queryKeys.settings.transferFee,
     queryFn: async () => {
       const { data } = await api.get('/transactions/transfer-fee');
       return data;

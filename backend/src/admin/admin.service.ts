@@ -7,6 +7,8 @@ import { TransactionRequestsService } from '@/transactions/services/transaction-
 import { AccountStatus } from '@/accounts/entities/account.entity';
 import { v4 as uuidv4 } from 'uuid';
 import Decimal from 'decimal.js';
+import { CreateUserAdminDto } from './dto/create-user-admin.dto';
+import { User } from '@/users/entities/user.entity';
 
 @Injectable()
 export class AdminService {
@@ -71,6 +73,10 @@ export class AdminService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async createUser(dto: CreateUserAdminDto): Promise<User> {
+    return this.usersService.create(dto);
   }
 
   async getUserById(id: string) {
@@ -167,12 +173,12 @@ export class AdminService {
     return await this.transactionRequestsService.rejectRequest(requestId, currentUserId);
   }
 
-  async getTransactionRequests(page: number = 1, limit: number = 10, status?: string) {
-    return await this.transactionRequestsService.findAllRequests(page, limit, status);
+  async getTransactionRequests(page: number = 1, limit: number = 10, status?: string, tellerId?: string) {
+    return await this.transactionRequestsService.findAllRequests(page, limit, status, tellerId);
   }
 
-  async getTransactions(page: number = 1, limit: number = 10, search?: string, startDate?: string, endDate?: string, type?: string) {
-    const { data, total, stats } = await this.transactionsService.findAll(page, limit, search, startDate, endDate, type);
+  async getTransactions(page: number = 1, limit: number = 10, search?: string, startDate?: string, endDate?: string, type?: string, tellerId?: string) {
+    const { data, total, stats } = await this.transactionsService.findAll(page, limit, search, startDate, endDate, type, tellerId);
     return {
       data: data.map(tx => ({
         id: tx.id,

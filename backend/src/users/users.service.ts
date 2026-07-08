@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsRelations } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User, UserStatus } from './entities/user.entity';
+import { User, UserStatus, UserRole } from './entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 
 /** bcrypt work factor — min 10 as specified in DATA_MODEL.md */
@@ -42,6 +42,7 @@ export class UsersService {
       fullName: dto.fullName,
       email: dto.email,
       passwordHash,
+      role: 'role' in dto ? (dto as { role?: UserRole }).role : undefined,
     });
 
     return this.userRepository.save(user);

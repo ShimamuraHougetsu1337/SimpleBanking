@@ -1,5 +1,6 @@
 import { useState, useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { queryKeys } from '@/constants/queryKeys';
 import { adminService, type AdminTransaction } from '@/services/admin.service';
 
 export function useAdminTransactions() {
@@ -15,7 +16,7 @@ export function useAdminTransactions() {
   const endDateStr = dateRange?.[1] ? dateRange[1].toISOString() : undefined;
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['adminTransactions', { page, limit: pageSize, search: deferredSearchQuery, startDate: startDateStr, endDate: endDateStr, type: typeFilter }],
+    queryKey: queryKeys.admin.transactions.list({ page, limit: pageSize, search: deferredSearchQuery, startDate: startDateStr, endDate: endDateStr, type: typeFilter }),
     queryFn: () =>
       adminService.getTransactions({
         page,
