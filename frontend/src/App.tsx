@@ -13,6 +13,7 @@ import AdminTransactionsPage from './pages/admin/AdminTransactionsPage';
 import AdminTransactionRequestsPage from './pages/admin/AdminTransactionRequestsPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAuditLogsPage from './pages/admin/AdminAuditLogsPage';
+import AdminAccountLedgerPage from './pages/admin/AdminAccountLedgerPage';
 import MaintenancePage from './pages/MaintenancePage';
 
 import { AppLayout } from './components/layout/AppLayout';
@@ -59,6 +60,7 @@ const router = createBrowserRouter([
       { path: 'dashboard', element: <AdminDashboardPage /> },
       { path: 'users', element: <AdminUsersPage /> },
       { path: 'accounts', element: <AdminAccountsPage /> },
+      { path: 'accounts/:id/ledger', element: <AdminAccountLedgerPage /> },
       { path: 'transactions', element: <AdminTransactionsPage /> },
       { path: 'transaction-requests', element: <AdminTransactionRequestsPage /> },
       { path: 'audit-logs', element: <AdminAuditLogsPage /> },

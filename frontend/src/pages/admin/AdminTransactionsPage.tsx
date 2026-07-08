@@ -20,6 +20,7 @@ export default function AdminTransactionsPage() {
     handleTypeFilterChange,
     handleDateRangeChange,
     handlePageChange,
+    handleReverseTransaction,
     stats,
   } = useAdminTransactions();
 
@@ -50,6 +51,7 @@ export default function AdminTransactionsPage() {
           pageSize={pageSize}
           total={total}
           onPageChange={handlePageChange}
+          onReverse={handleReverseTransaction}
         />
       </Card>
     </div>

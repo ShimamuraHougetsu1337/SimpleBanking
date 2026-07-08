@@ -1,5 +1,6 @@
 import { Table, Typography, Tag, Space, ConfigProvider, Button, Tooltip } from 'antd';
-import { LockOutlined, UnlockOutlined, DollarOutlined } from '@ant-design/icons';
+import { LockOutlined, UnlockOutlined, DollarOutlined, BookOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import type { AdminAccount } from '@/services/admin.service';
 
 const { Text } = Typography;
@@ -18,6 +19,7 @@ interface AdminAccountTableProps {
   onFreezeAccount: (id: string) => void;
   onUnfreezeAccount: (id: string) => void;
   onOpenDepositModal: (account: AdminAccount) => void;
+  isSystemTab?: boolean;
 }
 
 export const AdminAccountTable = ({
@@ -30,7 +32,10 @@ export const AdminAccountTable = ({
   onFreezeAccount,
   onUnfreezeAccount,
   onOpenDepositModal,
+  isSystemTab = false,
 }: AdminAccountTableProps) => {
+  const navigate = useNavigate();
+
   const columns = [
     {
       title: 'Số tài khoản',
@@ -92,46 +97,58 @@ export const AdminAccountTable = ({
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
           <Button
             type="text"
-            icon={<DollarOutlined />}
-            onClick={() => onOpenDepositModal(record)}
-            style={{ color: '#10B981' }}
-            disabled={record.status !== 'active'}
+            icon={<BookOutlined />}
+            onClick={() => navigate(`/admin/accounts/${record.id}/ledger`)}
+            style={{ color: '#8B5CF6' }}
           >
-            Nạp tiền
+            Sổ cái
           </Button>
-          {record.ownerEmail === 'admin@gmail.com' ? (
-            <Tooltip title="Không thể thực hiện thao tác này">
-              <span>
+          {!isSystemTab && (
+            <>
+              <Button
+                type="text"
+                icon={<DollarOutlined />}
+                onClick={() => onOpenDepositModal(record)}
+                style={{ color: '#10B981' }}
+                disabled={record.status !== 'active'}
+              >
+                Nạp tiền
+              </Button>
+              {record.ownerEmail === 'admin@gmail.com' ? (
+                <Tooltip title="Không thể thực hiện thao tác này">
+                  <span>
+                    <Button
+                      danger
+                      type="text"
+                      disabled
+                      icon={<LockOutlined />}
+                      style={{ display: 'inline-flex', alignItems: 'center', pointerEvents: 'none' }}
+                    >
+                      Khóa
+                    </Button>
+                  </span>
+                </Tooltip>
+              ) : record.status === 'active' ? (
                 <Button
                   danger
                   type="text"
-                  disabled
                   icon={<LockOutlined />}
-                  style={{ display: 'inline-flex', alignItems: 'center', pointerEvents: 'none' }}
+                  onClick={() => onFreezeAccount(record.id)}
+                  style={{ display: 'inline-flex', alignItems: 'center' }}
                 >
                   Khóa
                 </Button>
-              </span>
-            </Tooltip>
-          ) : record.status === 'active' ? (
-            <Button
-              danger
-              type="text"
-              icon={<LockOutlined />}
-              onClick={() => onFreezeAccount(record.id)}
-              style={{ display: 'inline-flex', alignItems: 'center' }}
-            >
-              Khóa
-            </Button>
-          ) : (
-            <Button
-              type="text"
-              style={{ color: '#3B82F6', display: 'inline-flex', alignItems: 'center' }}
-              icon={<UnlockOutlined />}
-              onClick={() => onUnfreezeAccount(record.id)}
-            >
-              Mở khóa
-            </Button>
+              ) : (
+                <Button
+                  type="text"
+                  style={{ color: '#3B82F6', display: 'inline-flex', alignItems: 'center' }}
+                  icon={<UnlockOutlined />}
+                  onClick={() => onUnfreezeAccount(record.id)}
+                >
+                  Mở khóa
+                </Button>
+              )}
+            </>
           )}
         </div>
       ),

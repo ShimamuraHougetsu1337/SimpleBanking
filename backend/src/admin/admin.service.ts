@@ -4,7 +4,9 @@ import { UserStatus } from '@/users/entities/user.entity';
 import { AccountsService } from '@/accounts/accounts.service';
 import { TransactionsService } from '@/transactions/services/transactions.service';
 import { TransactionRequestsService } from '@/transactions/services/transaction-requests.service';
+import { LedgerService } from '@/transactions/services/ledger.service';
 import { AccountStatus } from '@/accounts/entities/account.entity';
+import { UserHistoryService } from '@/users/services/user-history.service';
 import { v4 as uuidv4 } from 'uuid';
 import Decimal from 'decimal.js';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
@@ -17,6 +19,8 @@ export class AdminService {
     private readonly accountsService: AccountsService,
     private readonly transactionsService: TransactionsService,
     private readonly transactionRequestsService: TransactionRequestsService,
+    private readonly ledgerService: LedgerService,
+    private readonly userHistoryService: UserHistoryService,
   ) { }
 
   async getDashboardStats() {
@@ -48,11 +52,12 @@ export class AdminService {
     limit: number = 10,
     search?: string,
     status?: UserStatus,
+    includeDeleted: boolean = false,
   ) {
-    const { data, total } = await this.usersService.findAll(page, limit, search, status);
+    const { data, total } = await this.usersService.findAll(page, limit, search, status, includeDeleted);
 
     const formattedData = data.map((user) => {
-      const balance = user.accounts.reduce((acc, cur) => acc.plus(new Decimal(cur.balance)), new Decimal(0));
+      const balance = (user.accounts || []).reduce((acc, cur) => acc.plus(new Decimal(cur.balance)), new Decimal(0));
       return {
         id: user.id,
         fullName: user.fullName,
@@ -61,6 +66,7 @@ export class AdminService {
         status: user.status,
         balance: balance.toFixed(2),
         createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
       };
     });
 
@@ -98,6 +104,19 @@ export class AdminService {
     };
   }
 
+  async getUserHistory(userId: string) {
+    return await this.userHistoryService.findByUserId(userId);
+  }
+
+  async softDeleteUser(userId: string) {
+    return await this.usersService.softDelete(userId);
+  }
+
+  async getAccountLedger(accountId: string) {
+    // In a real app we might want pagination, but for now we fetch all or top 100 for admin view
+    return await this.ledgerService.getEntriesByAccount(accountId);
+  }
+
   async updateUserStatus(id: string, status: UserStatus, currentAdminId: string) {
     if (id === currentAdminId) {
       throw new BadRequestException('Administrators cannot lock their own accounts');
@@ -113,8 +132,14 @@ export class AdminService {
     };
   }
 
-  async getAccounts(page: number = 1, limit: number = 10, search?: string, status?: AccountStatus) {
-    const { data, total } = await this.accountsService.findAll(page, limit, search, status);
+  async getAccounts(
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    status?: AccountStatus,
+    type?: 'customer' | 'system' | 'all',
+  ) {
+    const { data, total } = await this.accountsService.findAll(page, limit, search, status, type);
     return {
       data: data.map(acc => ({
         id: acc.id,
@@ -196,6 +221,7 @@ export class AdminService {
         toAccount: tx.toAccount?.accountNumber || null,
         toUserName: tx.toAccount?.user?.fullName || null,
         createdAt: tx.createdAt,
+        originalTransactionId: tx.originalTransactionId,
       })),
       meta: {
         page,

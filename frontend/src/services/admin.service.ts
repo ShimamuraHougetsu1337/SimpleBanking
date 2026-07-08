@@ -9,6 +9,7 @@ export interface AdminUser {
   accountNumber: string | null;
   balance: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface GetUsersParams {
@@ -16,6 +17,7 @@ export interface GetUsersParams {
   limit?: number;
   search?: string;
   status?: string;
+  includeDeleted?: boolean;
 }
 
 export interface GetUsersResponse {
@@ -62,6 +64,7 @@ export interface AdminTransaction {
   toAccount: string | null;
   toUserName: string | null;
   createdAt: string;
+  originalTransactionId: string | null;
 }
 
 export interface GetTransactionsResponse {
@@ -91,6 +94,37 @@ export interface SystemSetting {
   displayName: string;
   description: string;
   groupName: string;
+}
+
+export interface UserHistoryRecord {
+  id: string;
+  userId: string;
+  changedById: string | null;
+  changedField: string;
+  oldValue: string | null;
+  newValue: string | null;
+  createdAt: string;
+}
+
+export interface LedgerEntryRecord {
+  id: string;
+  accountId: string;
+  transactionId: string;
+  type: string;
+  amount: string;
+  balanceAfter: string;
+  createdAt: string;
+  transaction?: AdminTransaction;
+}
+
+export interface GetLedgerResponse {
+  data: LedgerEntryRecord[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 export interface AdminAuditLog {
@@ -164,7 +198,7 @@ export const adminService = {
     return data;
   },
 
-  async getAccounts(params?: { page?: number; limit?: number; search?: string; status?: string }): Promise<GetAccountsResponse> {
+  async getAccounts(params?: { page?: number; limit?: number; search?: string; status?: string; type?: 'customer' | 'system' | 'all' }): Promise<GetAccountsResponse> {
     const { data } = await api.get('/admin/accounts', { params });
     return data;
   },
@@ -194,6 +228,28 @@ export const adminService = {
     // Backend now returns { settings, oldValues, newValues } for audit purposes
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return (data.settings ?? data) as SystemSetting[];
+  },
+
+  async reverseTransaction(id: string) {
+    const response = await api.post(`/transactions/${id}/reverse`);
+    return response.data;
+  },
+
+  async getUserHistory(id: string): Promise<UserHistoryRecord[]> {
+    const response = await api.get(`/admin/users/${id}/history`);
+    return response.data;
+  },
+
+  async softDeleteUser(id: string) {
+    const response = await api.delete(`/admin/users/${id}`);
+    return response.data;
+  },
+
+  async getAccountLedger(id: string, page = 1, limit = 50): Promise<GetLedgerResponse> {
+    const response = await api.get(`/admin/accounts/${id}/ledger`, {
+      params: { page, limit },
+    });
+    return response.data;
   },
 
   async getAdminAuditLogs(params?: GetAuditLogsParams): Promise<GetAdminAuditLogsResponse> {
