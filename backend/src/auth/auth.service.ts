@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
+import { OnEvent } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import { User, UserStatus } from '@/users/entities/user.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { UsersService } from '@/users/users.service';
+import { AppEvent } from '@/common/enums/app-event.enum';
 import { AccountsService } from '@/accounts/accounts.service';
 import { RegisterDto } from './dto/register.dto';
 import { StringValue } from 'ms';
@@ -99,22 +101,37 @@ export class AuthService {
     return { accessToken, refreshToken, user };
   }
 
-  /**
-   * Validates user credentials and generates a token pair on success.
-   */
   async login(email: string, password: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new UnauthorizedException(ERROR_INCORRECT_CREDENTIALS);
     }
 
+    // Check if the user is locked (either permanently or temporarily)
+    if (user.status === UserStatus.LOCKED) {
+      if (user.lockoutUntil && user.lockoutUntil > new Date()) {
+        const remainingMinutes = Math.ceil((user.lockoutUntil.getTime() - Date.now()) / (60 * 1000));
+        throw new ForbiddenException(
+          `Tài khoản đã bị khóa tạm thời do nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau ${remainingMinutes} phút.`,
+        );
+      } else if (user.lockoutUntil && user.lockoutUntil <= new Date()) {
+        // Lockout expired, auto-unlock before checking password
+        await this.usersService.resetFailedAttempts(user);
+      } else {
+        // Permanent lock by admin (no lockoutUntil timestamp)
+        throw new ForbiddenException(ERROR_ACCOUNT_LOCKED);
+      }
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
     if (!isPasswordValid) {
+      await this.usersService.incrementFailedAttempts(user);
       throw new UnauthorizedException(ERROR_INCORRECT_CREDENTIALS);
     }
 
-    if (user.status === UserStatus.LOCKED) {
-      throw new ForbiddenException(ERROR_ACCOUNT_LOCKED);
+    // Reset failed attempts upon successful login if there were any previous failures
+    if (user.failedAttempts > 0) {
+      await this.usersService.resetFailedAttempts(user);
     }
 
     return this.generateTokenPair(user);
@@ -167,6 +184,17 @@ export class AuthService {
     const tokenHash = hashToken(rawRefreshToken);
     await this.refreshTokenRepository.update(
       { tokenHash },
+      { isRevoked: true },
+    );
+  }
+
+  /**
+   * Listens to the AppEvent.USER_PASSWORD_CHANGED event to revoke all refresh tokens of the user.
+   */
+  @OnEvent(AppEvent.USER_PASSWORD_CHANGED)
+  async handleUserPasswordChanged(payload: { userId: string }) {
+    await this.refreshTokenRepository.update(
+      { userId: payload.userId },
       { isRevoked: true },
     );
   }

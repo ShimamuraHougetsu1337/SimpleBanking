@@ -3,7 +3,7 @@ import { Cron } from '@nestjs/schedule/dist/decorators';
 import { CronExpression } from '@nestjs/schedule/dist/enums';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { SystemSettingsService } from '@/admin/system-settings.service';
+import { SystemSettingsService } from '@/system-settings/system-settings.service';
 import { AdminAuditLogsService } from '@/audit-logs/admin-audit-logs.service';
 import { CustomerAuditLogsService } from '@/audit-logs/customer-audit-logs.service';
 
@@ -35,8 +35,8 @@ export class TasksService {
   async handleCleanupAuditLogs(): Promise<void> {
     this.logger.log('Running audit logs cleanup task...');
     try {
-      const adminRetentionDays = await this.systemSettingsService.getSetting<number>('admin_audit_retention_days') || 365;
-      const customerRetentionDays = await this.systemSettingsService.getSetting<number>('customer_audit_retention_days') || 180;
+      const adminRetentionDays = this.systemSettingsService.getSetting<number>('admin_audit_retention_days') || 365;
+      const customerRetentionDays = this.systemSettingsService.getSetting<number>('customer_audit_retention_days') || 180;
 
       await this.adminAuditLogsService.deleteOlderThan(adminRetentionDays);
       this.logger.log(`Cleaned up admin audit logs older than ${adminRetentionDays} days.`);

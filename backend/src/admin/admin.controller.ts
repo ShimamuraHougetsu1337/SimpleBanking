@@ -20,7 +20,7 @@ import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { AdminService } from './admin.service';
 import { GetUsersQueryDto } from './dto/get-users-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
-import { SystemSettingsService } from './system-settings.service';
+import { SystemSettingsService } from '@/system-settings/system-settings.service';
 import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { AdminLog } from '@/audit-logs/decorators/admin-log.decorator';
 import { AdminAuditAction } from '@/audit-logs/enums/admin-audit-action.enum';

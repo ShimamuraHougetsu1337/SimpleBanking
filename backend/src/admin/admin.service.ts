@@ -121,7 +121,7 @@ export class AdminService {
     if (id === currentAdminId) {
       throw new BadRequestException('Administrators cannot lock their own accounts');
     }
-    const updatedUser = await this.usersService.updateStatus(id, status);
+    const updatedUser = await this.usersService.updateStatus(id, status, currentAdminId);
     return {
       id: updatedUser.id,
       fullName: updatedUser.fullName,

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { TransactionsController } from './controllers/transactions.controller';
 import { ReversalController } from './controllers/reversal.controller';
 import { TransactionsService } from './services/transactions.service';
@@ -11,14 +12,22 @@ import { Transaction } from './entities/transaction.entity';
 import { LedgerEntry } from './entities/ledger-entry.entity';
 import { FeeSettlementLog } from './entities/fee-settlement-log.entity';
 import { AccountsModule } from '@/accounts/accounts.module';
+import { AuditLogsModule } from '@/audit-logs/audit-logs.module';
 import { FeeSettlementCron } from './jobs/fee-settlement.cron';
 import { LedgerService } from './services/ledger.service';
 import { TransactionRequest } from './entities/transaction-request.entity';
+import { TransactionRateLimitGuard } from './guards/transaction-rate-limit.guard';
+import { Otp } from './entities/otp.entity';
+import { OtpService } from './services/otp.service';
+import { SystemSettingsModule } from '@/system-settings/system-settings.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeSettlementLog]),
+    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeSettlementLog, Otp]),
     AccountsModule,
+    AuditLogsModule,
+    ThrottlerModule,
+    SystemSettingsModule,
   ],
   controllers: [TransactionsController, ReversalController],
   providers: [
@@ -29,7 +38,9 @@ import { TransactionRequest } from './entities/transaction-request.entity';
     LedgerService,
     ReversalService,
     FeeSettlementCron,
+    TransactionRateLimitGuard,
+    OtpService,
   ],
-  exports: [TransactionsService, TransactionRequestsService, LedgerService],
+  exports: [TransactionsService, TransactionRequestsService, LedgerService, TransactionRateLimitGuard, OtpService],
 })
 export class TransactionsModule { }

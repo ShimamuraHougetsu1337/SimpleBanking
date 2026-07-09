@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import { Injectable, ConflictException, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, OptimisticLockVersionMismatchError } from 'typeorm';
 import { SystemSetting } from './entities/system-setting.entity';
@@ -16,11 +16,29 @@ export interface UpdateSettingsResult {
 }
 
 @Injectable()
-export class SystemSettingsService {
+export class SystemSettingsService implements OnApplicationBootstrap {
+  private readonly cache = new Map<string, any>();
+
   constructor(
     @InjectRepository(SystemSetting)
     private readonly settingsRepo: Repository<SystemSetting>,
   ) {}
+
+  async onApplicationBootstrap() {
+    await this.reloadCache();
+  }
+
+  private async reloadCache(): Promise<void> {
+    const settings = await this.settingsRepo.find();
+    const newCache = new Map<string, any>();
+    for (const setting of settings) {
+      newCache.set(setting.settingKey, this.parseValue(setting.settingValue, setting.dataType));
+    }
+    this.cache.clear();
+    for (const [k, v] of newCache.entries()) {
+      this.cache.set(k, v);
+    }
+  }
 
   private parseValue(value: string, type: string): unknown {
     switch (type) {
@@ -65,10 +83,11 @@ export class SystemSettingsService {
     }));
   }
 
-  async getSetting<T>(key: string): Promise<T | null> {
-    const setting = await this.settingsRepo.findOne({ where: { settingKey: key } });
-    if (!setting) return null;
-    return this.parseValue(setting.settingValue, setting.dataType) as T;
+  getSetting<T>(key: string): T | null {
+    if (this.cache.has(key)) {
+      return this.cache.get(key) as T;
+    }
+    return null;
   }
 
   async updateSettings(updates: Record<string, any>, updatedBy?: string): Promise<UpdateSettingsResult> {
@@ -92,6 +111,8 @@ export class SystemSettingsService {
 
     try {
       await this.settingsRepo.save(settings);
+      // Invalidate cache upon successful database save
+      await this.reloadCache();
     } catch (error) {
       if (error instanceof OptimisticLockVersionMismatchError) {
         throw new ConflictException(
