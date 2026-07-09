@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-09]
+
+### Added
+- **Two-Factor Authentication (OTP) for Transactions**: Implemented OTP 2FA for high-value transactions (online transfers or cash withdrawals exceeding a dynamic threshold). Added `Otp` entity and `OtpService` to handle SHA-256 OTP hashing, verification (with expiry and 3-attempt lockouts), and resend operations.
+- **Dynamic Transaction Rate Limiting**: Added `TransactionRateLimitGuard` and dynamic throttler configuration (`throttler.config.ts`) to restrict transaction frequency using parameters defined in settings.
+- **Dedicated System Settings Module**: Extracted the system settings entity and service into a root-level `SystemSettingsModule` (`src/system-settings/`) to decouple it from `AdminModule` and resolve circular dependency risks.
+
+### Changed
+- **Eager Settings Caching**: Refactored `SystemSettingsService` to pre-load all configuration settings into RAM on application startup (`OnApplicationBootstrap`) and refresh them atomically, making lookups synchronous (0ms RAM cache reads).
+- **Service Refactoring & Logic Separation**: Separated high-level orchestration (`TransactionsService`) from lower-level transaction execution (`TransactionsHelper`).
+- **Clean Code & SRP Decomposition**: Decomposed long transactional methods across `TransactionsHelper`, `ReversalService`, and `TransactionRequestsService` (e.g., `executeMovement`, `reverseTransaction`, `adminDeposit/Withdraw`, `approve/rejectRequest`) into small, focused private helper functions.
+- **Synchronous Service Integrations**: Refactored `FeesService` and `TasksService` to fetch system configurations synchronously from the memory cache instead of executing raw database queries.
+
+---
+
 ## [2026-07-08]
 
 ### Added
