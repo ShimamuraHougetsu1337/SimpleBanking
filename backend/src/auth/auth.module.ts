@@ -11,14 +11,7 @@ import { AuthService } from './auth.service';
 import { UsersModule } from '@/users/users.module';
 import { AccountsModule } from '@/accounts/accounts.module';
 import { AuditLogsModule } from '@/audit-logs/audit-logs.module';
-import { LruCacheThrottlerStorage } from './storage/lru-cache-throttler.storage';
 import { LoginRateLimitGuard } from './guards/login-rate-limit.guard';
-
-/** Maximum login attempts within the rate limit window */
-const LOGIN_RATE_LIMIT = 5;
-
-/** Rate limit window in milliseconds (1 minute) */
-const LOGIN_RATE_LIMIT_TTL_MS = 60 * 1000;
 
 @Module({
   imports: [
@@ -38,19 +31,7 @@ const LOGIN_RATE_LIMIT_TTL_MS = 60 * 1000;
     UsersModule,
     AccountsModule,
     AuditLogsModule,
-
-    // ThrottlerModule scoped to AuthModule — uses LRU Cache as the storage backend.
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          name: 'login',
-          ttl: LOGIN_RATE_LIMIT_TTL_MS,
-          limit: LOGIN_RATE_LIMIT,
-          blockDuration: LOGIN_RATE_LIMIT_TTL_MS,
-        },
-      ],
-      storage: new LruCacheThrottlerStorage(),
-    }),
+    ThrottlerModule,
   ],
   controllers: [AuthController],
   providers: [

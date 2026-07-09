@@ -8,7 +8,7 @@ import {
   TransactionType,
   TransactionStatus,
 } from '@/transactions/entities/transaction.entity';
-import { SystemSetting } from '@/admin/entities/system-setting.entity';
+import { SystemSetting } from '@/system-settings/entities/system-setting.entity';
 import * as bcrypt from 'bcrypt';
 
 const BCRYPT_SALT_ROUNDS = 10;
@@ -284,6 +284,30 @@ async function run() {
         dataType: 'decimal',
         displayName: 'Hạn mức phê duyệt (Nạp/Rút nội bộ)',
         description: 'Các giao dịch Nạp/Rút nội bộ vượt hạn mức này sẽ yêu cầu Quản lý phê duyệt (Nguyên tắc 4 mắt).',
+        groupName: 'transaction'
+      },
+      {
+        settingKey: 'max_login_failed_attempts',
+        settingValue: '5',
+        dataType: 'int',
+        displayName: 'Số lần đăng nhập sai tối đa',
+        description: 'Số lần nhập sai mật khẩu tối đa trước khi tài khoản bị khóa tạm thời.',
+        groupName: 'security'
+      },
+      {
+        settingKey: 'login_lockout_duration_minutes',
+        settingValue: '15',
+        dataType: 'int',
+        displayName: 'Thời gian khóa đăng nhập (phút)',
+        description: 'Thời gian khóa tài khoản tạm thời khi nhập sai mật khẩu quá số lần quy định.',
+        groupName: 'security'
+      },
+      {
+        settingKey: 'otp_transaction_threshold',
+        settingValue: '10000000',
+        dataType: 'decimal',
+        displayName: 'Ngưỡng yêu cầu OTP giao dịch',
+        description: 'Các giao dịch có giá trị lớn hơn hoặc bằng ngưỡng này sẽ yêu cầu xác thực OTP từ phía khách hàng.',
         groupName: 'transaction'
       }
     ];

@@ -12,16 +12,19 @@ import { TasksModule } from './tasks/tasks.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bullmq';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerModule, ThrottlerModuleOptions } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { MaintenanceGuard } from './common/guards/maintenance.guard';
 import databaseConfig from './config/database.config';
+import throttlerConfig from './config/throttler.config';
 
 @Module({
   imports: [
     // Load environment variables globally — all modules can use ConfigService
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [databaseConfig],
+      load: [databaseConfig, throttlerConfig],
       // Allows the app to start without a .env file in production (env vars set externally)
       ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
@@ -55,6 +58,13 @@ import databaseConfig from './config/database.config';
     TasksModule,
     AuditLogsModule,
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) =>
+        configService.get<ThrottlerModuleOptions>('throttler') as ThrottlerModuleOptions,
+    }),
   ],
   controllers: [AppController],
   providers: [

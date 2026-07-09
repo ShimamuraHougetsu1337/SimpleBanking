@@ -8,4 +8,5 @@ export enum CustomerAuditAction {
   TRANSFER = 'transfer',
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
+  TRANSACTION_RATE_LIMITED = 'transaction_rate_limited',
 }

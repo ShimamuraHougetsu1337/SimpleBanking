@@ -1,14 +1,15 @@
-import { Injectable, BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { Brackets, Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Brackets, SelectQueryBuilder } from 'typeorm';
 import { TransactionsHelper } from '../helpers/transactions.helper';
-import { Transaction, TransactionType } from '../entities/transaction.entity';
+import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
 import { LedgerEntryType } from '../entities/ledger-entry.entity';
-import { Account, AccountStatus } from '@/accounts/entities/account.entity';
+import { Account } from '@/accounts/entities/account.entity';
 import { TransferDto } from '../dto/transfer.dto';
 import { DepositDto } from '../dto/deposit.dto';
 import { WithdrawDto } from '../dto/withdraw.dto';
-import { SystemSetting } from '@/admin/entities/system-setting.entity';
+import { SystemSettingsService } from '@/system-settings/system-settings.service';
+import { OtpService } from './otp.service';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -18,6 +19,8 @@ export class TransactionsService {
     private readonly transactionRepository: Repository<Transaction>,
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly transactionsHelper: TransactionsHelper,
+    private readonly otpService: OtpService,
+    private readonly systemSettingsService: SystemSettingsService,
   ) { }
 
   // ===========================================================================
@@ -38,7 +41,7 @@ export class TransactionsService {
       .leftJoinAndSelect('fromAccount.user', 'fromUser')
       .leftJoinAndSelect('toAccount.user', 'toUser')
       .where(
-        new Brackets((qb) => {
+        new Brackets((qb: SelectQueryBuilder<Transaction>) => {
           qb.where('fromAccount.userId = :userId', { userId })
             .orWhere('toAccount.userId = :userId', { userId });
         })
@@ -46,7 +49,7 @@ export class TransactionsService {
 
     if (accountId) {
       query.andWhere(
-        new Brackets((qb) => {
+        new Brackets((qb: SelectQueryBuilder<Transaction>) => {
           qb.where('tx.fromAccountId = :accountId', { accountId })
             .orWhere('tx.toAccountId = :accountId', { accountId });
         })
@@ -176,147 +179,42 @@ export class TransactionsService {
     const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existing) return existing;
 
-    const transactionResult = await this.transactionsHelper.executeTransaction(async (manager) => {
-      // Find fee
-      const feeSetting = await manager.findOne(SystemSetting, { where: { settingKey: 'transfer_fee' } });
-      const feeValue = new Decimal(feeSetting?.settingValue || 0);
+    const otpThresholdVal = this.systemSettingsService.getSetting<number>('otp_transaction_threshold');
+    const otpThreshold = new Decimal(otpThresholdVal ?? 10000000);
+    const amount = new Decimal(dto.amount);
 
-      // Resolve destination account first without locking to get its ID
+    if (amount.gte(otpThreshold)) {
+      return this.createPendingOtpTransaction(dto, currentUserId, idempotencyKey, TransactionType.TRANSFER);
+    }
+
+    return this.transactionsHelper.executeTransaction(async (manager) => {
       const toAccountRef = await manager.findOne(Account, {
         where: { accountNumber: dto.to_accountNumber },
       });
-
       if (!toAccountRef) {
         throw new NotFoundException('Destination account does not exist');
       }
 
-      const fromAccountId = dto.from_accountId;
-      const toAccountId = toAccountRef.id;
-
-      if (fromAccountId === toAccountId) {
-        throw new BadRequestException('Cannot transfer to the same account');
-      }
-
-      // Ensure consistent locking order and avoid deadlocks
-      const accountIdsToLock = [fromAccountId, toAccountId];
-
-      accountIdsToLock.sort();
-
-      const lockedAccounts = new Map<string, Account>();
-      for (const id of accountIdsToLock) {
-        const acc = await manager.findOne(Account, { where: { id }, lock: { mode: 'pessimistic_write' } });
-        if (acc) lockedAccounts.set(id, acc);
-      }
-
-      const fromAccount = lockedAccounts.get(fromAccountId);
-      const toAccount = lockedAccounts.get(toAccountId);
-
-      if (!fromAccount || fromAccount.userId !== currentUserId || fromAccount.status !== AccountStatus.ACTIVE) throw new NotFoundException('Source account not found or is locked');
-      if (!toAccount) throw new NotFoundException('Destination account not found');
-      if (toAccount.status !== AccountStatus.ACTIVE) throw new UnprocessableEntityException('Destination account is locked');
-
-      const amount = this.transactionsHelper.validateAmount(dto.amount);
+      const feeVal = this.systemSettingsService.getSetting<number>('transfer_fee');
+      const feeValue = new Decimal(feeVal ?? 0);
       const totalAmount = amount.plus(feeValue);
 
-      if (totalAmount.gt(fromAccount.balance)) {
-        throw new UnprocessableEntityException('Số dư tài khoản không đủ ');
-      }
-
-      // Check Daily Limit (chỉ tính số tiền chuyển, không tính phí)
-      const limitSetting = await manager.findOne(SystemSetting, { where: { settingKey: 'daily_limit' } });
-      if (limitSetting) {
-        const dailyLimit = new Decimal(limitSetting.settingValue);
-        const usedLimit = new Decimal(fromAccount.usedDailyLimit || 0);
-        if (usedLimit.plus(amount).gt(dailyLimit)) {
-          throw new BadRequestException('Bạn đã vượt quá hạn mức chuyển tiền hàng ngày');
-        }
-        // Update used daily limit
-        await manager
-          .createQueryBuilder()
-          .update(Account)
-          .set({ usedDailyLimit: () => `"used_daily_limit" + ${amount.toFixed(2)}` })
-          .where('id = :id', { id: fromAccount.id })
-          .execute();
-      }
-
-      const debitBalanceAfterAmount = await this.transactionsHelper.updateAccountBalance(manager, fromAccount.id, amount, 'subtract');
-
-      let debitBalanceAfterFee = debitBalanceAfterAmount;
-      if (feeValue.gt(0)) {
-        debitBalanceAfterFee = await this.transactionsHelper.updateAccountBalance(manager, fromAccount.id, feeValue, 'subtract');
-      }
-
-      const creditBalanceAfter = await this.transactionsHelper.updateAccountBalance(manager, toAccount.id, amount, 'add');
-
-      const transactionResult = await this.transactionsHelper.createAndSaveTransaction(manager, {
-        fromAccountId: fromAccount.id,
-        toAccountId: toAccount.id,
+      const tx = manager.create(Transaction, {
+        fromAccountId: dto.from_accountId,
+        toAccountId: toAccountRef.id,
         amount: dto.amount,
         fee: feeValue.toFixed(2),
         totalAmount: totalAmount.toFixed(2),
+        type: TransactionType.TRANSFER,
+        status: TransactionStatus.PROCESSING,
         description: dto.description,
         idempotencyKey,
-        type: TransactionType.TRANSFER,
       });
+      const savedTx = await manager.save(Transaction, tx);
 
-      // Build ledger entries: Debit sender (amount), Debit sender (fee), Credit receiver, Credit suspense (fee)
-      const suspenseAccountId = await this.transactionsHelper.getSuspenseAccountId();
-
-      const ledgerEntries: {
-        accountId: string;
-        transactionId: string;
-        type: LedgerEntryType;
-        amount: Decimal;
-        balanceAfter: Decimal;
-      }[] = [
-          // 1. Ghi nợ người gửi — số tiền gốc
-          {
-            accountId: fromAccount.id,
-            transactionId: transactionResult.id,
-            type: LedgerEntryType.DEBIT,
-            amount,
-            balanceAfter: debitBalanceAfterAmount,
-          },
-        ];
-
-      if (feeValue.gt(0)) {
-        // 2. Ghi nợ người gửi — phí giao dịch
-        ledgerEntries.push({
-          accountId: fromAccount.id,
-          transactionId: transactionResult.id,
-          type: LedgerEntryType.DEBIT,
-          amount: feeValue,
-          balanceAfter: debitBalanceAfterFee,
-        });
-
-        // 3. Ghi có SYS_FEE_SUSPENSE — phí thu được (INSERT-only, no lock)
-        ledgerEntries.push({
-          accountId: suspenseAccountId,
-          transactionId: transactionResult.id,
-          type: LedgerEntryType.CREDIT,
-          amount: feeValue,
-          balanceAfter: new Decimal(0), // sentinel — suspense balance is computed via SUM query
-        });
-      }
-
-      // 4. Ghi có người nhận — số tiền gốc
-      ledgerEntries.push({
-        accountId: toAccount.id,
-        transactionId: transactionResult.id,
-        type: LedgerEntryType.CREDIT,
-        amount,
-        balanceAfter: creditBalanceAfter,
-      });
-
-      await this.transactionsHelper.createLedgerEntries(manager, ledgerEntries);
-
-      return transactionResult;
+      return this.transactionsHelper.executeMovement(manager, savedTx);
     });
-
-    return transactionResult;
   }
-
-
 
   async deposit(dto: DepositDto, currentUserId: string, idempotencyKey: string): Promise<Transaction> {
     const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
@@ -356,34 +254,111 @@ export class TransactionsService {
     const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existing) return existing;
 
+    const otpThresholdVal = this.systemSettingsService.getSetting<number>('otp_transaction_threshold');
+    const otpThreshold = new Decimal(otpThresholdVal ?? 10000000);
+    const amount = new Decimal(dto.amount);
+
+    if (amount.gte(otpThreshold)) {
+      return this.createPendingOtpTransaction(dto, currentUserId, idempotencyKey, TransactionType.WITHDRAW);
+    }
+
     return this.transactionsHelper.executeTransaction(async (manager) => {
-      const account = await this.transactionsHelper.getAccountWithLock(manager, dto.accountId, currentUserId);
-      const amount = this.transactionsHelper.validateAmount(dto.amount, account.balance);
-
-      const balanceAfter = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'subtract');
-
-      const tx = await this.transactionsHelper.createAndSaveTransaction(manager, {
-        fromAccountId: account.id,
+      const tx = manager.create(Transaction, {
+        fromAccountId: dto.accountId,
         amount: dto.amount.toString(),
         fee: '0.00',
         totalAmount: dto.amount.toString(),
+        type: TransactionType.WITHDRAW,
+        status: TransactionStatus.PROCESSING,
         description: dto.description || 'Withdraw',
         idempotencyKey,
-        type: TransactionType.WITHDRAW,
       });
+      const savedTx = await manager.save(Transaction, tx);
 
-      await this.transactionsHelper.createLedgerEntries(manager, [
-        {
-          accountId: account.id,
-          transactionId: tx.id,
-          type: LedgerEntryType.DEBIT,
-          amount,
-          balanceAfter,
-        },
-      ]);
-
-      return tx;
+      return this.transactionsHelper.executeMovement(manager, savedTx);
     });
   }
 
+  /**
+   * Helper to create transaction in PENDING_OTP status and generate OTP.
+   */
+  private async createPendingOtpTransaction(
+    dto: TransferDto | WithdrawDto,
+    currentUserId: string,
+    idempotencyKey: string,
+    type: TransactionType,
+  ): Promise<Transaction> {
+    let fromAccountId: string | null = null;
+    let toAccountId: string | null = null;
+    const amountStr = dto.amount.toString();
+    let feeStr = '0.00';
+    let totalAmountStr = amountStr;
+    const description = dto.description || '';
+
+    if (type === TransactionType.TRANSFER) {
+      const transferDto = dto as TransferDto;
+      fromAccountId = transferDto.from_accountId;
+
+      const toAccountRef = await this.dataSource.getRepository(Account).findOne({
+        where: { accountNumber: transferDto.to_accountNumber },
+      });
+      if (!toAccountRef) {
+        throw new NotFoundException('Destination account does not exist');
+      }
+      toAccountId = toAccountRef.id;
+
+      const feeVal = this.systemSettingsService.getSetting<number>('transfer_fee');
+      const feeValue = new Decimal(feeVal ?? 0);
+      const totalAmount = new Decimal(amountStr).plus(feeValue);
+      feeStr = feeValue.toFixed(2);
+      totalAmountStr = totalAmount.toFixed(2);
+    } else {
+      const withdrawDto = dto as WithdrawDto;
+      fromAccountId = withdrawDto.accountId;
+    }
+
+    const pendingTx = this.transactionRepository.create({
+      fromAccountId,
+      toAccountId,
+      amount: amountStr,
+      fee: feeStr,
+      totalAmount: totalAmountStr,
+      type,
+      status: TransactionStatus.PENDING_OTP,
+      description,
+      idempotencyKey,
+    });
+    const savedTx = await this.transactionRepository.save(pendingTx);
+
+    // Delegate to OtpService
+    await this.otpService.createOtp(savedTx.id);
+
+    return savedTx;
+  }
+
+  /**
+   * Verifies OTP and executes the movement on success.
+   */
+  async verifyOtp(transactionId: string, code: string, userId: string): Promise<Transaction> {
+    await this.otpService.verifyOtp(transactionId, code, userId);
+
+    const tx = await this.transactionRepository.findOne({ where: { id: transactionId } });
+    if (!tx) {
+      throw new NotFoundException('Transaction not found');
+    }
+
+    tx.status = TransactionStatus.PROCESSING;
+    const processingTx = await this.transactionRepository.save(tx);
+
+    return this.transactionsHelper.executeTransaction(async (manager) => {
+      return this.transactionsHelper.executeMovement(manager, processingTx);
+    });
+  }
+
+  /**
+   * Resends OTP code for pending transaction.
+   */
+  async resendOtp(transactionId: string, userId: string): Promise<{ message: string }> {
+    return this.otpService.resendOtp(transactionId, userId);
+  }
 }

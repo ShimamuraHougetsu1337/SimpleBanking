@@ -19,6 +19,8 @@ export enum TransactionStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
   PENDING = 'pending',
+  PENDING_OTP = 'pending_otp',
+  PROCESSING = 'processing',
   REVERSED = 'reversed',
 }
 

@@ -66,6 +66,12 @@ export class User {
   })
   status: UserStatus;
 
+  @Column({ name: 'failed_attempts', type: 'int', default: 0 })
+  failedAttempts: number;
+
+  @Column({ name: 'lockout_until', type: 'timestamptz', nullable: true })
+  lockoutUntil: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 

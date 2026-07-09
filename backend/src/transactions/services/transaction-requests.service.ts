@@ -1,12 +1,12 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import { TransactionsHelper } from '../helpers/transactions.helper';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
 import { LedgerEntryType } from '../entities/ledger-entry.entity';
 import { TransactionRequest, TransactionRequestType, TransactionRequestStatus } from '../entities/transaction-request.entity';
 import { Account } from '@/accounts/entities/account.entity';
-import { SystemSetting } from '@/admin/entities/system-setting.entity';
+import { SystemSettingsService } from '@/system-settings/system-settings.service';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -16,6 +16,7 @@ export class TransactionRequestsService {
     private readonly transactionRequestRepository: Repository<TransactionRequest>,
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly transactionsHelper: TransactionsHelper,
+    private readonly systemSettingsService: SystemSettingsService,
   ) { }
 
   async findAllRequests(page: number = 1, limit: number = 10, status?: string, tellerId?: string) {
@@ -60,19 +61,23 @@ export class TransactionRequestsService {
     };
   }
 
-  async adminDeposit(accountId: string, amountStr: string, description: string, idempotencyKey: string, currentUserId: string): Promise<Transaction | TransactionRequest> {
+  async adminDeposit(
+    accountId: string,
+    amountStr: string,
+    description: string,
+    idempotencyKey: string,
+    currentUserId: string,
+  ): Promise<Transaction | TransactionRequest> {
     const existingTx = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existingTx) return existingTx;
 
     return this.transactionsHelper.executeTransaction(async (manager) => {
-      const account = await this.transactionsHelper.getAccountWithLock(manager, accountId);
-      const amount = this.transactionsHelper.validateAmount(amountStr);
+      const { account, amount } = await this.validateAdminDepositEligibility(manager, accountId, amountStr);
 
-      const thresholdSetting = await manager.findOne(SystemSetting, { where: { settingKey: 'high_value_transaction_threshold' } });
-      const threshold = new Decimal(thresholdSetting?.settingValue || '500000000');
+      const thresholdVal = this.systemSettingsService.getSetting<number>('high_value_transaction_threshold');
+      const threshold = new Decimal(thresholdVal ?? 500000000);
 
       if (amount.gt(threshold)) {
-        // Exceeds threshold -> Pending Approval
         const request = manager.create(TransactionRequest, {
           accountId,
           amount: amountStr,
@@ -85,172 +90,50 @@ export class TransactionRequestsService {
         return manager.save(TransactionRequest, request);
       }
 
-      // Within threshold -> Auto Approve -> Success
-      const request = manager.create(TransactionRequest, {
-        accountId,
-        amount: amountStr,
-        type: TransactionRequestType.DEPOSIT,
-        status: TransactionRequestStatus.AUTO_APPROVED,
-        description,
-        idempotencyKey,
-        createdById: currentUserId,
-      });
-      const savedRequest = await manager.save(TransactionRequest, request);
-
-      const balanceAfterDeposit = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
-
-      const transaction = manager.create(Transaction, {
-        toAccountId: accountId,
-        amount: amountStr,
-        fee: '0.00',
-        totalAmount: amountStr,
-        description,
-        type: TransactionType.DEPOSIT,
-        status: TransactionStatus.COMPLETED,
-        requestId: savedRequest.id,
-      });
-      const savedTx = await manager.save(Transaction, transaction);
-
-      await this.transactionsHelper.createLedgerEntries(manager, [
-        {
-          accountId,
-          transactionId: savedTx.id,
-          type: LedgerEntryType.CREDIT,
-          amount,
-          balanceAfter: balanceAfterDeposit,
-        }
-      ]);
-
-      // Link transaction back
-      savedRequest.transactionId = savedTx.id;
-      await manager.save(TransactionRequest, savedRequest);
-
-      return savedTx;
+      return this.createAutoApprovedDeposit(manager, account, amount, amountStr, description, idempotencyKey, currentUserId);
     });
   }
 
-  async adminWithdraw(accountId: string, amountStr: string, description: string, idempotencyKey: string, currentUserId: string): Promise<Transaction | TransactionRequest> {
+  async adminWithdraw(
+    accountId: string,
+    amountStr: string,
+    description: string,
+    idempotencyKey: string,
+    currentUserId: string,
+  ): Promise<Transaction | TransactionRequest> {
     const existingTx = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existingTx) return existingTx;
 
     return this.transactionsHelper.executeTransaction(async (manager) => {
-      const account = await this.transactionsHelper.getAccountWithLock(manager, accountId);
-      const amount = this.transactionsHelper.validateAmount(amountStr, account.balance, account.holdBalance);
+      const { account, amount } = await this.validateAdminWithdrawEligibility(manager, accountId, amountStr);
 
-      const thresholdSetting = await manager.findOne(SystemSetting, { where: { settingKey: 'high_value_transaction_threshold' } });
-      const threshold = new Decimal(thresholdSetting?.settingValue || '500000000');
+      const thresholdVal = this.systemSettingsService.getSetting<number>('high_value_transaction_threshold');
+      const threshold = new Decimal(thresholdVal ?? 500000000);
 
       if (amount.gt(threshold)) {
-        // Exceeds threshold -> Pending Approval, INCREASE HOLD BALANCE
-        await manager
-          .createQueryBuilder()
-          .update(Account)
-          .set({ holdBalance: () => `"hold_balance" + ${amount.toFixed(2)}` })
-          .where('id = :id', { id: account.id })
-          .execute();
-
-        const request = manager.create(TransactionRequest, {
-          accountId,
-          amount: amountStr,
-          type: TransactionRequestType.WITHDRAW,
-          status: TransactionRequestStatus.PENDING,
-          description,
-          idempotencyKey,
-          createdById: currentUserId,
-        });
-        return manager.save(TransactionRequest, request);
+        return this.createPendingWithdrawRequest(manager, account, amount, amountStr, description, idempotencyKey, currentUserId);
       }
 
-      // Within threshold -> Auto approve -> Success
-      const request = manager.create(TransactionRequest, {
-        accountId,
-        amount: amountStr,
-        type: TransactionRequestType.WITHDRAW,
-        status: TransactionRequestStatus.AUTO_APPROVED,
-        description,
-        idempotencyKey,
-        createdById: currentUserId,
-      });
-      const savedRequest = await manager.save(TransactionRequest, request);
-
-      const balanceAfterWithdraw = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'subtract');
-
-      const transaction = manager.create(Transaction, {
-        fromAccountId: accountId,
-        amount: amountStr,
-        fee: '0.00',
-        totalAmount: amountStr,
-        description,
-        type: TransactionType.WITHDRAW,
-        status: TransactionStatus.COMPLETED,
-        requestId: savedRequest.id,
-      });
-      const savedTx = await manager.save(Transaction, transaction);
-
-      await this.transactionsHelper.createLedgerEntries(manager, [
-        {
-          accountId,
-          transactionId: savedTx.id,
-          type: LedgerEntryType.DEBIT,
-          amount,
-          balanceAfter: balanceAfterWithdraw,
-        }
-      ]);
-
-      savedRequest.transactionId = savedTx.id;
-      await manager.save(TransactionRequest, savedRequest);
-
-      return savedTx;
+      return this.createAutoApprovedWithdraw(manager, account, amount, amountStr, description, idempotencyKey, currentUserId);
     });
   }
 
   async approveRequest(requestId: string, currentUserId: string): Promise<Transaction> {
     return this.transactionsHelper.executeTransaction(async (manager) => {
-      const request = await manager.findOne(TransactionRequest, {
-        where: { id: requestId },
-        relations: { account: true },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!request) {
-        throw new NotFoundException('Transaction request not found');
-      }
-
-      if (request.status !== TransactionRequestStatus.PENDING) {
-        throw new BadRequestException(`Request cannot be approved in its current state: ${request.status}`);
-      }
-
-      if (request.createdById === currentUserId) {
-        throw new BadRequestException('You cannot approve a transaction request that you created');
-      }
-
+      const request = await this.validateApprovalRequest(manager, requestId, currentUserId);
       const account = await this.transactionsHelper.getAccountWithLock(manager, request.accountId);
       const amount = new Decimal(request.amount);
 
       let fromAccountId: string | null = null;
       let toAccountId: string | null = null;
       let ledgerType: LedgerEntryType;
-      let balanceAfterApproval: Decimal;
+
+      const balanceAfterApproval = await this.executeApprovalBalanceChanges(manager, request, account, amount);
 
       if (request.type === TransactionRequestType.WITHDRAW) {
-        // Need to deduct from both holdBalance and balance
-        await manager
-          .createQueryBuilder()
-          .update(Account)
-          .set({
-            balance: () => `"balance" - ${amount.toFixed(2)}`,
-            holdBalance: () => `"hold_balance" - ${amount.toFixed(2)}`
-          })
-          .where('id = :id', { id: account.id })
-          .execute();
-
-        const updatedAccount = await manager.findOne(Account, { where: { id: account.id } });
-        balanceAfterApproval = new Decimal(updatedAccount?.balance ?? 0);
         fromAccountId = account.id;
         ledgerType = LedgerEntryType.DEBIT;
       } else {
-        // Deposit
-        balanceAfterApproval = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
         toAccountId = account.id;
         ledgerType = LedgerEntryType.CREDIT;
       }
@@ -292,35 +175,10 @@ export class TransactionRequestsService {
 
   async rejectRequest(requestId: string, currentUserId: string): Promise<TransactionRequest> {
     return this.transactionsHelper.executeTransaction(async (manager) => {
-      const request = await manager.findOne(TransactionRequest, {
-        where: { id: requestId },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!request) {
-        throw new NotFoundException('Transaction request not found');
-      }
-
-      if (request.status !== TransactionRequestStatus.PENDING) {
-        throw new BadRequestException(`Request cannot be rejected in its current state: ${request.status}`);
-      }
-
-      if (request.createdById === currentUserId) {
-        throw new BadRequestException('You cannot reject a transaction request that you created');
-      }
+      const request = await this.validateRejectionRequest(manager, requestId, currentUserId);
 
       if (request.type === TransactionRequestType.WITHDRAW) {
-        // Release holdBalance
-        const amount = new Decimal(request.amount);
-        const account = await this.transactionsHelper.getAccountWithLock(manager, request.accountId);
-        await manager
-          .createQueryBuilder()
-          .update(Account)
-          .set({
-            holdBalance: () => `"hold_balance" - ${amount.toFixed(2)}`
-          })
-          .where('id = :id', { id: account.id })
-          .execute();
+        await this.executeRejectionHoldRelease(manager, request);
       }
 
       request.status = TransactionRequestStatus.REJECTED;
@@ -329,5 +187,248 @@ export class TransactionRequestsService {
 
       return manager.save(TransactionRequest, request);
     });
+  }
+
+  // ===========================================================================
+  // PRIVATE HELPER METHODS
+  // ===========================================================================
+
+  private async validateAdminDepositEligibility(
+    manager: EntityManager,
+    accountId: string,
+    amountStr: string,
+  ): Promise<{ account: Account; amount: Decimal }> {
+    const account = await this.transactionsHelper.getAccountWithLock(manager, accountId);
+    const amount = this.transactionsHelper.validateAmount(amountStr);
+    return { account, amount };
+  }
+
+  private async createAutoApprovedDeposit(
+    manager: EntityManager,
+    account: Account,
+    amount: Decimal,
+    amountStr: string,
+    description: string,
+    idempotencyKey: string,
+    currentUserId: string,
+  ): Promise<Transaction> {
+    const request = manager.create(TransactionRequest, {
+      accountId: account.id,
+      amount: amountStr,
+      type: TransactionRequestType.DEPOSIT,
+      status: TransactionRequestStatus.AUTO_APPROVED,
+      description,
+      idempotencyKey,
+      createdById: currentUserId,
+    });
+    const savedRequest = await manager.save(TransactionRequest, request);
+
+    const balanceAfterDeposit = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
+
+    const transaction = manager.create(Transaction, {
+      toAccountId: account.id,
+      amount: amountStr,
+      fee: '0.00',
+      totalAmount: amountStr,
+      description,
+      type: TransactionType.DEPOSIT,
+      status: TransactionStatus.COMPLETED,
+      requestId: savedRequest.id,
+    });
+    const savedTx = await manager.save(Transaction, transaction);
+
+    await this.transactionsHelper.createLedgerEntries(manager, [
+      {
+        accountId: account.id,
+        transactionId: savedTx.id,
+        type: LedgerEntryType.CREDIT,
+        amount,
+        balanceAfter: balanceAfterDeposit,
+      }
+    ]);
+
+    savedRequest.transactionId = savedTx.id;
+    await manager.save(TransactionRequest, savedRequest);
+
+    return savedTx;
+  }
+
+  private async validateAdminWithdrawEligibility(
+    manager: EntityManager,
+    accountId: string,
+    amountStr: string,
+  ): Promise<{ account: Account; amount: Decimal }> {
+    const account = await this.transactionsHelper.getAccountWithLock(manager, accountId);
+    const amount = this.transactionsHelper.validateAmount(amountStr, account.balance, account.holdBalance);
+    return { account, amount };
+  }
+
+  private async createPendingWithdrawRequest(
+    manager: EntityManager,
+    account: Account,
+    amount: Decimal,
+    amountStr: string,
+    description: string,
+    idempotencyKey: string,
+    currentUserId: string,
+  ): Promise<TransactionRequest> {
+    await manager
+      .createQueryBuilder()
+      .update(Account)
+      .set({ holdBalance: () => `"hold_balance" + ${amount.toFixed(2)}` })
+      .where('id = :id', { id: account.id })
+      .execute();
+
+    const request = manager.create(TransactionRequest, {
+      accountId: account.id,
+      amount: amountStr,
+      type: TransactionRequestType.WITHDRAW,
+      status: TransactionRequestStatus.PENDING,
+      description,
+      idempotencyKey,
+      createdById: currentUserId,
+    });
+    return manager.save(TransactionRequest, request);
+  }
+
+  private async createAutoApprovedWithdraw(
+    manager: EntityManager,
+    account: Account,
+    amount: Decimal,
+    amountStr: string,
+    description: string,
+    idempotencyKey: string,
+    currentUserId: string,
+  ): Promise<Transaction> {
+    const request = manager.create(TransactionRequest, {
+      accountId: account.id,
+      amount: amountStr,
+      type: TransactionRequestType.WITHDRAW,
+      status: TransactionRequestStatus.AUTO_APPROVED,
+      description,
+      idempotencyKey,
+      createdById: currentUserId,
+    });
+    const savedRequest = await manager.save(TransactionRequest, request);
+
+    const balanceAfterWithdraw = await this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'subtract');
+
+    const transaction = manager.create(Transaction, {
+      fromAccountId: account.id,
+      amount: amountStr,
+      fee: '0.00',
+      totalAmount: amountStr,
+      description,
+      type: TransactionType.WITHDRAW,
+      status: TransactionStatus.COMPLETED,
+      requestId: savedRequest.id,
+    });
+    const savedTx = await manager.save(Transaction, transaction);
+
+    await this.transactionsHelper.createLedgerEntries(manager, [
+      {
+        accountId: account.id,
+        transactionId: savedTx.id,
+        type: LedgerEntryType.DEBIT,
+        amount,
+        balanceAfter: balanceAfterWithdraw,
+      }
+    ]);
+
+    savedRequest.transactionId = savedTx.id;
+    await manager.save(TransactionRequest, savedRequest);
+
+    return savedTx;
+  }
+
+  private async validateApprovalRequest(
+    manager: EntityManager,
+    requestId: string,
+    currentUserId: string,
+  ): Promise<TransactionRequest> {
+    const request = await manager.findOne(TransactionRequest, {
+      where: { id: requestId },
+      relations: { account: true },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Transaction request not found');
+    }
+
+    if (request.status !== TransactionRequestStatus.PENDING) {
+      throw new BadRequestException(`Request cannot be approved in its current state: ${request.status}`);
+    }
+
+    if (request.createdById === currentUserId) {
+      throw new BadRequestException('You cannot approve a transaction request that you created');
+    }
+
+    return request;
+  }
+
+  private async executeApprovalBalanceChanges(
+    manager: EntityManager,
+    request: TransactionRequest,
+    account: Account,
+    amount: Decimal,
+  ): Promise<Decimal> {
+    if (request.type === TransactionRequestType.WITHDRAW) {
+      await manager
+        .createQueryBuilder()
+        .update(Account)
+        .set({
+          balance: () => `"balance" - ${amount.toFixed(2)}`,
+          holdBalance: () => `"hold_balance" - ${amount.toFixed(2)}`
+        })
+        .where('id = :id', { id: account.id })
+        .execute();
+
+      const updatedAccount = await manager.findOne(Account, { where: { id: account.id } });
+      return new Decimal(updatedAccount?.balance ?? 0);
+    } else {
+      return this.transactionsHelper.updateAccountBalance(manager, account.id, amount, 'add');
+    }
+  }
+
+  private async validateRejectionRequest(
+    manager: EntityManager,
+    requestId: string,
+    currentUserId: string,
+  ): Promise<TransactionRequest> {
+    const request = await manager.findOne(TransactionRequest, {
+      where: { id: requestId },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (!request) {
+      throw new NotFoundException('Transaction request not found');
+    }
+
+    if (request.status !== TransactionRequestStatus.PENDING) {
+      throw new BadRequestException(`Request cannot be rejected in its current state: ${request.status}`);
+    }
+
+    if (request.createdById === currentUserId) {
+      throw new BadRequestException('You cannot reject a transaction request that you created');
+    }
+
+    return request;
+  }
+
+  private async executeRejectionHoldRelease(
+    manager: EntityManager,
+    request: TransactionRequest,
+  ): Promise<void> {
+    const amount = new Decimal(request.amount);
+    const account = await this.transactionsHelper.getAccountWithLock(manager, request.accountId);
+    await manager
+      .createQueryBuilder()
+      .update(Account)
+      .set({
+        holdBalance: () => `"hold_balance" - ${amount.toFixed(2)}`
+      })
+      .where('id = :id', { id: account.id })
+      .execute();
   }
 }

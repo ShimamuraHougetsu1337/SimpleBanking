@@ -1,16 +1,18 @@
 import { Injectable, BadRequestException, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, SelectQueryBuilder, Brackets } from 'typeorm';
-import { Transaction, TransactionStatus } from '../entities/transaction.entity';
+import { Transaction, TransactionStatus, TransactionType } from '../entities/transaction.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { LedgerEntry, LedgerEntryType } from '../entities/ledger-entry.entity';
 import { SystemAccount } from '@/common/enums/system-account.enum';
+import { SystemSettingsService } from '@/system-settings/system-settings.service';
 import Decimal from 'decimal.js';
 
 @Injectable()
 export class TransactionsHelper {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly systemSettingsService: SystemSettingsService,
   ) { }
 
   /** Cached suspense account ID — loaded once on first use. */
@@ -185,5 +187,196 @@ export class TransactionsHelper {
       status: tx.status,
       createdAt: tx.createdAt,
     };
+  }
+
+  /**
+   * Core balance updates and ledger entries creation method.
+   * Lock accounts -> Check balance/limit -> Post balance -> Write ledger -> Complete transaction.
+   */
+  async executeMovement(manager: EntityManager, tx: Transaction): Promise<Transaction> {
+    const lockedAccounts = await this.lockAccountsForMovement(manager, tx.fromAccountId, tx.toAccountId);
+    const fromAccount = tx.fromAccountId ? (lockedAccounts.get(tx.fromAccountId) ?? null) : null;
+    const toAccount = tx.toAccountId ? (lockedAccounts.get(tx.toAccountId) ?? null) : null;
+
+    const amount = new Decimal(tx.amount);
+    const totalAmount = new Decimal(tx.totalAmount);
+    const feeValue = new Decimal(tx.fee);
+
+    await this.validateLimitsAndBalances(manager, tx.type, fromAccount, toAccount, amount, totalAmount);
+
+    const balances = await this.postBalanceChanges(manager, fromAccount, toAccount, amount, feeValue);
+
+    const ledgerEntries = await this.buildLedgerEntriesList(tx, fromAccount, toAccount, amount, feeValue, balances);
+    await this.createLedgerEntries(manager, ledgerEntries);
+
+    tx.status = TransactionStatus.COMPLETED;
+    return manager.save(Transaction, tx);
+  }
+
+  /**
+   * Helper to lock accounts using pessimistic write.
+   */
+  private async lockAccountsForMovement(
+    manager: EntityManager,
+    fromId?: string | null,
+    toId?: string | null,
+  ): Promise<Map<string, Account>> {
+    const accountIdsToLock = [];
+    if (fromId) accountIdsToLock.push(fromId);
+    if (toId) accountIdsToLock.push(toId);
+
+    accountIdsToLock.sort();
+
+    const lockedAccounts = new Map<string, Account>();
+    for (const id of accountIdsToLock) {
+      const acc = await manager.findOne(Account, { where: { id }, lock: { mode: 'pessimistic_write' } });
+      if (acc) lockedAccounts.set(id, acc);
+    }
+    return lockedAccounts;
+  }
+
+  /**
+   * Validates account state, available balances, and daily transaction limits.
+   */
+  private async validateLimitsAndBalances(
+    manager: EntityManager,
+    type: TransactionType,
+    fromAccount: Account | null,
+    toAccount: Account | null,
+    amount: Decimal,
+    totalAmount: Decimal,
+  ): Promise<void> {
+    if (type === TransactionType.TRANSFER || type === TransactionType.WITHDRAW) {
+      if (!fromAccount || fromAccount.status !== AccountStatus.ACTIVE) {
+        throw new UnprocessableEntityException('Source account not found or is locked');
+      }
+      if (totalAmount.gt(fromAccount.balance)) {
+        throw new UnprocessableEntityException('Số dư tài khoản không đủ');
+      }
+
+      const dailyLimitValue = this.systemSettingsService.getSetting<number>('daily_limit');
+      if (dailyLimitValue !== null) {
+        const dailyLimit = new Decimal(dailyLimitValue);
+        const usedLimit = new Decimal(fromAccount.usedDailyLimit || 0);
+        if (usedLimit.plus(amount).gt(dailyLimit)) {
+          throw new BadRequestException('Bạn đã vượt quá hạn mức chuyển tiền hàng ngày');
+        }
+        await manager
+          .createQueryBuilder()
+          .update(Account)
+          .set({ usedDailyLimit: () => `"used_daily_limit" + ${amount.toFixed(2)}` })
+          .where('id = :id', { id: fromAccount.id })
+          .execute();
+      }
+    }
+
+    if (type === TransactionType.TRANSFER) {
+      if (!toAccount) {
+        throw new NotFoundException('Destination account not found');
+      }
+      if (toAccount.status !== AccountStatus.ACTIVE) {
+        throw new UnprocessableEntityException('Destination account is locked');
+      }
+    }
+  }
+
+  /**
+   * Deducts amounts from source and adds to destination account.
+   */
+  private async postBalanceChanges(
+    manager: EntityManager,
+    fromAccount: Account | null,
+    toAccount: Account | null,
+    amount: Decimal,
+    feeValue: Decimal,
+  ): Promise<{ debitAfterAmount: Decimal; debitAfterFee: Decimal; creditAfter: Decimal }> {
+    let debitBalanceAfterAmount = new Decimal(0);
+    let debitBalanceAfterFee = new Decimal(0);
+    let creditBalanceAfter = new Decimal(0);
+
+    if (fromAccount) {
+      debitBalanceAfterAmount = await this.updateAccountBalance(manager, fromAccount.id, amount, 'subtract');
+      debitBalanceAfterFee = debitBalanceAfterAmount;
+      if (feeValue.gt(0)) {
+        debitBalanceAfterFee = await this.updateAccountBalance(manager, fromAccount.id, feeValue, 'subtract');
+      }
+    }
+
+    if (toAccount) {
+      creditBalanceAfter = await this.updateAccountBalance(manager, toAccount.id, amount, 'add');
+    }
+
+    return {
+      debitAfterAmount: debitBalanceAfterAmount,
+      debitAfterFee: debitBalanceAfterFee,
+      creditAfter: creditBalanceAfter,
+    };
+  }
+
+  /**
+   * Generates the double-entry bookkeeping ledger entry records.
+   */
+  private async buildLedgerEntriesList(
+    tx: Transaction,
+    fromAccount: Account | null,
+    toAccount: Account | null,
+    amount: Decimal,
+    feeValue: Decimal,
+    balances: { debitAfterAmount: Decimal; debitAfterFee: Decimal; creditAfter: Decimal },
+  ): Promise<{
+    accountId: string;
+    transactionId: string | null;
+    type: LedgerEntryType;
+    amount: Decimal;
+    balanceAfter: Decimal;
+  }[]> {
+    const ledgerEntries: {
+      accountId: string;
+      transactionId: string | null;
+      type: LedgerEntryType;
+      amount: Decimal;
+      balanceAfter: Decimal;
+    }[] = [];
+
+    if (fromAccount) {
+      ledgerEntries.push({
+        accountId: fromAccount.id,
+        transactionId: tx.id,
+        type: LedgerEntryType.DEBIT,
+        amount,
+        balanceAfter: balances.debitAfterAmount,
+      });
+
+      if (feeValue.gt(0)) {
+        const suspenseAccountId = await this.getSuspenseAccountId();
+        ledgerEntries.push({
+          accountId: fromAccount.id,
+          transactionId: tx.id,
+          type: LedgerEntryType.DEBIT,
+          amount: feeValue,
+          balanceAfter: balances.debitAfterFee,
+        });
+
+        ledgerEntries.push({
+          accountId: suspenseAccountId,
+          transactionId: tx.id,
+          type: LedgerEntryType.CREDIT,
+          amount: feeValue,
+          balanceAfter: new Decimal(0),
+        });
+      }
+    }
+
+    if (toAccount) {
+      ledgerEntries.push({
+        accountId: toAccount.id,
+        transactionId: tx.id,
+        type: LedgerEntryType.CREDIT,
+        amount,
+        balanceAfter: balances.creditAfter,
+      });
+    }
+
+    return ledgerEntries;
   }
 }

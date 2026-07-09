@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Query, Headers, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Query, Headers, BadRequestException, Param } from '@nestjs/common';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { TransactionsService } from '../services/transactions.service';
@@ -11,6 +11,7 @@ import { GetTransactionsQueryDto } from '../dto/get-transactions-query.dto';
 import { CustomerLog } from '@/audit-logs/decorators/customer-log.decorator';
 import { CustomerAuditAction } from '@/audit-logs/enums/customer-audit-action.enum';
 import { isUUID } from 'class-validator';
+import { TransactionRateLimitGuard } from '../guards/transaction-rate-limit.guard';
 
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
@@ -21,6 +22,7 @@ export class TransactionsController {
   ) { }
 
   @Post('transfer')
+  @UseGuards(TransactionRateLimitGuard)
   @CustomerLog(CustomerAuditAction.TRANSFER)
   async transfer(
     @CurrentUser() user: User,
@@ -37,6 +39,7 @@ export class TransactionsController {
   }
 
   @Post('deposit')
+  @UseGuards(TransactionRateLimitGuard)
   @CustomerLog(CustomerAuditAction.DEPOSIT)
   async deposit(
     @CurrentUser() user: User,
@@ -53,6 +56,7 @@ export class TransactionsController {
   }
 
   @Post('withdraw')
+  @UseGuards(TransactionRateLimitGuard)
   @CustomerLog(CustomerAuditAction.WITHDRAW)
   async withdraw(
     @CurrentUser() user: User,
@@ -69,8 +73,34 @@ export class TransactionsController {
   }
 
   @Get('transfer-fee')
-  async getTransferFee() {
+  getTransferFee() {
     return this.feesService.getTransferFee();
+  }
+
+  @Post(':id/verify-otp')
+  async verifyOtp(
+    @Param('id') id: string,
+    @Body() dto: { code: string },
+    @CurrentUser() user: User,
+  ) {
+    if (!isUUID(id, '4')) {
+      throw new BadRequestException('Transaction ID must be a valid UUID v4');
+    }
+    if (!dto.code || dto.code.length !== 6) {
+      throw new BadRequestException('Mã OTP phải có độ dài đúng 6 chữ số');
+    }
+    return this.transactionsService.verifyOtp(id, dto.code, user.id);
+  }
+
+  @Post(':id/resend-otp')
+  async resendOtp(
+    @Param('id') id: string,
+    @CurrentUser() user: User,
+  ) {
+    if (!isUUID(id, '4')) {
+      throw new BadRequestException('Transaction ID must be a valid UUID v4');
+    }
+    return this.transactionsService.resendOtp(id, user.id);
   }
 
   @Get()
