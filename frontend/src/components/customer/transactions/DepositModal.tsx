@@ -1,34 +1,40 @@
 import { Modal, Form, InputNumber, Input, message } from 'antd';
 import { useDeposit } from '@/hooks/customer/useDeposit';
+import { v4 as uuidv4 } from 'uuid';
+import { getErrorMessage } from '@/utils/error';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   accountId: string;
-  onSuccess?: (tx: any) => void;
+  onSuccess?: (tx: unknown) => void;
 }
 
-export function DepositModal({ isOpen, onClose, accountId }: ModalProps) {
+export function DepositModal({ isOpen, onClose, accountId, onSuccess }: ModalProps) {
   const [form] = Form.useForm();
   const { mutate: deposit, isPending } = useDeposit();
 
-  const handleOk = () => {
-    form.validateFields().then(values => {
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
       deposit(
-        { accountId, amount: values.amount, description: values.description },
+        { accountId, amount: values.amount, description: values.description, idempotencyKey: uuidv4() },
         {
-          onSuccess: () => {
+          onSuccess: (data) => {
             message.success('Nạp tiền vào tài khoản thành công!');
             form.resetFields();
             onClose();
+            onSuccess?.(data);
           },
-          onError: (err: any) => {
-            const errorMsg = err.response?.data?.message || 'Không thể thực hiện nạp tiền. Vui lòng thử lại sau.';
+          onError: (err: unknown) => {
+            const errorMsg = getErrorMessage(err);
             message.error(errorMsg);
           }
         }
       );
-    });
+    } catch {
+      // Form validation failed
+    }
   };
 
   return (

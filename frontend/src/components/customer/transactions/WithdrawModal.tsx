@@ -1,12 +1,14 @@
 import { Modal, Form, InputNumber, Input, message } from 'antd';
 import { useWithdraw } from '@/hooks/customer/useWithdraw';
 import { useAuthStore } from '@/store/auth.store';
+import { v4 as uuidv4 } from 'uuid';
+import { getErrorMessage } from '@/utils/error';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   accountId: string;
-  onSuccess?: (tx: any) => void;
+  onSuccess?: (tx: unknown) => void;
 }
 
 export function WithdrawModal({ isOpen, onClose, accountId, onSuccess }: ModalProps) {
@@ -15,11 +17,12 @@ export function WithdrawModal({ isOpen, onClose, accountId, onSuccess }: ModalPr
   const user = useAuthStore(s => s.user);
   const defaultDescription = user?.full_name ? `${user.full_name} rút tiền ra khỏi tài khoản` : 'Rút tiền ra khỏi tài khoản';
 
-  const handleOk = () => {
-    form.validateFields().then(values => {
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
       const description = values.description?.trim() || defaultDescription;
       withdraw(
-        { accountId, amount: values.amount, description },
+        { accountId, amount: values.amount, description, idempotencyKey: uuidv4() },
         {
           onSuccess: (data) => {
             message.success('Rút tiền từ tài khoản thành công!');
@@ -27,13 +30,15 @@ export function WithdrawModal({ isOpen, onClose, accountId, onSuccess }: ModalPr
             onClose();
             onSuccess?.(data);
           },
-          onError: (err: any) => {
-            const errorMsg = err.response?.data?.message || 'Không thể thực hiện rút tiền. Vui lòng thử lại sau hoặc kiểm tra lại số dư.';
+          onError: (err: unknown) => {
+            const errorMsg = getErrorMessage(err);
             message.error(errorMsg);
           }
         }
       );
-    });
+    } catch {
+      // Form validation failed, UI will show warnings automatically
+    }
   };
 
   // Pre-fill the form description when opened/reset
