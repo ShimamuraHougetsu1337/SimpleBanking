@@ -2,15 +2,23 @@ import { Injectable, BadRequestException, NotFoundException, ForbiddenException 
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
-import { Otp } from '../entities/otp.entity';
+import { LRUCache } from 'lru-cache';
 import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Account } from '@/accounts/entities/account.entity';
 
+interface OtpCacheEntry {
+  codeHash: string;
+  attempts: number;
+}
+
 @Injectable()
 export class OtpService {
+  private readonly cache = new LRUCache<string, OtpCacheEntry>({
+    max: 10000,
+    ttl: 5 * 60 * 1000, // 5 minutes TTL
+  });
+
   constructor(
-    @InjectRepository(Otp)
-    private readonly otpRepository: Repository<Otp>,
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(Account)
@@ -18,23 +26,13 @@ export class OtpService {
   ) {}
 
   /**
-   * Generates a new 6-digit OTP, hashes it, and saves it in the database.
+   * Generates a new 6-digit OTP, hashes it, and saves it in the local RAM cache.
    */
-  async createOtp(transactionId: string): Promise<string> {
+  createOtp(transactionId: string): string {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const codeHash = crypto.createHash('sha256').update(otpCode).digest('hex');
 
-    // Upsert the OTP record
-    let otp = await this.otpRepository.findOne({ where: { transactionId } });
-    if (!otp) {
-      otp = this.otpRepository.create({ transactionId });
-    }
-    otp.codeHash = codeHash;
-    otp.expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes expiry
-    otp.attempts = 0;
-    otp.isVerified = false;
-
-    await this.otpRepository.save(otp);
+    this.cache.set(transactionId, { codeHash, attempts: 0 });
     console.log(`[OTP DEBUG] Generated OTP for transaction ${transactionId}: ${otpCode}`);
 
     return otpCode;
@@ -62,18 +60,13 @@ export class OtpService {
       throw new ForbiddenException('You are not authorized to verify this transaction');
     }
 
-    const otp = await this.otpRepository.findOne({ where: { transactionId, isVerified: false } });
+    const otp = this.cache.get(transactionId);
     if (!otp) {
-      throw new BadRequestException('OTP not found or already verified');
-    }
-
-    if (otp.expiresAt < new Date()) {
-      tx.status = TransactionStatus.FAILED;
-      await this.transactionRepository.save(tx);
-      throw new BadRequestException('OTP has expired');
+      throw new BadRequestException('OTP not found or already verified or expired');
     }
 
     if (otp.attempts >= 3) {
+      this.cache.delete(transactionId);
       tx.status = TransactionStatus.FAILED;
       await this.transactionRepository.save(tx);
       throw new BadRequestException('Too many incorrect OTP attempts. Transaction failed.');
@@ -82,19 +75,23 @@ export class OtpService {
     const codeHash = crypto.createHash('sha256').update(code).digest('hex');
     if (otp.codeHash !== codeHash) {
       otp.attempts += 1;
-      await this.otpRepository.save(otp);
 
       if (otp.attempts >= 3) {
+        this.cache.delete(transactionId);
         tx.status = TransactionStatus.FAILED;
         await this.transactionRepository.save(tx);
         throw new BadRequestException('Incorrect OTP. Maximum attempts reached. Transaction failed.');
       }
+
+      // Preserve the remaining TTL on update
+      const remainingTtl = this.cache.getRemainingTTL(transactionId);
+      this.cache.set(transactionId, otp, { ttl: remainingTtl > 0 ? remainingTtl : undefined });
+
       throw new BadRequestException(`Incorrect OTP. ${3 - otp.attempts} attempts remaining.`);
     }
 
-    // OTP is correct! Mark it as verified
-    otp.isVerified = true;
-    await this.otpRepository.save(otp);
+    // OTP is correct! Delete from cache to consume it
+    this.cache.delete(transactionId);
   }
 
   /**
@@ -119,7 +116,7 @@ export class OtpService {
       throw new ForbiddenException('You are not authorized to resend OTP for this transaction');
     }
 
-    await this.createOtp(transactionId);
+    this.createOtp(transactionId);
     return { message: 'Mã OTP mới đã được gửi.' };
   }
 }

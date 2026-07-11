@@ -11,6 +11,7 @@ import { WithdrawDto } from '../dto/withdraw.dto';
 import { SystemSettingsService } from '@/system-settings/system-settings.service';
 import { OtpService } from './otp.service';
 import Decimal from 'decimal.js';
+import { User, UserRole } from '@/users/entities/user.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -179,13 +180,15 @@ export class TransactionsService {
     const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existing) return existing;
 
-    const otpThresholdVal = this.systemSettingsService.getSetting<number>('otp_transaction_threshold');
-    const otpThreshold = new Decimal(otpThresholdVal ?? 10000000);
-    const amount = new Decimal(dto.amount);
+    const user = await this.dataSource.getRepository(User).findOne({ where: { id: currentUserId } });
+    const isCustomer = user?.role === UserRole.CUSTOMER;
 
-    if (amount.gte(otpThreshold)) {
-      return this.createPendingOtpTransaction(dto, currentUserId, idempotencyKey, TransactionType.TRANSFER);
+    if (isCustomer) {
+      // Customers ALWAYS require OTP for transfers
+      return this.createPendingOtpTransaction(dto, idempotencyKey, TransactionType.TRANSFER);
     }
+
+    const amount = new Decimal(dto.amount);
 
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const toAccountRef = await manager.findOne(Account, {
@@ -254,12 +257,18 @@ export class TransactionsService {
     const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
     if (existing) return existing;
 
-    const otpThresholdVal = this.systemSettingsService.getSetting<number>('otp_transaction_threshold');
-    const otpThreshold = new Decimal(otpThresholdVal ?? 10000000);
+    const user = await this.dataSource.getRepository(User).findOne({ where: { id: currentUserId } });
+    const isCustomer = user?.role === UserRole.CUSTOMER;
+
     const amount = new Decimal(dto.amount);
 
-    if (amount.gte(otpThreshold)) {
-      return this.createPendingOtpTransaction(dto, currentUserId, idempotencyKey, TransactionType.WITHDRAW);
+    if (isCustomer) {
+      const otpThresholdVal = this.systemSettingsService.getSetting<number>('otp_transaction_threshold');
+      const otpThreshold = new Decimal(otpThresholdVal ?? 10000000);
+
+      if (amount.gte(otpThreshold)) {
+        return this.createPendingOtpTransaction(dto, idempotencyKey, TransactionType.WITHDRAW);
+      }
     }
 
     return this.transactionsHelper.executeTransaction(async (manager) => {
@@ -284,7 +293,6 @@ export class TransactionsService {
    */
   private async createPendingOtpTransaction(
     dto: TransferDto | WithdrawDto,
-    currentUserId: string,
     idempotencyKey: string,
     type: TransactionType,
   ): Promise<Transaction> {
@@ -331,7 +339,7 @@ export class TransactionsService {
     const savedTx = await this.transactionRepository.save(pendingTx);
 
     // Delegate to OtpService
-    await this.otpService.createOtp(savedTx.id);
+    this.otpService.createOtp(savedTx.id);
 
     return savedTx;
   }

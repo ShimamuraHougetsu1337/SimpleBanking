@@ -17,13 +17,13 @@ import { FeeSettlementCron } from './jobs/fee-settlement.cron';
 import { LedgerService } from './services/ledger.service';
 import { TransactionRequest } from './entities/transaction-request.entity';
 import { TransactionRateLimitGuard } from './guards/transaction-rate-limit.guard';
-import { Otp } from './entities/otp.entity';
 import { OtpService } from './services/otp.service';
 import { SystemSettingsModule } from '@/system-settings/system-settings.module';
+import { Account } from '@/accounts/entities/account.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeSettlementLog, Otp]),
+    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeSettlementLog, Account]),
     AccountsModule,
     AuditLogsModule,
     ThrottlerModule,
