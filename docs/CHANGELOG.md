@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-11]
+
+### Added
+- **In-Memory OTP Cache**: Replaced the database-backed `Otp` entity with an in-memory `lru-cache` on the backend, deleting the database-backed `Otp` entity.
+- **Enforced Customer OTP Rules**: Enforced OTP verification for all customer transfers regardless of the amount, and for withdrawals exceeding the settings threshold.
+- **Frontend OTP Verification UI**: Integrated a new `OtpVerificationModal` component on the frontend `TransferPage` to support verification code inputs and countdown timers.
+- **Unified API Layer**: Introduced `transactionService` on the frontend to centralize all transaction-related API endpoints (deposit, withdraw, transfer, verify-otp, resend-otp).
+
+### Changed
+- **React Query for Audit Logs**: Refactored `useAuditLogs` hook and `AdminAuditLogsPage` to use `@tanstack/react-query`'s `useQuery` for cleaner caching, search, and pagination.
+- **Transaction Modals Refactoring**: Updated `DepositModal` and `WithdrawModal` to use client-generated UUIDv4 idempotency keys and invalidate query caches on success.
+
+---
+
 ## [2026-07-09]
 
 ### Added

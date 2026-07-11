@@ -25,5 +25,8 @@ Before making changes, you **MUST** use the `view_file` tool to read the specifi
 
 ## Priority Rules
 1. **Separation of Concerns**: Keep components purely presentational. Extract logic into custom hooks.
-2. **API Consistency**: All requests must go through the central Axios instance in `src/services/api.ts`.
+2. **API Consistency & Service Encapsulation**: All requests must go through the central Axios instance in `src/services/api.ts`. Do NOT call `api.post/get/patch` directly inside components or hooks; always wrap them in a service object (e.g., `transactionService`, `authService`) with descriptive method names.
 3. **Premium UI**: Adhere strictly to the Stripe-inspired borderless, generous-padding design language.
+4. **Query & Mutation Management**: Always prioritize React Query (`useQuery`, `useMutation`) over manual `useEffect` fetching, and **MUST** use the central Query Key Factory (`queryKeys` from `src/constants/queryKeys.ts`) for all cache keys.
+5. **Async Code Style (Avoid then/catch)**: Never use `.then()` or `.catch()` chains for asynchronous operations in hooks or components. Always write flat async code using `async/await` and `try/catch` blocks (especially for Ant Design's `form.validateFields()`).
+6. **No Deprecated APIs**: Never use deprecated APIs or sub-components in external libraries (e.g., do NOT use Ant Design's `Select.Option` or `const { Option } = Select`). Always implement modern recommended properties (such as passing items through the `options` array prop directly to `<Select>`).
