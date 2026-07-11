@@ -13,3 +13,4 @@
 - Wrap secure views in a `<ProtectedRoute>` component to redirect unauthenticated traffic to `/login`.
 - Wrap admin-only views in an `<AdminRoute>` component to check if the user has `role === 'admin'`.
 - Never hardcode the base API URL — reference `import.meta.env.VITE_API_BASE_URL`.
+- **ALWAYS use `async/await` with `try/catch`** instead of `.then()` / `.catch()` promise chains for all asynchronous operations (for example: Ant Design's `form.validateFields()`). This keeps code flat, readable, and prevents nested callback hell.

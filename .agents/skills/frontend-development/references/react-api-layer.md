@@ -231,18 +231,21 @@ export const transactionService = {
 };
 ```
 
-## 4. React Query Hooks Patterns
+## 4. React Query Hooks Patterns & Query Key Factory Guidelines
+
+All components and custom hooks **MUST** use the central Query Key Factory defined in `src/constants/queryKeys.ts` to manage all `queryKey` definitions. Hardcoded query keys are strictly forbidden. 
+
+Always prioritize using React Query `useQuery` for fetching data and `useMutation` for executing commands (write requests) over manual `useEffect` state syncing.
 
 ```typescript
 // src/hooks/useAccount.ts
 import { useQuery } from '@tanstack/react-query';
 import { accountService } from '@/services/account.service';
-
-export const ACCOUNT_QUERY_KEY = ['account', 'me'];
+import { queryKeys } from '@/constants/queryKeys';
 
 export function useAccount() {
   return useQuery({
-    queryKey: ACCOUNT_QUERY_KEY,
+    queryKey: queryKeys.accounts.me(),
     queryFn: accountService.getMyAccount,
     staleTime: 30_000, // 30 seconds caching stale time
   });
@@ -251,6 +254,7 @@ export function useAccount() {
 // src/hooks/useTransactions.ts
 import { useQuery } from '@tanstack/react-query';
 import { transactionService } from '@/services/transaction.service';
+import { queryKeys } from '@/constants/queryKeys';
 
 export function useTransactions(params: {
   page: number;
@@ -258,7 +262,7 @@ export function useTransactions(params: {
   type?: string;
 }) {
   return useQuery({
-    queryKey: ['transactions', params],
+    queryKey: queryKeys.transactions.list(params),
     queryFn: () => transactionService.getTransactions(params),
     placeholderData: (previousData) => previousData, // Retains old page layout details during page loading
   });
@@ -267,7 +271,7 @@ export function useTransactions(params: {
 // src/hooks/useTransfer.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { transactionService } from '@/services/transaction.service';
-import { ACCOUNT_QUERY_KEY } from './useAccount';
+import { queryKeys } from '@/constants/queryKeys';
 import { message } from 'antd';
 
 export function useTransfer() {
@@ -276,9 +280,9 @@ export function useTransfer() {
   return useMutation({
     mutationFn: transactionService.transfer,
     onSuccess: () => {
-      // Invalidate query caches to fetch updated balances and transactions
-      queryClient.invalidateQueries({ queryKey: ACCOUNT_QUERY_KEY });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      // Invalidate query caches using queryKeys factory to fetch updated balances and transactions
+      queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all });
       message.success('Money transferred successfully!');
     },
     onError: (error: any) => {
@@ -359,7 +363,9 @@ export function getErrorMessage(error: unknown): string {
 - [ ] Verify Axios responses are handling 401 exceptions via refresh token calls.
 - [ ] Enforce locking checks so multiple concurrent token refresh invocations queue requests.
 - [ ] Make sure Axios uses `withCredentials: true` to automatically pass HttpOnly refresh token cookies.
+- [ ] Do NOT call Axios instance methods (`api.post/get/patch`) directly inside components or hooks; always wrap them in a Service helper class/object with descriptive method names.
 - [ ] Wrap the main application entry point inside the QueryClientProvider.
-- [ ] Ensure all query requests use React Query `useQuery`, and operations use `useMutation`.
+- [ ] Ensure all query requests use React Query `useQuery`, and operations use `useMutation` (always prioritize React Query over manual useEffect state fetching).
+- [ ] Enforce using the central Query Key Factory (`queryKeys`) for all React Query caching keys; hardcoded string arrays are forbidden.
 - [ ] Invalidate relevant query keys on successful mutations to trigger background updates.
 - [ ] Enforce route protection using ProtectedRoute or AdminRoute components.

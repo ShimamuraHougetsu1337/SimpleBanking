@@ -10,24 +10,43 @@ import api from '../../services/api';
 import { TransferForm } from '../../components/customer/transfer/TransferForm';
 import { TransferReviewModal } from '../../components/customer/transfer/TransferReviewModal';
 import { TransactionResultModal } from '@/components/customer/transactions/result-modal/TransactionResultModal';
+import { OtpVerificationModal } from '../../components/customer/transfer/OtpVerificationModal';
+import { type TxData } from '@/components/customer/transactions/result-modal/TransactionSuccessState';
+import { TransactionStatus } from '@/types/transaction';
 
 const { Title } = Typography;
+
+interface TransferValues {
+  from_accountId: string;
+  to_accountNumber: string;
+  amount: string;
+  description?: string;
+}
+
+interface AccountInfo {
+  id: string;
+  accountNumber: string;
+  balance: string;
+  [key: string]: unknown;
+}
 
 export default function TransferPage() {
   const location = useLocation();
   const [form] = Form.useForm();
   const { mutate: transfer, isPending } = useTransfer();
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [pendingValues, setPendingValues] = useState<any>(null);
-  const [receiver, setReceiver] = useState<any>(null);
+  const [pendingValues, setPendingValues] = useState<TransferValues | null>(null);
+  const [receiver, setReceiver] = useState<Record<string, unknown> | null>(null);
   const [isResolving, setIsResolving] = useState(false);
+  const [isOtpModalVisible, setIsOtpModalVisible] = useState(false);
+  const [otpTransactionId, setOtpTransactionId] = useState<string | null>(null);
   const [resultTx, setResultTx] = useState<{
     status: 'success' | 'failed';
     errorMsg?: string;
-    txData?: any;
+    txData?: TxData;
   } | null>(null);
 
-  const { data: accounts, isLoading: isLoadingAccounts } = useQuery({
+  const { data: accounts, isLoading: isLoadingAccounts } = useQuery<AccountInfo[]>({
     queryKey: queryKeys.accounts.me(),
     queryFn: async () => {
       const { data } = await api.get('/accounts/me');
@@ -54,15 +73,16 @@ export default function TransferPage() {
     }
   }, [accounts, form, location.state]);
 
-  const onReview = async (values: any) => {
+  const onReview = async (values: TransferValues) => {
     try {
       setIsResolving(true);
       const res = await api.get(`/accounts/resolve/${values.to_accountNumber}`);
-      setReceiver(res.data);
+      setReceiver(res.data as Record<string, unknown>);
       setPendingValues(values);
       setIsModalVisible(true);
-    } catch (err: any) {
-      if (err.response?.status === 404) {
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { status?: number } };
+      if (axiosError.response?.status === 404) {
         message.error('Không tìm thấy tài khoản thụ hưởng');
       } else {
         message.error('Lỗi hệ thống khi tìm tài khoản. Vui lòng thử lại sau.');
@@ -83,23 +103,14 @@ export default function TransferPage() {
     }, {
       onSuccess: (data) => {
         setIsModalVisible(false);
-        setResultTx({
-          status: 'success',
-          txData: {
-            id: data.id,
-            type: 'transfer',
-            amount: data.amount,
-            fromAccount: selectedAccount?.accountNumber,
-            toAccount: pendingValues.to_accountNumber,
-            description: data.description,
-            createdAt: data.createdAt,
-          }
-        });
-        form.resetFields(['to_accountNumber', 'amount', 'description']);
-        setPendingValues(null);
-        setReceiver(null);
+        if (data.status === TransactionStatus.PENDING_OTP) {
+          setOtpTransactionId(data.id);
+          setIsOtpModalVisible(true);
+        } else {
+          handleTransferSuccess(data as Record<string, unknown>);
+        }
       },
-      onError: (err) => {
+      onError: (err: unknown) => {
         setIsModalVisible(false);
         setResultTx({
           status: 'failed',
@@ -109,11 +120,38 @@ export default function TransferPage() {
     });
   };
 
+  const handleTransferSuccess = (data: Record<string, unknown>) => {
+    setResultTx({
+      status: 'success',
+      txData: {
+        id: data.id as string,
+        type: 'transfer',
+        amount: data.amount as string | number,
+        fromAccount: selectedAccount?.accountNumber,
+        toAccount: pendingValues?.to_accountNumber,
+        description: data.description as string | undefined,
+        createdAt: data.createdAt as string,
+      }
+    });
+    form.resetFields(['to_accountNumber', 'amount', 'description']);
+    setPendingValues(null);
+    setReceiver(null);
+  };
+
+  const handleOtpCancel = () => {
+    setIsOtpModalVisible(false);
+    setOtpTransactionId(null);
+    setResultTx({
+      status: 'failed',
+      errorMsg: 'Giao dịch đã bị hủy bỏ bởi người dùng.',
+    });
+  };
+
   const handleCancel = () => {
     setIsModalVisible(false);
   };
 
-  const selectedAccount = accounts?.find((acc: any) => acc.id === pendingValues?.from_accountId);
+  const selectedAccount = accounts?.find((acc: AccountInfo) => acc.id === pendingValues?.from_accountId);
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', paddingBottom: 60 }}>
@@ -144,6 +182,15 @@ export default function TransferPage() {
         errorMsg={resultTx?.errorMsg}
         txData={resultTx?.txData}
         onClose={() => setResultTx(null)}
+      />
+
+      <OtpVerificationModal
+        key={otpTransactionId || 'none'}
+        isOpen={isOtpModalVisible}
+        onClose={() => setIsOtpModalVisible(false)}
+        transactionId={otpTransactionId}
+        onSuccess={handleTransferSuccess}
+        onCancel={handleOtpCancel}
       />
     </div>
   );

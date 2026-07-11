@@ -2,14 +2,13 @@ import { Input, Select, DatePicker } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 
 const { RangePicker } = DatePicker;
-const { Option } = Select;
 
 interface AdminTransactionFiltersProps {
   searchQuery: string;
   typeFilter: string;
   onSearchChange: (value: string) => void;
   onTypeFilterChange: (value: string) => void;
-  onDateRangeChange: (dates: any, dateStrings: [string, string]) => void;
+  onDateRangeChange: (dates: unknown, dateStrings: [string, string]) => void;
 }
 
 export const AdminTransactionFilters = ({
@@ -32,11 +31,12 @@ export const AdminTransactionFilters = ({
       onChange={onTypeFilterChange}
       style={{ width: 150, height: 40 }}
       styles={{ popup: { root: { borderRadius: 8 } } }}
-    >
-      <Option value="all">All Types</Option>
-      <Option value="deposit">Deposit</Option>
-      <Option value="transfer">Transfer</Option>
-    </Select>
+      options={[
+        { value: 'all', label: 'All Types' },
+        { value: 'deposit', label: 'Deposit' },
+        { value: 'transfer', label: 'Transfer' },
+      ]}
+    />
     <RangePicker
       style={{ borderRadius: 8, height: 40 }}
       onChange={onDateRangeChange}

@@ -41,8 +41,9 @@ export function useAccounts() {
     setIsModalOpen(false);
   };
 
-  const handleOk = () => {
-    form.validateFields().then((values) => {
+  const handleOk = async () => {
+    try {
+      const values = await form.validateFields();
       createAccount.mutate(values, {
         onSuccess: () => {
           message.success('Mở tài khoản mới thành công!');
@@ -52,7 +53,9 @@ export function useAccounts() {
           message.error('Không thể mở tài khoản mới. Vui lòng thử lại sau.');
         },
       });
-    });
+    } catch {
+      // Form validation failed
+    }
   };
 
   return {

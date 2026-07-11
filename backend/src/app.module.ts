@@ -11,7 +11,6 @@ import { AdminModule } from './admin/admin.module';
 import { TasksModule } from './tasks/tasks.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { BullModule } from '@nestjs/bullmq';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule, ThrottlerModuleOptions } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
@@ -40,17 +39,6 @@ import throttlerConfig from './config/throttler.config';
 
     AuthModule,
 
-    // BullMQ setup for Redis Queue
-    BullModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        connection: {
-          host: configService.get<string>('REDIS_HOST', 'localhost'),
-          port: parseInt(configService.get<string>('REDIS_PORT', '6379'), 10),
-        },
-      }),
-      inject: [ConfigService],
-    }),
     UsersModule,
     AccountsModule,
     TransactionsModule,

@@ -15,6 +15,7 @@ Use this skill when developing frontend UI components, managing layouts, styling
 ## UI Framework and Foundations
 
 - **Library**: Use **Ant Design (antd v5)** exclusively. Override default Antd tokens using `ConfigProvider` to soften borders and adjust shadows.
+- **No Deprecated APIs**: Do NOT use deprecated Ant Design v5 APIs (for example: do NOT use `Select.Option` or `const { Option } = Select` keys). Always use the modern equivalent props (such as passing the `options={[]}` array prop directly to the `<Select>` component).
 - **Clean Code & SRP**: Follow the guidelines in `.agents/skills/clean-react-components/SKILL.md` to separate presentation logic into custom hooks and keep components focused.
 - **Atomic Modular Architecture**: Decompose UIs into Atoms, Molecules, and Organisms. Avoid monolith UI files by extracting reusable components (e.g., `<AuthCard>`, `<TransactionTable>`).
 - **Responsiveness**: Ensure the UI is fluid, premium-looking, and fully compatible with desktop screens. Use CSS Flexbox/Grid or Antd Grid (`Row`/`Col`). Avoid fixed container widths that break ultra-wide desktop views.
