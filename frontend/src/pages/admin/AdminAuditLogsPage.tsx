@@ -1,14 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Card, Typography, Tabs, Space, DatePicker, Select, Button } from 'antd';
 import { DatabaseOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAuditLogs } from '@/hooks/useAuditLogs';
 import AdminAuditLogTable from '@/components/admin/AdminAuditLogTable';
 import CustomerAuditLogTable from '@/components/admin/CustomerAuditLogTable';
 import dayjs from 'dayjs';
+import { useAuthStore } from '@/store/auth.store';
+import { UserRole } from '@/constants/roles';
+import { Navigate } from 'react-router-dom';
+import type { GetAuditLogsParams, AdminAuditLog, CustomerAuditLog } from '@/services/admin.service';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
-const { Option } = Select;
 
 const CARD_SHADOW_STYLE = {
   boxShadow: '0 2px 5px -1px rgba(50, 50, 93, 0.25), 0 1px 3px -1px rgba(0, 0, 0, 0.3)',
@@ -19,38 +22,52 @@ const CARD_SHADOW_STYLE = {
 };
 
 export default function AdminAuditLogsPage() {
+  const currentUser = useAuthStore((s) => s.user);
   const [activeTab, setActiveTab] = useState('admin');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null]);
   const [status, setStatus] = useState<string | undefined>(undefined);
 
-  const {
-    adminLogs,
-    customerLogs,
-    loading,
-    meta,
-    fetchAdminLogs,
-    fetchCustomerLogs,
-  } = useAuditLogs();
+  const [searchParams, setSearchParams] = useState<GetAuditLogsParams>({
+    page: 1,
+    limit: 10,
+  });
 
-  const loadLogs = (page = 1, pageSize = 10) => {
-    const params: any = { page, limit: pageSize };
-    if (status && status !== 'all') params.status = status;
-    if (dateRange && dateRange[0]) params.startDate = dateRange[0].startOf('day').toISOString();
-    if (dateRange && dateRange[1]) params.endDate = dateRange[1].endOf('day').toISOString();
+  const { data, isLoading } = useAuditLogs(activeTab, searchParams);
 
-    if (activeTab === 'admin') {
-      fetchAdminLogs(params);
-    } else {
-      fetchCustomerLogs(params);
-    }
+  if (currentUser?.role !== UserRole.SUPERADMIN) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  const logs = data?.data || [];
+  const meta = data?.meta || { page: 1, limit: 10, total: 0, totalPages: 0 };
+
+  const handleTableChange = (pageNumber: number, pageSize: number) => {
+    setSearchParams((prev) => ({
+      ...prev,
+      page: pageNumber,
+      limit: pageSize,
+    }));
   };
 
-  useEffect(() => {
-    loadLogs(1, meta.limit);
-  }, [activeTab]);
+  const handleSearch = () => {
+    setSearchParams((prev) => ({
+      ...prev,
+      page: 1,
+      status: status === 'all' ? undefined : status,
+      startDate: dateRange[0] ? dateRange[0].startOf('day').toISOString() : undefined,
+      endDate: dateRange[1] ? dateRange[1].endOf('day').toISOString() : undefined,
+    }));
+  };
 
-  const handleTableChange = (page: number, pageSize: number) => {
-    loadLogs(page, pageSize);
+  const handleTabChange = (key: string) => {
+    setActiveTab(key);
+    setSearchParams({
+      page: 1,
+      limit: searchParams.limit,
+      status: status === 'all' ? undefined : status,
+      startDate: dateRange[0] ? dateRange[0].startOf('day').toISOString() : undefined,
+      endDate: dateRange[1] ? dateRange[1].endOf('day').toISOString() : undefined,
+    });
   };
 
   const pagination = {
@@ -72,7 +89,7 @@ export default function AdminAuditLogsPage() {
       <Card style={{ ...CARD_SHADOW_STYLE, flex: 1 }} styles={{ body: { height: '100%', display: 'flex', flexDirection: 'column' } }}>
         <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
           <RangePicker
-            onChange={(dates) => setDateRange(dates as any)}
+            onChange={(dates) => setDateRange(dates ? [dates[0], dates[1]] : [null, null])}
             style={{ borderRadius: 8 }}
           />
           <Select
@@ -81,15 +98,16 @@ export default function AdminAuditLogsPage() {
             style={{ width: 150 }}
             onChange={setStatus}
             defaultValue="all"
-          >
-            <Option value="all">All</Option>
-            <Option value="success">Success</Option>
-            <Option value="failed">Failed</Option>
-          </Select>
+            options={[
+              { value: 'all', label: 'All' },
+              { value: 'success', label: 'Success' },
+              { value: 'failed', label: 'Failed' },
+            ]}
+          />
           <Button
             type="primary"
             icon={<SearchOutlined />}
-            onClick={() => loadLogs(1, meta.limit)}
+            onClick={handleSearch}
             style={{ borderRadius: 8 }}
           >
             Tìm kiếm
@@ -98,15 +116,15 @@ export default function AdminAuditLogsPage() {
 
         <Tabs
           activeKey={activeTab}
-          onChange={setActiveTab}
+          onChange={handleTabChange}
           items={[
             {
               key: 'admin',
               label: 'Admin Actions',
               children: (
                 <AdminAuditLogTable
-                  logs={adminLogs}
-                  loading={loading && activeTab === 'admin'}
+                  logs={activeTab === 'admin' ? (logs as AdminAuditLog[]) : []}
+                  loading={isLoading}
                   pagination={pagination}
                 />
               ),
@@ -116,8 +134,8 @@ export default function AdminAuditLogsPage() {
               label: 'Customer Actions',
               children: (
                 <CustomerAuditLogTable
-                  logs={customerLogs}
-                  loading={loading && activeTab === 'customer'}
+                  logs={activeTab === 'customer' ? (logs as CustomerAuditLog[]) : []}
+                  loading={isLoading}
                   pagination={pagination}
                 />
               ),

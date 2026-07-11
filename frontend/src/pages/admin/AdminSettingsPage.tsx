@@ -18,6 +18,9 @@ import {
 } from '@ant-design/icons';
 import { useAdminSettings } from '@/hooks/admin/useAdminSettings';
 import type { SystemSetting } from '@/services/admin.service';
+import { useAuthStore } from '@/store/auth.store';
+import { UserRole } from '@/constants/roles';
+import { Navigate } from 'react-router-dom';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -37,7 +40,12 @@ const GROUP_CONFIG: Record<string, { title: string; icon: React.ReactNode }> = {
 };
 
 export default function AdminSettingsPage() {
+  const currentUser = useAuthStore((s) => s.user);
   const { settings, isSaving, handleUpdateSetting, handleSave } = useAdminSettings();
+
+  if (currentUser?.role !== UserRole.SUPERADMIN) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
   // Group settings
   const groupedSettings = settings.reduce((acc, setting) => {
     if (!acc[setting.groupName]) {
