@@ -33,13 +33,23 @@ export class ReversalService {
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const original = await this.validateReversalEligibility(manager, transactionId);
 
-      const lockedAccounts = await this.lockAccountsForReversal(
+      const fromAccountId = original.fromAccountId;
+      const toAccountId = original.toAccountId;
+      if (!fromAccountId || !toAccountId) {
+        throw new UnprocessableEntityException('Cannot reverse a non-transfer transaction');
+      }
+
+      const lockedAccounts = await this.transactionsHelper.lockAccounts(
         manager,
-        original.fromAccountId!,
-        original.toAccountId!,
+        fromAccountId,
+        toAccountId,
       );
-      const fromAccount = lockedAccounts.get(original.fromAccountId!)!;
-      const toAccount = lockedAccounts.get(original.toAccountId!)!;
+      const fromAccount = lockedAccounts.get(fromAccountId);
+      const toAccount = lockedAccounts.get(toAccountId);
+
+      if (!fromAccount || !toAccount) {
+        throw new NotFoundException('One or both accounts involved in this transaction no longer exist');
+      }
 
       const amount = new Decimal(original.amount);
       const fee = new Decimal(original.fee);
@@ -125,30 +135,7 @@ export class ReversalService {
     return original;
   }
 
-  /**
-   * Sorts and locks both accounts involved in the reversal.
-   */
-  private async lockAccountsForReversal(
-    manager: EntityManager,
-    fromId: string,
-    toId: string,
-  ): Promise<Map<string, Account>> {
-    const accountIdsToLock = [fromId, toId].sort();
-    const lockedAccounts = new Map<string, Account>();
-    for (const id of accountIdsToLock) {
-      const acc = await manager.findOne(Account, { where: { id }, lock: { mode: 'pessimistic_write' } });
-      if (acc) lockedAccounts.set(id, acc);
-    }
 
-    const fromAccount = lockedAccounts.get(fromId);
-    const toAccount = lockedAccounts.get(toId);
-
-    if (!fromAccount || !toAccount) {
-      throw new NotFoundException('One or both accounts involved in this transaction no longer exist');
-    }
-
-    return lockedAccounts;
-  }
 
   /**
    * Conducts balance checks and performs subtract/add database operations.

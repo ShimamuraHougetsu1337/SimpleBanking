@@ -107,15 +107,17 @@ export class TransactionsHelper {
     }
 
     const sign = operation === 'add' ? '+' : '-';
-    await manager
+    const result = await manager
       .createQueryBuilder()
       .update(Account)
       .set({ balance: () => `balance ${sign} ${amount.toFixed(2)}` })
       .where('id = :id', { id: accountId })
+      .returning(['balance'])
       .execute();
 
-    const updated = await manager.findOne(Account, { where: { id: accountId } });
-    return new Decimal(updated?.balance ?? 0);
+    const rawResult = result.raw as { balance: string }[];
+    const updatedBalance = rawResult[0]?.balance;
+    return new Decimal(updatedBalance ?? 0);
   }
 
   /**
@@ -171,7 +173,7 @@ export class TransactionsHelper {
     counterpartAccount: Account | null | undefined,
     suffix?: string,
   ) {
-    const defaultName = direction === 'credit' ? 'Hệ thống' : 'Hệ thống';
+    const defaultName = 'Hệ thống';
     const counterpartName = counterpartAccount?.user?.fullName || counterpartAccount?.name || defaultName;
 
     return {
@@ -194,7 +196,7 @@ export class TransactionsHelper {
    * Lock accounts -> Check balance/limit -> Post balance -> Write ledger -> Complete transaction.
    */
   async executeMovement(manager: EntityManager, tx: Transaction): Promise<Transaction> {
-    const lockedAccounts = await this.lockAccountsForMovement(manager, tx.fromAccountId, tx.toAccountId);
+    const lockedAccounts = await this.lockAccounts(manager, tx.fromAccountId, tx.toAccountId);
     const fromAccount = tx.fromAccountId ? (lockedAccounts.get(tx.fromAccountId) ?? null) : null;
     const toAccount = tx.toAccountId ? (lockedAccounts.get(tx.toAccountId) ?? null) : null;
 
@@ -216,7 +218,7 @@ export class TransactionsHelper {
   /**
    * Helper to lock accounts using pessimistic write.
    */
-  private async lockAccountsForMovement(
+  async lockAccounts(
     manager: EntityManager,
     fromId?: string | null,
     toId?: string | null,
@@ -254,8 +256,7 @@ export class TransactionsHelper {
         throw new UnprocessableEntityException('Số dư tài khoản không đủ');
       }
 
-      const accWithLimit = fromAccount as { dailyLimit: string | null };
-      const customLimit = accWithLimit.dailyLimit ? new Decimal(accWithLimit.dailyLimit) : null;
+      const customLimit = fromAccount.dailyLimit ? new Decimal(fromAccount.dailyLimit) : null;
       const dailyLimitValue = this.systemSettingsService.getSetting<number>('daily_limit');
       const dailyLimit = customLimit ?? (dailyLimitValue !== null ? new Decimal(dailyLimitValue) : null);
       if (dailyLimit !== null) {
