@@ -59,3 +59,38 @@ Use this skill when creating, modifying, or refactoring React components and cus
   - **Feature Scope**: If a constant is shared only between components/hooks of a specific feature folder (e.g. options shared within `src/components/transfer/`), isolate it in a dedicated constants file inside that feature directory (e.g., `src/components/transfer/transfer.constants.ts`).
   - **Local Scope**: If a constant is strictly local to a single React component or hook (e.g., local lists or specific options arrays), define it directly at the top of the file using UPPER_SNAKE_CASE.
 
+### 7. Separation of Queries and Mutations (Actions)
+- **Separate Query & Mutation Hooks**: To prevent custom hooks from becoming "God Hooks", completely separate UI states/Fetch logic (Queries) from state-modifying operations (Mutations/Actions).
+  - **Query Hooks**: Manage search inputs, pagination states, loading indicators, and calls to `useQuery` (e.g., `useAdminUsersQuery.ts`).
+  - **Mutation Hooks**: Handle side-effect actions (like updates, reactivations, locks, and deletes) utilizing `useMutation` (e.g., `useAdminUsersActions.ts`).
+- **High Cohesion**: Group related mutations targeting the same resource together to enable code reuse (DRY) and make hooks simple and maintainable.
+- **Decompose Monoliths**: Split pages with multiple modals/tables into isolated presentational sub-components, coordinating them via shared custom hooks.
+
+### 8. Role-Based View Segmentation (Object Mapping)
+- **Avoid Role-Conditioned Monoliths**: Do not combine completely distinct UI layouts/dashboards for multiple user roles (e.g. Teller, Manager, Admin) inside a single large file using nested `if` or `switch` blocks.
+- **Decompose into Role-Specific Components**: Extract each role's view into a separate presentational component (e.g. `ManagerDashboard.tsx`, `TellerDashboard.tsx`, `SystemDashboard.tsx`).
+- **Use Type-Safe Object Mapping**: Instead of using standard `switch-case` in the return block, map the user roles to component types in a clean mapping dictionary. Render the component dynamically with a default fallback component:
+  ```tsx
+  import React from 'react';
+  import { UserRole } from '@/constants/roles';
+  import { DashboardStats } from '@/services/admin.service';
+  import ManagerDashboard from './components/ManagerDashboard';
+  import TellerDashboard from './components/TellerDashboard';
+  import SystemDashboard from './components/SystemDashboard';
+
+  const DASHBOARD_MAP: Record<string, React.ComponentType<{ stats: DashboardStats }>> = {
+    [UserRole.MANAGER]: ManagerDashboard,
+    [UserRole.TELLER]: TellerDashboard,
+  };
+
+  export default function AdminDashboardPage() {
+    const { stats } = useAdminStats();
+    const currentUser = useAuthStore((s) => s.user);
+
+    const TargetDashboard = DASHBOARD_MAP[currentUser?.role || ''] || SystemDashboard;
+
+    return <TargetDashboard stats={stats} />;
+  }
+  ```
+- **Performance benefit**: Component types are resolved lazily on render, avoiding unnecessary element instantiation or hook execution for inactive roles.
+
