@@ -11,7 +11,7 @@ const { Content } = Layout;
 
 export default function LoginPage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [sessionExpired, setSessionExpired] = useState(false);
+  const [sessionExpired] = useState(() => searchParams.get('expired') === 'true');
   const [rateLimitSeconds, setRateLimitSeconds] = useState(0);
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loginMutation = useLogin();
@@ -31,36 +31,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (searchParams.get('expired') === 'true') {
-      setSessionExpired(true);
       // Clean up the URL parameter without triggering a reload
       setSearchParams({});
     }
   }, [searchParams, setSearchParams]);
-
-  // Handle rate limit error — start countdown
-  useEffect(() => {
-    const error = loginMutation.error;
-    if (!error) return;
-
-    if (axios.isAxiosError(error) && error.response?.status === 429) {
-      // Ưu tiên đọc từ Header chuẩn HTTP 'Retry-After', nếu không có thì đọc từ JSON, cuối cùng fallback về 60
-      const headerRetry = error.response.headers?.['retry-after'];
-      const jsonRetry = (error.response.data as { retryAfter?: number })?.retryAfter;
-      const retryAfter: number = headerRetry ? parseInt(headerRetry as string, 10) : (jsonRetry ?? 60);
-      setRateLimitSeconds(retryAfter);
-
-      if (countdownRef.current) clearInterval(countdownRef.current);
-      countdownRef.current = setInterval(() => {
-        setRateLimitSeconds((prev) => {
-          if (prev <= 1) {
-            if (countdownRef.current) clearInterval(countdownRef.current);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-  }, [loginMutation.error]);
 
   // Cleanup countdown on unmount
   useEffect(() => {
@@ -73,7 +47,28 @@ export default function LoginPage() {
 
   const onFinish = (values: { email: string; password: string }) => {
     if (isRateLimited) return;
-    loginMutation.mutate([values.email, values.password]);
+    loginMutation.mutate([values.email, values.password], {
+      onError: (error) => {
+        if (axios.isAxiosError(error) && error.response?.status === 429) {
+          // Ưu tiên đọc từ Header chuẩn HTTP 'Retry-After', nếu không có thì đọc từ JSON, cuối cùng fallback về 60
+          const headerRetry = error.response.headers?.['retry-after'];
+          const jsonRetry = (error.response.data as { retryAfter?: number })?.retryAfter;
+          const retryAfter: number = headerRetry ? parseInt(headerRetry as string, 10) : (jsonRetry ?? 60);
+          setRateLimitSeconds(retryAfter);
+
+          if (countdownRef.current) clearInterval(countdownRef.current);
+          countdownRef.current = setInterval(() => {
+            setRateLimitSeconds((prev) => {
+              if (prev <= 1) {
+                if (countdownRef.current) clearInterval(countdownRef.current);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        }
+      },
+    });
   };
 
   return (

@@ -8,6 +8,8 @@ export interface User {
   email: string;
   role: UserRole;
   status: string;
+  phoneNumber?: string;
+  phone_number?: string;
 }
 
 export interface AuthState {

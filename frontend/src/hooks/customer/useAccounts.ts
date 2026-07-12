@@ -3,7 +3,7 @@ import { Form, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
-import api from '@/services/api';
+import { accountService } from '@/services/account.service';
 import { useCreateAccount } from '@/hooks/customer/useCreateAccount';
 
 export interface Account {
@@ -27,8 +27,7 @@ export function useAccounts() {
   const { data: accounts, isLoading, error } = useQuery<Account[]>({
     queryKey: queryKeys.accounts.me(),
     queryFn: async () => {
-      const res = await api.get('/accounts/me');
-      return res.data;
+      return await accountService.getAccountsMe() as Account[];
     },
   });
 

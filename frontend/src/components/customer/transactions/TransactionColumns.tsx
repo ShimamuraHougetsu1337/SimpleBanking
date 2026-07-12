@@ -85,7 +85,7 @@ export function getTransactionColumns(
       key: 'status',
       align: 'center' as const,
       render: (status: string) => {
-        const config = STATUS_CONFIG[status] ?? { color: 'default', label: status };
+        const config = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] ?? { color: 'default', label: status };
         return (
           <Tag
             color={config.color}

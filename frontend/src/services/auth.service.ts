@@ -30,4 +30,14 @@ export const authService = {
     const { data } = await api.get('/users/me');
     return data;
   },
+
+  async updateProfile(fullName: string, phoneNumber?: string) {
+    const { data } = await api.patch('/users/me/profile', { fullName, phoneNumber });
+    return data;
+  },
+
+  async changePassword(payload: Record<string, string>) {
+    const { data } = await api.patch('/users/me/password', payload);
+    return data;
+  },
 };

@@ -1,6 +1,7 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
-import api from '../../services/api';
+import { transactionService } from '@/services/transaction.service';
+import type { TransactionRecord } from '@/types/transaction';
 
 export interface UseTransactionsParams {
   page?: number;
@@ -11,8 +12,18 @@ export interface UseTransactionsParams {
   toDate?: string;
 }
 
+export interface TransactionsResponse {
+  data: TransactionRecord[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
 export function useTransactions(params: UseTransactionsParams = {}) {
-  return useQuery({
+  return useQuery<TransactionsResponse>({
     queryKey: queryKeys.transactions.list(params),
     queryFn: async () => {
       // Send all filter fields as flat top-level query params so NestJS
@@ -27,8 +38,7 @@ export function useTransactions(params: UseTransactionsParams = {}) {
       if (params.fromDate) queryParams.fromDate = params.fromDate;
       if (params.toDate) queryParams.toDate = params.toDate;
 
-      const { data } = await api.get('/transactions', { params: queryParams });
-      return data;
+      return await transactionService.getTransactions(queryParams) as TransactionsResponse;
     },
     placeholderData: keepPreviousData,
   });

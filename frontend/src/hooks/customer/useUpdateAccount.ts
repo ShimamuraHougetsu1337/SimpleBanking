@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
-import api from '../../services/api';
+import { accountService } from '@/services/account.service';
 
 interface UpdateAccountPayload {
   name?: string;
@@ -12,8 +12,10 @@ export function useUpdateAccount(accountId: string) {
 
   return useMutation({
     mutationFn: async (payload: UpdateAccountPayload) => {
-      const { data } = await api.patch(`/accounts/${accountId}`, payload);
-      return data;
+      return await accountService.updateAccount(accountId, {
+        name: payload.name || '',
+        theme: payload.theme || '',
+      });
     },
     onSuccess: () => {
       // Invalidate relevant queries

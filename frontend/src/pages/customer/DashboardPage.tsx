@@ -6,6 +6,7 @@ import { useDashboardData, type Account } from '@/hooks/customer/useDashboardDat
 import { WithdrawModal } from '@/components/customer/transactions/WithdrawModal';
 import { AccountSettingsForm } from '@/components/customer/account/settings/AccountSettingsForm';
 import { TransactionResultModal } from '@/components/customer/transactions/result-modal/TransactionResultModal';
+import type { TxData } from '@/components/customer/transactions/result-modal/TransactionSuccessState';
 
 const { Title } = Typography;
 
@@ -15,7 +16,7 @@ export default function DashboardPage() {
   const [resultTx, setResultTx] = useState<{
     status: 'success' | 'failed';
     errorMsg?: string;
-    txData?: any;
+    txData?: TxData;
   } | null>(null);
 
   const {
@@ -75,16 +76,17 @@ export default function DashboardPage() {
         isOpen={!!withdrawAccount}
         onClose={() => setWithdrawAccount(null)}
         accountId={withdrawAccount?.id || ''}
-        onSuccess={(tx) => {
+        onSuccess={(tx: unknown) => {
+          const typedTx = tx as { id: string; amount: string | number; description?: string; createdAt: string };
           setResultTx({
             status: 'success',
             txData: {
-              id: tx.id,
+              id: typedTx.id,
               type: 'withdraw',
-              amount: tx.amount,
+              amount: typedTx.amount,
               fromAccount: withdrawAccount?.accountNumber,
-              description: tx.description,
-              createdAt: tx.createdAt,
+              description: typedTx.description,
+              createdAt: typedTx.createdAt,
             }
           });
         }}

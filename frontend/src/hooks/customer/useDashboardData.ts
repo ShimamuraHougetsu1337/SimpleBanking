@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
-import api from '@/services/api';
+import { accountService } from '@/services/account.service';
+import { transactionService } from '@/services/transaction.service';
 import type { Transaction } from '@/components/customer/dashboard/recent-transactions/RecentTransactions';
 
 export interface Account {
@@ -21,8 +22,7 @@ export const useDashboardData = () => {
   const { data: accountsData, isLoading: loadingAccounts, error: errorAccounts } = useQuery({
     queryKey: queryKeys.accounts.me(),
     queryFn: async () => {
-      const { data } = await api.get('/accounts/me');
-      return data as Account[];
+      return await accountService.getAccountsMe() as unknown as Account[];
     },
   });
 
@@ -32,15 +32,16 @@ export const useDashboardData = () => {
       if (!accountsData || accountsData.length === 0) return {};
 
       const txPromises = accountsData.map((acc: Account) =>
-        api.get(`/transactions`, { params: { accountId: acc.id, limit: 5 } })
+        transactionService.getTransactions({ accountId: acc.id, limit: 5 })
       );
 
       const txResArray = await Promise.all(txPromises);
 
       const newTxByAccount: Record<string, Transaction[]> = {};
       accountsData.forEach((acc: Account, idx: number) => {
-        if (txResArray[idx].data && txResArray[idx].data.data) {
-          newTxByAccount[acc.id] = txResArray[idx].data.data;
+        const res = txResArray[idx] as { data?: Transaction[] } | undefined;
+        if (res && res.data) {
+          newTxByAccount[acc.id] = res.data;
         } else {
           newTxByAccount[acc.id] = [];
         }
