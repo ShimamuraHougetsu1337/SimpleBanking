@@ -254,9 +254,11 @@ export class TransactionsHelper {
         throw new UnprocessableEntityException('Số dư tài khoản không đủ');
       }
 
+      const accWithLimit = fromAccount as { dailyLimit: string | null };
+      const customLimit = accWithLimit.dailyLimit ? new Decimal(accWithLimit.dailyLimit) : null;
       const dailyLimitValue = this.systemSettingsService.getSetting<number>('daily_limit');
-      if (dailyLimitValue !== null) {
-        const dailyLimit = new Decimal(dailyLimitValue);
+      const dailyLimit = customLimit ?? (dailyLimitValue !== null ? new Decimal(dailyLimitValue) : null);
+      if (dailyLimit !== null) {
         const usedLimit = new Decimal(fromAccount.usedDailyLimit || 0);
         if (usedLimit.plus(amount).gt(dailyLimit)) {
           throw new BadRequestException('Bạn đã vượt quá hạn mức chuyển tiền hàng ngày');

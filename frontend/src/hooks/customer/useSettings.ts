@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
 import { App } from 'antd';
-import api from '@/services/api';
+import { authService } from '@/services/auth.service';
 import { useAuthStore } from '@/store/auth.store';
 import { getErrorMessage } from '@/utils/error';
 
@@ -9,8 +9,7 @@ export function useProfile() {
   return useQuery({
     queryKey: queryKeys.settings.profile,
     queryFn: async () => {
-      const { data } = await api.get('/users/me');
-      return data;
+      return await authService.getCurrentUser();
     },
   });
 }
@@ -21,9 +20,8 @@ export function useUpdateProfile() {
   const { user, accessToken, setAuth } = useAuthStore();
 
   return useMutation({
-    mutationFn: async (fullName: string) => {
-      const { data } = await api.patch('/users/me/profile', { fullName });
-      return data;
+    mutationFn: async ({ fullName, phoneNumber }: { fullName: string; phoneNumber?: string }) => {
+      return await authService.updateProfile(fullName, phoneNumber);
     },
     onSuccess: (updatedUser) => {
       message.success('Cập nhật thông tin thành công!');
@@ -34,6 +32,7 @@ export function useUpdateProfile() {
             ...user,
             fullName: updatedUser.fullName,
             full_name: updatedUser.fullName, // Keep compatibility for both formats
+            phoneNumber: updatedUser.phoneNumber,
           },
           accessToken
         );
@@ -50,9 +49,8 @@ export function useChangePassword() {
   const { message } = App.useApp();
 
   return useMutation({
-    mutationFn: async (payload: Parameters<typeof api.patch>[1]) => {
-      const { data } = await api.patch('/users/me/password', payload);
-      return data;
+    mutationFn: async (payload: Record<string, string>) => {
+      return await authService.changePassword(payload);
     },
     onSuccess: () => {
       message.success('Đổi mật khẩu thành công!');

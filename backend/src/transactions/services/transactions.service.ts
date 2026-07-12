@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, DataSource, Brackets, SelectQueryBuilder } from 'typeorm';
 import { TransactionsHelper } from '../helpers/transactions.helper';
@@ -134,11 +134,44 @@ export class TransactionsService {
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
-
     return { data, total, stats };
   }
 
+  async getTellerTransactionStatsToday(tellerId: string) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
 
+    const stats = await this.transactionRepository.createQueryBuilder('tx')
+      .select('tx.type', 'type')
+      .addSelect('SUM(CAST(tx.amount AS NUMERIC))', 'volume')
+      .addSelect('COUNT(tx.id)', 'count')
+      .where('tx.status = :status', { status: TransactionStatus.COMPLETED })
+      .andWhere('tx.createdAt >= :startOfDay', { startOfDay })
+      .andWhere('tx.requestId IN (SELECT id FROM transaction_requests WHERE created_by_id = :tellerId)', { tellerId })
+      .groupBy('tx.type')
+      .getRawMany<{ type: TransactionType; volume: string | null; count: string | null }>();
+
+    let todayDepositsVolume = '0.00';
+    let todayWithdrawalsVolume = '0.00';
+    let todayCompletedCount = 0;
+
+    for (const row of stats) {
+      const vol = row.volume || '0.00';
+      const count = Number(row.count) || 0;
+      todayCompletedCount += count;
+      if (row.type === TransactionType.DEPOSIT) {
+        todayDepositsVolume = new Decimal(vol).toFixed(2);
+      } else if (row.type === TransactionType.WITHDRAW) {
+        todayWithdrawalsVolume = new Decimal(vol).toFixed(2);
+      }
+    }
+
+    return {
+      todayDepositsVolume,
+      todayWithdrawalsVolume,
+      todayCompletedCount,
+    };
+  }
 
   async getWeeklyVolume() {
     const today = new Date();
@@ -184,6 +217,9 @@ export class TransactionsService {
     const isCustomer = user?.role === UserRole.CUSTOMER;
 
     if (isCustomer) {
+      if (user?.isOtpBlocked) {
+        throw new ForbiddenException('Mã OTP của bạn đã bị khóa. Vui lòng liên hệ Quản lý (Manager) để được hỗ trợ kích hoạt lại.');
+      }
       // Customers ALWAYS require OTP for transfers
       return this.createPendingOtpTransaction(dto, idempotencyKey, TransactionType.TRANSFER);
     }
@@ -348,6 +384,10 @@ export class TransactionsService {
    * Verifies OTP and executes the movement on success.
    */
   async verifyOtp(transactionId: string, code: string, userId: string): Promise<Transaction> {
+    const user = await this.dataSource.getRepository(User).findOne({ where: { id: userId } });
+    if (user?.isOtpBlocked) {
+      throw new ForbiddenException('Mã OTP của bạn đã bị khóa. Vui lòng liên hệ Quản lý (Manager) để được hỗ trợ kích hoạt lại.');
+    }
     await this.otpService.verifyOtp(transactionId, code, userId);
 
     const tx = await this.transactionRepository.findOne({ where: { id: transactionId } });
@@ -367,6 +407,42 @@ export class TransactionsService {
    * Resends OTP code for pending transaction.
    */
   async resendOtp(transactionId: string, userId: string): Promise<{ message: string }> {
+    const user = await this.dataSource.getRepository(User).findOne({ where: { id: userId } });
+    if (user?.isOtpBlocked) {
+      throw new ForbiddenException('Mã OTP của bạn đã bị khóa. Vui lòng liên hệ Quản lý (Manager) để được hỗ trợ kích hoạt lại.');
+    }
     return this.otpService.resendOtp(transactionId, userId);
+  }
+
+  async getBranchCashFlowToday(): Promise<{ totalDepositsToday: string; totalWithdrawalsToday: string; netCashFlowToday: string }> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const stats = await this.transactionRepository.createQueryBuilder('tx')
+      .select('tx.type', 'type')
+      .addSelect('SUM(CAST(tx.amount AS NUMERIC))', 'volume')
+      .where('tx.status = :status', { status: TransactionStatus.COMPLETED })
+      .andWhere('tx.createdAt >= :startOfDay', { startOfDay })
+      .andWhere('(tx.type = :deposit OR tx.type = :withdraw)', { deposit: TransactionType.DEPOSIT, withdraw: TransactionType.WITHDRAW })
+      .groupBy('tx.type')
+      .getRawMany<{ type: TransactionType; volume: string }>();
+
+    let totalDeposits = new Decimal(0);
+    let totalWithdrawals = new Decimal(0);
+
+    for (const row of stats) {
+      const vol = new Decimal(row.volume || 0);
+      if (row.type === TransactionType.DEPOSIT) {
+        totalDeposits = vol;
+      } else if (row.type === TransactionType.WITHDRAW) {
+        totalWithdrawals = vol;
+      }
+    }
+
+    return {
+      totalDepositsToday: totalDeposits.toFixed(2),
+      totalWithdrawalsToday: totalWithdrawals.toFixed(2),
+      netCashFlowToday: totalDeposits.minus(totalWithdrawals).toFixed(2),
+    };
   }
 }

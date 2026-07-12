@@ -8,6 +8,7 @@ export interface AdminUser {
   status: string;
   accountNumber: string | null;
   balance: string;
+  isOtpBlocked?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -34,6 +35,8 @@ export interface AdminAccount {
   id: string;
   accountNumber: string;
   balance: string;
+  holdBalance: string;
+  dailyLimit?: string | null;
   currency: string;
   status: string;
   ownerName: string;
@@ -85,6 +88,17 @@ export interface DashboardStats {
   totalAccounts: number;
   totalBalance: string;
   weeklyVolume: { date: string; volume: string }[];
+  pendingCount?: number;
+  approvedCount?: number;
+  rejectedCount?: number;
+  todayDepositsVolume?: string;
+  todayWithdrawalsVolume?: string;
+  todayCompletedCount?: number;
+  pendingRequestsCount?: number;
+  totalDepositsToday?: string;
+  totalWithdrawalsToday?: string;
+  netCashFlowToday?: string;
+  tellerPerformance?: { tellerId: string; tellerName: string; tellerEmail: string; pendingCount: number; completedCount: number; rejectedCount: number; totalVolume: string }[];
 }
 
 export interface SystemSetting {
@@ -272,13 +286,23 @@ export const adminService = {
     return data;
   },
 
-  async rejectTransactionRequest(id: string): Promise<unknown> {
-    const { data } = await api.post(`/admin/transaction-requests/${id}/reject`);
+  async rejectTransactionRequest({ id, rejectionReason }: { id: string; rejectionReason: string }): Promise<unknown> {
+    const { data } = await api.post(`/admin/transaction-requests/${id}/reject`, { rejectionReason });
     return data;
   },
 
   async createUser(payload: Record<string, unknown>): Promise<unknown> {
     const { data } = await api.post('/admin/users', payload);
     return data;
+  },
+
+  async reactivateOtp(id: string): Promise<unknown> {
+    const response = await api.post(`/admin/users/${id}/reactivate-otp`);
+    return response.data;
+  },
+
+  async updateDailyLimit(id: string, dailyLimit: string | null): Promise<unknown> {
+    const response = await api.patch(`/admin/accounts/${id}/daily-limit`, { dailyLimit });
+    return response.data;
   }
 };

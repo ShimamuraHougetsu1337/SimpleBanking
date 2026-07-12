@@ -62,4 +62,14 @@ export const transactionService = {
     const { data } = await api.post(`/transactions/${transactionId}/resend-otp`);
     return data;
   },
+
+  async getTransferFee(): Promise<{ fee: string }> {
+    const { data } = await api.get('/transactions/transfer-fee');
+    return data;
+  },
+
+  async getTransactions(params?: Record<string, string | number | undefined>): Promise<unknown> {
+    const { data } = await api.get('/transactions', { params });
+    return data;
+  },
 };

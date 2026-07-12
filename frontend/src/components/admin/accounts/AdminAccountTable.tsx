@@ -19,6 +19,7 @@ interface AdminAccountTableProps {
   onFreezeAccount: (id: string) => void;
   onUnfreezeAccount: (id: string) => void;
   onOpenDepositModal: (account: AdminAccount) => void;
+  onOpenLimitModal?: (account: AdminAccount) => void;
   isSystemTab?: boolean;
 }
 
@@ -32,6 +33,7 @@ export const AdminAccountTable = ({
   onFreezeAccount,
   onUnfreezeAccount,
   onOpenDepositModal,
+  onOpenLimitModal,
   isSystemTab = false,
 }: AdminAccountTableProps) => {
   const navigate = useNavigate();
@@ -76,6 +78,39 @@ export const AdminAccountTable = ({
         <Text strong style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
           {formatVND(balance)}
         </Text>
+      ),
+    },
+    {
+      title: 'Số dư tạm giữ',
+      dataIndex: 'holdBalance',
+      key: 'holdBalance',
+      align: 'center' as const,
+      render: (holdBalance: string) => (
+        <Text strong style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#dc2626' }}>
+          {formatVND(holdBalance || '0')}
+        </Text>
+      ),
+    },
+    {
+      title: 'Hạn mức ngày',
+      key: 'dailyLimit',
+      align: 'center' as const,
+      render: (record: AdminAccount) => (
+        <Space size={4} direction="vertical" align="center">
+          <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b', fontWeight: 500 }}>
+            {record.dailyLimit ? formatVND(record.dailyLimit) : 'Mặc định'}
+          </Text>
+          {onOpenLimitModal && !isSystemTab && (
+            <Button
+              type="link"
+              size="small"
+              onClick={() => onOpenLimitModal(record)}
+              style={{ padding: 0, fontSize: 12 }}
+            >
+              Chỉnh sửa
+            </Button>
+          )}
+        </Space>
       ),
     },
     {

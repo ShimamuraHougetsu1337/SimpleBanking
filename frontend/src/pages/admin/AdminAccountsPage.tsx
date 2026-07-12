@@ -6,6 +6,9 @@ import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { AdminAccountTable } from '@/components/admin/accounts/AdminAccountTable';
 import { AdminDepositModal } from '@/components/admin/accounts/AdminDepositModal';
+import { LimitModal } from '@/components/admin/accounts/LimitModal';
+import { useAuthStore } from '@/store/auth.store';
+import { UserRole } from '@/constants/roles';
 
 const { Title } = Typography;
 
@@ -30,12 +33,16 @@ export default function AdminAccountsPage() {
     handleFreezeAccount,
     handleUnfreezeAccount,
     handleDeposit,
+    handleUpdateDailyLimit,
+    isUpdatingDailyLimit,
     isDepositing,
     isLoading,
   } = useAdminAccounts();
 
   const [depositModalVisible, setDepositModalVisible] = useState(false);
+  const [limitModalVisible, setLimitModalVisible] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<AdminAccount | null>(null);
+  const currentUser = useAuthStore((s) => s.user);
 
   const openDepositModal = (account: AdminAccount) => {
     setSelectedAccount(account);
@@ -44,6 +51,16 @@ export default function AdminAccountsPage() {
 
   const closeDepositModal = () => {
     setDepositModalVisible(false);
+    setSelectedAccount(null);
+  };
+
+  const openLimitModal = (account: AdminAccount) => {
+    setSelectedAccount(account);
+    setLimitModalVisible(true);
+  };
+
+  const closeLimitModal = () => {
+    setLimitModalVisible(false);
     setSelectedAccount(null);
   };
 
@@ -62,15 +79,17 @@ export default function AdminAccountsPage() {
         </Space>
       </div>
 
-      <Tabs
-        activeKey={type}
-        onChange={(key) => handleTypeChange(key as 'customer' | 'system')}
-        items={[
-          { key: 'customer', label: 'Tài khoản khách hàng' },
-          { key: 'system', label: 'Tài khoản hệ thống' },
-        ]}
-        style={{ marginBottom: 16 }}
-      />
+      {currentUser?.role !== UserRole.TELLER && currentUser?.role !== UserRole.MANAGER && (
+        <Tabs
+          activeKey={type}
+          onChange={(key) => handleTypeChange(key as 'customer' | 'system')}
+          items={[
+            { key: 'customer', label: 'Tài khoản khách hàng' },
+            { key: 'system', label: 'Tài khoản hệ thống' },
+          ]}
+          style={{ marginBottom: 16 }}
+        />
+      )}
 
       <Card style={CARD_SHADOW_STYLE} styles={{ body: { padding: 0, overflow: 'hidden' } }}>
         <AdminAccountTable
@@ -83,6 +102,7 @@ export default function AdminAccountsPage() {
           onFreezeAccount={handleFreezeAccount}
           onUnfreezeAccount={handleUnfreezeAccount}
           onOpenDepositModal={openDepositModal}
+          onOpenLimitModal={currentUser?.role === UserRole.TELLER ? undefined : openLimitModal}
           isSystemTab={type === 'system'}
         />
       </Card>
@@ -93,6 +113,14 @@ export default function AdminAccountsPage() {
         onCancel={closeDepositModal}
         onDeposit={handleDeposit}
         isDepositing={isDepositing}
+      />
+
+      <LimitModal
+        open={limitModalVisible}
+        account={selectedAccount}
+        onCancel={closeLimitModal}
+        onUpdateLimit={handleUpdateDailyLimit}
+        isUpdating={isUpdatingDailyLimit}
       />
     </div>
   );

@@ -72,6 +72,9 @@ export class User {
   @Column({ name: 'lockout_until', type: 'timestamptz', nullable: true })
   lockoutUntil: Date | null;
 
+  @Column({ name: 'is_otp_blocked', type: 'boolean', default: false })
+  isOtpBlocked: boolean;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 

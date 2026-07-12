@@ -109,16 +109,18 @@ export default function AccountsPage() {
             label="Giao diện thẻ"
             rules={[{ required: true, message: 'Vui lòng chọn giao diện' }]}
           >
-            <Select size="large">
-              {AVAILABLE_THEMES.map((theme) => (
-                <Select.Option key={theme.value} value={theme.value}>
+            <Select
+              size="large"
+              options={AVAILABLE_THEMES.map((theme) => ({
+                value: theme.value,
+                label: (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 16, height: 16, background: theme.value, borderRadius: 4 }}></div>
                     {theme.label}
                   </div>
-                </Select.Option>
-              ))}
-            </Select>
+                ),
+              }))}
+            />
           </Form.Item>
         </Form>
       </Modal>

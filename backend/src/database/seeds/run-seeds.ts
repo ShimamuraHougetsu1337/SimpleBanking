@@ -51,25 +51,45 @@ async function run() {
     const savedAdmin = await queryRunner.manager.save(User, superAdminUser);
     console.log(`SuperAdmin user created with ID: ${savedAdmin.id}`);
 
-    // Create Teller User
-    const tellerUser = new User();
-    tellerUser.fullName = 'Teller 01';
-    tellerUser.email = 'teller@gmail.com';
-    tellerUser.passwordHash = commonPasswordHash;
-    tellerUser.role = UserRole.TELLER;
-    tellerUser.status = UserStatus.ACTIVE;
-    const savedTeller = await queryRunner.manager.save(User, tellerUser);
-    console.log(`Teller user created with ID: ${savedTeller.id}`);
+    // Create Teller 1 User
+    const teller1User = new User();
+    teller1User.fullName = 'Teller 01';
+    teller1User.email = 'teller1@gmail.com';
+    teller1User.passwordHash = commonPasswordHash;
+    teller1User.role = UserRole.TELLER;
+    teller1User.status = UserStatus.ACTIVE;
+    const savedTeller1 = await queryRunner.manager.save(User, teller1User);
+    console.log(`Teller 1 user created with ID: ${savedTeller1.id}`);
 
-    // Create Manager User
-    const managerUser = new User();
-    managerUser.fullName = 'Manager 01';
-    managerUser.email = 'manager@gmail.com';
-    managerUser.passwordHash = commonPasswordHash;
-    managerUser.role = UserRole.MANAGER;
-    managerUser.status = UserStatus.ACTIVE;
-    const savedManager = await queryRunner.manager.save(User, managerUser);
-    console.log(`Manager user created with ID: ${savedManager.id}`);
+    // Create Teller 2 User
+    const teller2User = new User();
+    teller2User.fullName = 'Teller 02';
+    teller2User.email = 'teller2@gmail.com';
+    teller2User.passwordHash = commonPasswordHash;
+    teller2User.role = UserRole.TELLER;
+    teller2User.status = UserStatus.ACTIVE;
+    const savedTeller2 = await queryRunner.manager.save(User, teller2User);
+    console.log(`Teller 2 user created with ID: ${savedTeller2.id}`);
+
+    // Create Manager 1 User
+    const manager1User = new User();
+    manager1User.fullName = 'Manager 01';
+    manager1User.email = 'manager1@gmail.com';
+    manager1User.passwordHash = commonPasswordHash;
+    manager1User.role = UserRole.MANAGER;
+    manager1User.status = UserStatus.ACTIVE;
+    const savedManager1 = await queryRunner.manager.save(User, manager1User);
+    console.log(`Manager 1 user created with ID: ${savedManager1.id}`);
+
+    // Create Manager 2 User
+    const manager2User = new User();
+    manager2User.fullName = 'Manager 02';
+    manager2User.email = 'manager2@gmail.com';
+    manager2User.passwordHash = commonPasswordHash;
+    manager2User.role = UserRole.MANAGER;
+    manager2User.status = UserStatus.ACTIVE;
+    const savedManager2 = await queryRunner.manager.save(User, manager2User);
+    console.log(`Manager 2 user created with ID: ${savedManager2.id}`);
 
     // Create Customer User
     const customerUser = new User();

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { UsersService } from '@/users/users.service';
 import { UserStatus } from '@/users/entities/user.entity';
 import { AccountsService } from '@/accounts/accounts.service';
@@ -10,7 +10,7 @@ import { UserHistoryService } from '@/users/services/user-history.service';
 import { v4 as uuidv4 } from 'uuid';
 import Decimal from 'decimal.js';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
-import { User } from '@/users/entities/user.entity';
+import { User, UserRole } from '@/users/entities/user.entity';
 
 @Injectable()
 export class AdminService {
@@ -45,6 +45,48 @@ export class AdminService {
       totalBalance: totalBalance.toFixed(2),
       weeklyVolume,
     };
+  }
+
+  async getTellerDashboardStats(tellerId: string) {
+    const requestStats = await this.transactionRequestsService.getTellerRequestStatsToday(tellerId);
+    const txStats = await this.transactionsService.getTellerTransactionStatsToday(tellerId);
+    return {
+      ...requestStats,
+      ...txStats,
+    };
+  }
+
+  async getManagerDashboardStats() {
+    const pendingRequestsCount = await this.transactionRequestsService.getPendingRequestsCount();
+    const branchCashFlow = await this.transactionsService.getBranchCashFlowToday();
+    const tellerPerformance = await this.transactionRequestsService.getTellerPerformanceToday();
+    return {
+      pendingRequestsCount,
+      ...branchCashFlow,
+      tellerPerformance,
+    };
+  }
+
+  async reactivateOtp(userId: string, currentAdmin: User): Promise<User> {
+    const targetUser = await this.usersService.findById(userId);
+    if (!targetUser) {
+      throw new NotFoundException(`User with ID "${userId}" not found`);
+    }
+    if (currentAdmin.role === UserRole.MANAGER && targetUser.role !== UserRole.CUSTOMER) {
+      throw new ForbiddenException('Quản lý chỉ có thể kích hoạt OTP cho khách hàng');
+    }
+    return await this.usersService.reactivateOtp(userId, currentAdmin.id);
+  }
+
+  async updateDailyLimit(accountId: string, dailyLimit: string | null, currentAdmin: User) {
+    const account = await this.accountsService.findByIdAdmin(accountId);
+    if (!account) {
+      throw new NotFoundException(`Account with ID "${accountId}" not found`);
+    }
+    if (currentAdmin.role === UserRole.MANAGER && account.user?.role !== UserRole.CUSTOMER) {
+      throw new ForbiddenException('Quản lý chỉ có thể chỉnh sửa hạn mức tài khoản của khách hàng');
+    }
+    return await this.accountsService.updateDailyLimit(accountId, dailyLimit);
   }
 
   async getUsers(
@@ -117,11 +159,18 @@ export class AdminService {
     return await this.ledgerService.getEntriesByAccount(accountId);
   }
 
-  async updateUserStatus(id: string, status: UserStatus, currentAdminId: string) {
-    if (id === currentAdminId) {
+  async updateUserStatus(id: string, status: UserStatus, currentAdmin: User) {
+    if (id === currentAdmin.id) {
       throw new BadRequestException('Administrators cannot lock their own accounts');
     }
-    const updatedUser = await this.usersService.updateStatus(id, status, currentAdminId);
+    const targetUser = await this.usersService.findById(id);
+    if (!targetUser) {
+      throw new NotFoundException(`User with ID "${id}" not found`);
+    }
+    if (currentAdmin.role === UserRole.MANAGER && targetUser.role !== UserRole.CUSTOMER) {
+      throw new ForbiddenException('Quản lý chỉ có thể khóa/mở khóa tài khoản của khách hàng');
+    }
+    const updatedUser = await this.usersService.updateStatus(id, status, currentAdmin.id);
     return {
       id: updatedUser.id,
       fullName: updatedUser.fullName,
@@ -145,6 +194,8 @@ export class AdminService {
         id: acc.id,
         accountNumber: acc.accountNumber,
         balance: acc.balance,
+        holdBalance: acc.holdBalance,
+        dailyLimit: (acc as { dailyLimit: string | null }).dailyLimit,
         currency: acc.currency,
         status: acc.status,
         ownerName: acc.user?.fullName,
@@ -157,9 +208,15 @@ export class AdminService {
     };
   }
 
-  async updateAccountStatus(id: string, status: AccountStatus) {
+  async updateAccountStatus(id: string, status: AccountStatus, currentAdmin: User) {
     // Fetch old status BEFORE update so audit log can record accurate before/after
     const before = await this.accountsService.findByIdAdmin(id);
+    if (!before) {
+      throw new NotFoundException(`Account with ID "${id}" not found`);
+    }
+    if (currentAdmin.role === UserRole.MANAGER && before.user?.role !== UserRole.CUSTOMER) {
+      throw new ForbiddenException('Quản lý chỉ có thể đóng/mở tài khoản của khách hàng');
+    }
     const account = await this.accountsService.updateStatus(id, status);
     return {
       id: account.id,
@@ -197,8 +254,8 @@ export class AdminService {
     return await this.transactionRequestsService.approveRequest(requestId, currentUserId);
   }
 
-  async rejectRequest(requestId: string, currentUserId: string) {
-    return await this.transactionRequestsService.rejectRequest(requestId, currentUserId);
+  async rejectRequest(requestId: string, currentUserId: string, rejectionReason: string) {
+    return await this.transactionRequestsService.rejectRequest(requestId, currentUserId, rejectionReason);
   }
 
   async getTransactionRequests(page: number = 1, limit: number = 10, status?: string, tellerId?: string) {

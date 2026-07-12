@@ -170,4 +170,23 @@ export class AccountsService {
 
     return this.accountRepository.save(account);
   }
+
+  async updateDailyLimit(id: string, dailyLimit: string | null): Promise<Account> {
+    const account = await this.findByIdAdmin(id);
+    if (!account) {
+      throw new NotFoundException(`Account with ID "${id}" not found`);
+    }
+
+    if (dailyLimit !== null) {
+      const limitNum = Number(dailyLimit);
+      if (isNaN(limitNum) || limitNum < 0) {
+        throw new BadRequestException('Hạn mức giao dịch không hợp lệ');
+      }
+      account.dailyLimit = limitNum.toFixed(2);
+    } else {
+      account.dailyLimit = null;
+    }
+
+    return await this.accountRepository.save(account);
+  }
 }

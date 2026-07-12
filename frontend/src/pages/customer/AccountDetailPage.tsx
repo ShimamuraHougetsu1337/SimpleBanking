@@ -1,24 +1,14 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Spin, Empty, Button } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
-import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '@/constants/queryKeys';
-import api from '@/services/api';
+import { useAccountDetailQuery } from '@/hooks/customer/useAccountDetailQuery';
 import { AccountTransactions } from '@/components/customer/account/transactions/AccountTransactions';
 
 export default function AccountDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const { data: account, isLoading: accountLoading } = useQuery({
-    queryKey: queryKeys.accounts.detail(id || ''),
-    queryFn: async () => {
-      if (!id) return null;
-      const res = await api.get(`/accounts/${id}`);
-      return res.data;
-    },
-    enabled: !!id,
-  });
+  const { data: account, isLoading: accountLoading } = useAccountDetailQuery(id);
 
   if (accountLoading) {
     return <div style={{ textAlign: 'center', padding: '100px' }}><Spin size="large" /></div>;

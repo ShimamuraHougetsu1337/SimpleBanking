@@ -117,7 +117,7 @@ export default function TransactionsPage() {
       </Card>
 
       {/* External Pagination to prevent local slicing */}
-      {data?.meta?.total > 0 && (
+      {data?.meta?.total !== undefined && data.meta.total > 0 && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
           <Pagination
             current={page}

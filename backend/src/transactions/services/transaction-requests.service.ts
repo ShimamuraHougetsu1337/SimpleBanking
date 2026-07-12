@@ -8,6 +8,7 @@ import { TransactionRequest, TransactionRequestType, TransactionRequestStatus } 
 import { Account } from '@/accounts/entities/account.entity';
 import { SystemSettingsService } from '@/system-settings/system-settings.service';
 import Decimal from 'decimal.js';
+import { User, UserRole } from '@/users/entities/user.entity';
 
 @Injectable()
 export class TransactionRequestsService {
@@ -53,11 +54,42 @@ export class TransactionRequestsService {
         approvedBy: req.approvedBy?.fullName,
         createdAt: req.createdAt,
         approvedAt: req.approvedAt,
+        rejectionReason: req.rejectionReason,
       })),
       total,
       page,
       limit,
       totalPages: Math.ceil(total / limit)
+    };
+  }
+
+  async getTellerRequestStatsToday(tellerId: string) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const pendingCount = await this.transactionRequestRepository.count({
+      where: {
+        createdById: tellerId,
+        status: TransactionRequestStatus.PENDING,
+      },
+    });
+
+    const approvedCount = await this.transactionRequestRepository.createQueryBuilder('req')
+      .where('req.createdById = :tellerId', { tellerId })
+      .andWhere('req.status = :approvedStatus', { approvedStatus: TransactionRequestStatus.APPROVED })
+      .andWhere('req.approvedAt >= :startOfDay', { startOfDay })
+      .getCount();
+
+    const rejectedCount = await this.transactionRequestRepository.createQueryBuilder('req')
+      .where('req.createdById = :tellerId', { tellerId })
+      .andWhere('req.status = :rejectedStatus', { rejectedStatus: TransactionRequestStatus.REJECTED })
+      .andWhere('req.approvedAt >= :startOfDay', { startOfDay })
+      .getCount();
+
+    return {
+      pendingCount,
+      approvedCount,
+      rejectedCount,
     };
   }
 
@@ -173,7 +205,7 @@ export class TransactionRequestsService {
     });
   }
 
-  async rejectRequest(requestId: string, currentUserId: string): Promise<TransactionRequest> {
+  async rejectRequest(requestId: string, currentUserId: string, rejectionReason: string): Promise<TransactionRequest> {
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const request = await this.validateRejectionRequest(manager, requestId, currentUserId);
 
@@ -184,6 +216,7 @@ export class TransactionRequestsService {
       request.status = TransactionRequestStatus.REJECTED;
       request.approvedById = currentUserId;
       request.approvedAt = new Date();
+      request.rejectionReason = rejectionReason;
 
       return manager.save(TransactionRequest, request);
     });
@@ -348,7 +381,6 @@ export class TransactionRequestsService {
   ): Promise<TransactionRequest> {
     const request = await manager.findOne(TransactionRequest, {
       where: { id: requestId },
-      relations: { account: true },
       lock: { mode: 'pessimistic_write' },
     });
 
@@ -430,5 +462,65 @@ export class TransactionRequestsService {
       })
       .where('id = :id', { id: account.id })
       .execute();
+  }
+
+  async getPendingRequestsCount(): Promise<number> {
+    return await this.transactionRequestRepository.count({
+      where: { status: TransactionRequestStatus.PENDING },
+    });
+  }
+
+  async getTellerPerformanceToday(): Promise<any[]> {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    // Fetch all active tellers
+    const tellers = await this.dataSource.getRepository(User).find({
+      where: { role: UserRole.TELLER },
+      select: { id: true, fullName: true, email: true },
+    });
+
+    // Query stats grouped by createdById and status
+    const stats = await this.transactionRequestRepository.createQueryBuilder('req')
+      .select('req.createdById', 'tellerId')
+      .addSelect('req.status', 'status')
+      .addSelect('COUNT(req.id)', 'count')
+      .addSelect('SUM(CAST(req.amount AS NUMERIC))', 'volume')
+      .where('req.createdAt >= :startOfDay', { startOfDay })
+      .groupBy('req.createdById')
+      .addGroupBy('req.status')
+      .getRawMany<{ tellerId: string; status: TransactionRequestStatus; count: string; volume: string }>();
+
+    // Map stats to Tellers
+    return tellers.map(teller => {
+      const tellerStats = stats.filter(s => s.tellerId === teller.id);
+      
+      const pendingCount = tellerStats
+        .filter(s => s.status === TransactionRequestStatus.PENDING)
+        .reduce((sum, s) => sum + Number(s.count), 0);
+
+      const completedCount = tellerStats
+        .filter(s => s.status === TransactionRequestStatus.APPROVED || s.status === TransactionRequestStatus.AUTO_APPROVED)
+        .reduce((sum, s) => sum + Number(s.count), 0);
+
+      const rejectedCount = tellerStats
+        .filter(s => s.status === TransactionRequestStatus.REJECTED)
+        .reduce((sum, s) => sum + Number(s.count), 0);
+
+      const totalVolume = tellerStats
+        .filter(s => s.status === TransactionRequestStatus.APPROVED || s.status === TransactionRequestStatus.AUTO_APPROVED)
+        .reduce((sum, s) => sum.plus(new Decimal(s.volume || 0)), new Decimal(0))
+        .toFixed(2);
+
+      return {
+        tellerId: teller.id,
+        tellerName: teller.fullName,
+        tellerEmail: teller.email,
+        pendingCount,
+        completedCount,
+        rejectedCount,
+        totalVolume,
+      };
+    });
   }
 }
