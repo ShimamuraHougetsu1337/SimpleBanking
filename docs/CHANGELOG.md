@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-12]
+
+### Added
+- **Balance Reconciliation Cron Job**: Implemented a new background cron job (`ReconciliationCron`) that runs periodically to verify the consistency of account balances by summing historical ledger entries and comparing the results with the cached balances.
+- **Configurable Cron Job Schedules**: Allowed custom cron job execution schedules via `.env` configuration variables (`FEE_SETTLEMENT_CRON` and `RECONCILIATION_CRON`).
+- **Decorator Environment Loading**: Imported `dotenv/config` at the very beginning of the backend entry point (`main.ts`) to guarantee that decorators (such as `@Cron`) can read dynamic values from `process.env` during class-load time.
+
+### Changed
+- **Optimized Balance Updates**: Refactored `updateAccountBalance` to use the PostgreSQL `RETURNING` clause, reducing database round-trips by eliminating redundant SELECT queries.
+- **DRY Refactoring for Account Locking**: Eliminated duplicate `lockAccountsForReversal` method in `ReversalService` by making `lockAccountsForMovement` public (renamed to `lockAccounts`) in `TransactionsHelper` and sharing it.
+- **Type-Safe Code Clean-up**: Refactored non-null assertions (`!`) in `ReversalService` to improve type safety and ensure compliance with strict ESLint rules.
+
+---
+
 ## [2026-07-11]
 
 ### Added
