@@ -5,18 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
 import { accountService } from '@/services/account.service';
 import { useCreateAccount } from '@/hooks/customer/useCreateAccount';
-
-export interface Account {
-  id: string;
-  accountNumber: string;
-  name: string;
-  balance: string;
-  currency: string;
-  theme?: string;
-  user?: {
-    fullName: string;
-  };
-}
+import type { Account } from '@/types/account';
 
 export function useAccounts() {
   const navigate = useNavigate();

@@ -1,7 +1,8 @@
 import { useState, useDeferredValue } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
-import { adminService, type AdminTransaction } from '@/services/admin.service';
+import { adminService } from '@/services/admin.service';
+import type { AdminTransaction } from '@/types/admin';
 import { message } from 'antd';
 
 export function useAdminTransactions() {

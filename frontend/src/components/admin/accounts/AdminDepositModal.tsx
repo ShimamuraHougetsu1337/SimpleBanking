@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Modal, Form, Input, InputNumber, Button, Typography } from 'antd';
-import type { AdminAccount } from '@/services/admin.service';
+import type { AdminAccount } from '@/types/admin';
 
 const { Text } = Typography;
 

@@ -1,6 +1,6 @@
 import { Table, Tag, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import type { CustomerAuditLog } from '@/services/admin.service';
+import type { CustomerAuditLog } from '@/types/admin';
 import dayjs from 'dayjs';
 import AuditMetadataViewer from './AuditMetadataViewer';
 

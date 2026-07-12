@@ -8,7 +8,7 @@ import dayjs from 'dayjs';
 import { useAuthStore } from '@/store/auth.store';
 import { UserRole } from '@/constants/roles';
 import { Navigate } from 'react-router-dom';
-import type { GetAuditLogsParams, AdminAuditLog, CustomerAuditLog } from '@/services/admin.service';
+import type { GetAuditLogsParams, AdminAuditLog, CustomerAuditLog } from '@/types/admin';
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;

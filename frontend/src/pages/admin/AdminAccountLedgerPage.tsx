@@ -2,7 +2,7 @@ import { Card, Typography, Table, ConfigProvider, Button, Tag } from 'antd';
 import { ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAdminLedger } from '@/hooks/admin/useAdminLedger';
-import type { LedgerEntryRecord } from '@/services/admin.service';
+import type { LedgerEntryRecord } from '@/types/admin';
 import { formatVnd } from '@/utils/format';
 
 const { Title, Text } = Typography;

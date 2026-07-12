@@ -1,6 +1,6 @@
 import { useAdminAccountsQuery } from './useAdminAccountsQuery';
 import { useAdminAccountsActions } from './useAdminAccountsActions';
-import type { AdminAccount } from '@/services/admin.service';
+import type { AdminAccount } from '@/types/admin';
 
 export function useAdminAccounts() {
   const queryData = useAdminAccountsQuery();

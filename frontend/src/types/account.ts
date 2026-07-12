@@ -1,4 +1,33 @@
-import type { AdminAccount } from '@/services/admin.service';
+import type { AdminAccount } from '@/types/admin';
+
+export interface Account {
+  id: string;
+  accountNumber: string;
+  name: string;
+  balance: string;
+  currency: string;
+  theme?: string;
+  status: string;
+  createdAt: string;
+  holdBalance?: string;
+  dailyLimit?: string | null;
+  usedDailyLimit?: string;
+  user?: {
+    fullName: string;
+    email?: string;
+  };
+  [key: string]: unknown;
+}
+
+export interface CreateAccountPayload {
+  name: string;
+  theme: string;
+}
+
+export interface UpdateAccountPayload {
+  name: string;
+  theme: string;
+}
 
 export interface LimitModalProps {
   open: boolean;

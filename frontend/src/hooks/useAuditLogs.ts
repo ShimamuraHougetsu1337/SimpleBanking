@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { adminService } from '@/services/admin.service';
 import { queryKeys } from '@/constants/queryKeys';
-import type { GetAuditLogsParams, GetAdminAuditLogsResponse, GetCustomerAuditLogsResponse } from '@/services/admin.service';
+import type { GetAuditLogsParams, GetAdminAuditLogsResponse, GetCustomerAuditLogsResponse } from '@/types/admin';
 
 export function useAuditLogs(activeTab: string, params: GetAuditLogsParams) {
   return useQuery<GetAdminAuditLogsResponse | GetCustomerAuditLogsResponse>({

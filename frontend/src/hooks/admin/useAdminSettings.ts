@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { message } from 'antd';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
-import { adminService, type SystemSetting } from '../../services/admin.service';
+import { adminService } from '../../services/admin.service';
+import type { SystemSetting } from '@/types/admin';
 
 export function useAdminSettings() {
   const queryClient = useQueryClient();
