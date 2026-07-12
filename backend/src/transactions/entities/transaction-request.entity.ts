@@ -75,6 +75,9 @@ export class TransactionRequest {
   @Column({ name: 'transaction_id', type: 'uuid', nullable: true })
   transactionId: string | null;
 
+  @Column({ name: 'rejection_reason', type: 'text', nullable: true })
+  rejectionReason: string | null;
+
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt: Date;
 }

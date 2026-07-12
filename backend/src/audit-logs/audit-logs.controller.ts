@@ -12,7 +12,6 @@ import { GetCustomerAuditLogsQueryDto } from './dto/get-customer-audit-logs-quer
 @ApiTags('Audit Logs')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SUPERADMIN)
 @Controller('audit-logs')
 export class AuditLogsController {
   constructor(
@@ -21,13 +20,15 @@ export class AuditLogsController {
   ) {}
 
   @Get('admin')
-  @ApiOperation({ summary: 'Get admin audit logs (Admin only)' })
+  @Roles(UserRole.SUPERADMIN)
+  @ApiOperation({ summary: 'Get admin audit logs (SuperAdmin only)' })
   async getAdminLogs(@Query() query: GetAdminAuditLogsQueryDto) {
     return this.adminAuditLogsService.findAll(query);
   }
 
   @Get('customer')
-  @ApiOperation({ summary: 'Get customer audit logs (Admin only)' })
+  @Roles(UserRole.SUPERADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Get customer audit logs (SuperAdmin & Manager only)' })
   async getCustomerLogs(@Query() query: GetCustomerAuditLogsQueryDto) {
     return this.customerAuditLogsService.findAll(query);
   }

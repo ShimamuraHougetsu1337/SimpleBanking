@@ -139,7 +139,7 @@ export class UsersService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(user.fullName ILIKE :search OR user.email ILIKE :search)',
+        '(user.fullName ILIKE :search OR user.email ILIKE :search OR user.phoneNumber ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -259,6 +259,25 @@ export class UsersService {
     user.lockoutUntil = null;
     user.status = UserStatus.ACTIVE;
     return this.userRepository.save(user);
+  }
+
+  async reactivateOtp(id: string, changedById: string): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with id "${id}" not found`);
+    }
+    if (user.isOtpBlocked) {
+      await this.userHistoryService.record(
+        id,
+        changedById,
+        'isOtpBlocked',
+        'true',
+        'false',
+      );
+      user.isOtpBlocked = false;
+      return await this.userRepository.save(user);
+    }
+    return user;
   }
 }
 

@@ -20,10 +20,11 @@ import { TransactionRateLimitGuard } from './guards/transaction-rate-limit.guard
 import { OtpService } from './services/otp.service';
 import { SystemSettingsModule } from '@/system-settings/system-settings.module';
 import { Account } from '@/accounts/entities/account.entity';
+import { User } from '@/users/entities/user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeSettlementLog, Account]),
+    TypeOrmModule.forFeature([Transaction, TransactionRequest, LedgerEntry, FeeSettlementLog, Account, User]),
     AccountsModule,
     AuditLogsModule,
     ThrottlerModule,

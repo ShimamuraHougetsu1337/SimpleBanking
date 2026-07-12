@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { LRUCache } from 'lru-cache';
 import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { Account } from '@/accounts/entities/account.entity';
+import { User } from '@/users/entities/user.entity';
 
 interface OtpCacheEntry {
   codeHash: string;
@@ -23,6 +24,8 @@ export class OtpService {
     private readonly transactionRepository: Repository<Transaction>,
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   /**
@@ -69,7 +72,10 @@ export class OtpService {
       this.cache.delete(transactionId);
       tx.status = TransactionStatus.FAILED;
       await this.transactionRepository.save(tx);
-      throw new BadRequestException('Too many incorrect OTP attempts. Transaction failed.');
+      if (fromAccount) {
+        await this.userRepository.update(fromAccount.userId, { isOtpBlocked: true });
+      }
+      throw new BadRequestException('Too many incorrect OTP attempts. Transaction failed. OTP has been blocked.');
     }
 
     const codeHash = crypto.createHash('sha256').update(code).digest('hex');
@@ -80,7 +86,10 @@ export class OtpService {
         this.cache.delete(transactionId);
         tx.status = TransactionStatus.FAILED;
         await this.transactionRepository.save(tx);
-        throw new BadRequestException('Incorrect OTP. Maximum attempts reached. Transaction failed.');
+        if (fromAccount) {
+          await this.userRepository.update(fromAccount.userId, { isOtpBlocked: true });
+        }
+        throw new BadRequestException('Incorrect OTP. Maximum attempts reached. Transaction failed. OTP has been blocked.');
       }
 
       // Preserve the remaining TTL on update

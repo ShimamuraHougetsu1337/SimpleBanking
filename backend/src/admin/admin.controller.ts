@@ -26,6 +26,8 @@ import { AdminLog } from '@/audit-logs/decorators/admin-log.decorator';
 import { AdminAuditAction } from '@/audit-logs/enums/admin-audit-action.enum';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 import { ForbiddenException } from '@nestjs/common';
+import { RejectTransactionRequestDto } from './dto/reject-transaction-request.dto';
+import { UpdateDailyLimitDto } from './dto/update-daily-limit.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -79,14 +81,26 @@ export class AdminController {
   }
 
   @Patch('users/:id/status')
-  @ApiOperation({ summary: 'Lock or unlock a user account (Admin only)' })
+  @Roles(UserRole.SUPERADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Lock or unlock a user account (Admin & Manager only)' })
   @AdminLog('UPDATE_USER_STATUS')
   async updateUserStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateUserStatusDto,
     @CurrentUser() admin: User,
   ) {
-    return this.adminService.updateUserStatus(id, dto.status, admin.id);
+    return this.adminService.updateUserStatus(id, dto.status, admin);
+  }
+
+  @Post('users/:id/reactivate-otp')
+  @Roles(UserRole.SUPERADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Reactivate customer OTP block' })
+  @AdminLog(AdminAuditAction.REACTIVATE_USER_OTP)
+  async reactivateUserOtp(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() admin: User,
+  ) {
+    return this.adminService.reactivateOtp(id, admin);
   }
 
   @Get('users/:id/history')
@@ -106,7 +120,13 @@ export class AdminController {
 
   @Get('dashboard-stats')
   @ApiOperation({ summary: 'Get overall dashboard statistics' })
-  async getDashboardStats() {
+  async getDashboardStats(@CurrentUser() admin: User) {
+    if (admin.role === UserRole.TELLER) {
+      return this.adminService.getTellerDashboardStats(admin.id);
+    }
+    if (admin.role === UserRole.MANAGER) {
+      return this.adminService.getManagerDashboardStats();
+    }
     return this.adminService.getDashboardStats();
   }
 
@@ -118,13 +138,15 @@ export class AdminController {
     @Query('search') search?: string,
     @Query('status') status?: string,
     @Query('type') type?: 'customer' | 'system' | 'all',
+    @CurrentUser() admin?: User,
   ) {
+    const accountType = (admin?.role === UserRole.TELLER || admin?.role === UserRole.MANAGER) ? 'customer' : type;
     return this.adminService.getAccounts(
       +page,
       +limit,
       search,
       status as AccountStatus,
-      type,
+      accountType,
     );
   }
 
@@ -137,13 +159,27 @@ export class AdminController {
   }
 
   @Patch('accounts/:id/status')
-  @ApiOperation({ summary: 'Freeze or unfreeze a bank account (Admin only)' })
+  @Roles(UserRole.SUPERADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Freeze or unfreeze a bank account (Admin & Manager only)' })
   @AdminLog('UPDATE_ACCOUNT_STATUS')
   async updateAccountStatus(
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status') status: string,
+    @CurrentUser() admin: User,
   ) {
-    return this.adminService.updateAccountStatus(id, status as AccountStatus);
+    return this.adminService.updateAccountStatus(id, status as AccountStatus, admin);
+  }
+
+  @Patch('accounts/:id/daily-limit')
+  @Roles(UserRole.SUPERADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Set custom account daily limit' })
+  @AdminLog(AdminAuditAction.UPDATE_ACCOUNT_DAILY_LIMIT)
+  async updateAccountDailyLimit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateDailyLimitDto,
+    @CurrentUser() admin: User,
+  ) {
+    return this.adminService.updateDailyLimit(id, dto.dailyLimit, admin);
   }
 
   @Post('accounts/:id/deposit')
@@ -190,8 +226,9 @@ export class AdminController {
   async rejectRequest(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() admin: User,
+    @Body() dto: RejectTransactionRequestDto,
   ) {
-    return await this.adminService.rejectRequest(id, admin.id);
+    return await this.adminService.rejectRequest(id, admin.id, dto.rejectionReason);
   }
 
   @Get('transaction-requests')
