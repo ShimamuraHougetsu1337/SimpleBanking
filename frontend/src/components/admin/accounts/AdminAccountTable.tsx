@@ -1,7 +1,7 @@
 import { Table, Typography, Tag, Space, ConfigProvider, Button, Tooltip } from 'antd';
 import { LockOutlined, UnlockOutlined, DollarOutlined, BookOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import type { AdminAccount } from '@/services/admin.service';
+import type { AdminAccount } from '@/types/admin';
 
 const { Text } = Typography;
 

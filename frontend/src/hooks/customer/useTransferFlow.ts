@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/constants/queryKeys';
 import { accountService } from '@/services/account.service';
-import type { AccountInfo } from '@/services/account.service';
+import type { Account } from '@/types/account';
 import { transactionService } from '@/services/transaction.service';
 import { useTransfer } from './useTransfer';
 import { v4 as uuidv4 } from 'uuid';
@@ -36,7 +36,7 @@ export function useTransferFlow() {
     txData?: TxData;
   } | null>(null);
 
-  const { data: accounts, isLoading: isLoadingAccounts } = useQuery<AccountInfo[]>({
+  const { data: accounts, isLoading: isLoadingAccounts } = useQuery<Account[]>({
     queryKey: queryKeys.accounts.me(),
     queryFn: accountService.getAccountsMe,
   });

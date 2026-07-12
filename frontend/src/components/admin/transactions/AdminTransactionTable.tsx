@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Table, Typography, Tag, Space, ConfigProvider, Button, Modal, Descriptions } from 'antd';
 import { RollbackOutlined, EyeOutlined } from '@ant-design/icons';
 import { formatVnd } from '@/utils/format';
-import type { AdminTransaction } from '@/services/admin.service';
+import type { AdminTransaction } from '@/types/admin';
 
 const { Text } = Typography;
 

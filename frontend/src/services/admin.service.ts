@@ -1,200 +1,20 @@
 import api from './api';
-
-export interface AdminUser {
-  id: string;
-  fullName: string;
-  email: string;
-  role: string;
-  status: string;
-  accountNumber: string | null;
-  balance: string;
-  isOtpBlocked?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface GetUsersParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  status?: string;
-  includeDeleted?: boolean;
-}
-
-export interface GetUsersResponse {
-  data: AdminUser[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface AdminAccount {
-  id: string;
-  accountNumber: string;
-  balance: string;
-  holdBalance: string;
-  dailyLimit?: string | null;
-  currency: string;
-  status: string;
-  ownerName: string;
-  ownerEmail: string;
-  createdAt: string;
-}
-
-export interface GetAccountsResponse {
-  data: AdminAccount[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface AdminTransaction {
-  id: string;
-  type: string;
-  amount: string;
-  fee?: string;
-  totalAmount?: string;
-  status: string;
-  description: string;
-  fromAccount: string | null;
-  fromUserName: string | null;
-  toAccount: string | null;
-  toUserName: string | null;
-  createdAt: string;
-  originalTransactionId: string | null;
-}
-
-export interface GetTransactionsResponse {
-  data: AdminTransaction[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-    totalVolume: string;
-    successfulCount: number;
-    failedCount: number;
-  };
-}
-
-export interface DashboardStats {
-  totalUsers: number;
-  totalAccounts: number;
-  totalBalance: string;
-  weeklyVolume: { date: string; volume: string }[];
-  pendingCount?: number;
-  approvedCount?: number;
-  rejectedCount?: number;
-  todayDepositsVolume?: string;
-  todayWithdrawalsVolume?: string;
-  todayCompletedCount?: number;
-  pendingRequestsCount?: number;
-  totalDepositsToday?: string;
-  totalWithdrawalsToday?: string;
-  netCashFlowToday?: string;
-  tellerPerformance?: { tellerId: string; tellerName: string; tellerEmail: string; pendingCount: number; completedCount: number; rejectedCount: number; totalVolume: string }[];
-}
-
-export interface SystemSetting {
-  settingKey: string;
-  value: any;
-  dataType: string;
-  displayName: string;
-  description: string;
-  groupName: string;
-}
-
-export interface UserHistoryRecord {
-  id: string;
-  userId: string;
-  changedById: string | null;
-  changedField: string;
-  oldValue: string | null;
-  newValue: string | null;
-  createdAt: string;
-}
-
-export interface LedgerEntryRecord {
-  id: string;
-  accountId: string;
-  transactionId: string;
-  type: string;
-  amount: string;
-  balanceAfter: string;
-  createdAt: string;
-  transaction?: AdminTransaction;
-}
-
-export interface GetLedgerResponse {
-  data: LedgerEntryRecord[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface AdminAuditLog {
-  id: string;
-  adminId: string | null;
-  adminName: string | null;
-  adminEmail: string | null;
-  action: string;
-  status: string;
-  metadata: any;
-  ipAddress: string | null;
-  createdAt: string;
-}
-
-export interface CustomerAuditLog {
-  id: string;
-  customerId: string | null;
-  customerName: string | null;
-  customerEmail: string | null;
-  action: string;
-  status: string;
-  transactionId: string | null;
-  metadata: any;
-  ipAddress: string | null;
-  createdAt: string;
-}
-
-export interface GetAuditLogsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  action?: string;
-  status?: string;
-  startDate?: string;
-  endDate?: string;
-}
-
-export interface GetAdminAuditLogsResponse {
-  data: AdminAuditLog[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
-
-export interface GetCustomerAuditLogsResponse {
-  data: CustomerAuditLog[];
-  meta: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
-}
+import type {
+  AdminUser,
+  GetUsersParams,
+  GetUsersResponse,
+  AdminAccount,
+  GetAccountsResponse,
+  GetTransactionsResponse,
+  DashboardStats,
+  SystemSetting,
+  UserHistoryRecord,
+  GetLedgerResponse,
+  GetAuditLogsParams,
+  GetAdminAuditLogsResponse,
+  GetCustomerAuditLogsResponse,
+  AdminTransactionRequest,
+} from '@/types/admin';
 
 export const adminService = {
   async getDashboardStats(): Promise<DashboardStats> {
@@ -222,7 +42,7 @@ export const adminService = {
     return data;
   },
 
-  async depositToAccount(id: string, amount: string, description?: string): Promise<any> {
+  async depositToAccount(id: string, amount: string, description?: string): Promise<unknown> {
     const { data } = await api.post(`/admin/accounts/${id}/deposit`, { amount, description });
     return data;
   },
@@ -237,11 +57,11 @@ export const adminService = {
     return data;
   },
 
-  async updateSettings(updates: Record<string, any>): Promise<SystemSetting[]> {
+  async updateSettings(updates: Record<string, unknown>): Promise<SystemSetting[]> {
     const { data } = await api.patch('/admin/settings', { updates });
     // Backend now returns { settings, oldValues, newValues } for audit purposes
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    return (data.settings ?? data) as SystemSetting[];
+    const settingsData = (data as { settings?: SystemSetting[] }).settings ?? data;
+    return settingsData as SystemSetting[];
   },
 
   async reverseTransaction(id: string) {
@@ -276,7 +96,7 @@ export const adminService = {
     return data;
   },
 
-  async getTransactionRequests(params?: { page?: number; limit?: number; status?: string }): Promise<any> {
+  async getTransactionRequests(params?: { page?: number; limit?: number; status?: string }): Promise<{ data: AdminTransactionRequest[]; total: number }> {
     const { data } = await api.get('/admin/transaction-requests', { params });
     return data;
   },

@@ -17,7 +17,7 @@ import {
   DatabaseOutlined,
 } from '@ant-design/icons';
 import { useAdminSettings } from '@/hooks/admin/useAdminSettings';
-import type { SystemSetting } from '@/services/admin.service';
+import type { SystemSetting } from '@/types/admin';
 import { useAuthStore } from '@/store/auth.store';
 import { UserRole } from '@/constants/roles';
 import { Navigate } from 'react-router-dom';

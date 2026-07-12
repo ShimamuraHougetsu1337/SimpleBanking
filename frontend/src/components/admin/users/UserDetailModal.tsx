@@ -1,5 +1,5 @@
 import { Modal, Descriptions, Tag, Typography } from 'antd';
-import type { AdminUser } from '@/services/admin.service';
+import type { AdminUser } from '@/types/admin';
 import { UserRole } from '@/constants/roles';
 
 const { Text } = Typography;

@@ -1,6 +1,7 @@
 import { Modal, Table, Typography, Tag, Space } from 'antd';
 import { useQuery } from '@tanstack/react-query';
-import { adminService, type UserHistoryRecord } from '@/services/admin.service';
+import { adminService } from '@/services/admin.service';
+import type { UserHistoryRecord } from '@/types/admin';
 
 const { Text } = Typography;
 

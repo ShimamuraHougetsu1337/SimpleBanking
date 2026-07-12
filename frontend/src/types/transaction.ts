@@ -31,3 +31,25 @@ export const STATUS_CONFIG: Record<TransactionStatus, { color: string; label: st
   [TransactionStatus.PROCESSING]: { color: 'blue', label: 'Đang xử lý' },
   [TransactionStatus.REVERSED]: { color: 'purple', label: 'Đã hoàn tiền' },
 };
+
+export interface TransferPayload {
+  from_accountId: string;
+  to_accountNumber: string;
+  amount: string;
+  description?: string;
+  idempotencyKey: string;
+}
+
+export interface WithdrawVariables {
+  accountId: string;
+  amount: number;
+  description?: string;
+  idempotencyKey: string;
+}
+
+export interface DepositVariables {
+  accountId: string;
+  amount: number;
+  description?: string;
+  idempotencyKey: string;
+}

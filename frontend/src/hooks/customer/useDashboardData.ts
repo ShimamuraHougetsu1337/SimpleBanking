@@ -3,20 +3,7 @@ import { queryKeys } from '@/constants/queryKeys';
 import { accountService } from '@/services/account.service';
 import { transactionService } from '@/services/transaction.service';
 import type { Transaction } from '@/components/customer/dashboard/recent-transactions/RecentTransactions';
-
-export interface Account {
-  id: string;
-  accountNumber: string;
-  name: string;
-  balance: string;
-  currency: string;
-  theme?: string;
-  status: string;
-  createdAt: string;
-  user?: {
-    fullName: string;
-  };
-}
+import type { Account } from '@/types/account';
 
 export const useDashboardData = () => {
   const { data: accountsData, isLoading: loadingAccounts, error: errorAccounts } = useQuery({
@@ -65,3 +52,5 @@ export const useDashboardData = () => {
     hasAccountsLoaded: !!accountsData,
   };
 };
+
+export type { Account };

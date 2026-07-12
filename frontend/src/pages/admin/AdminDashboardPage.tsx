@@ -2,7 +2,7 @@ import { Spin } from 'antd';
 import { useAdminStats } from '@/hooks/admin/useAdminStats';
 import { useAuthStore } from '@/store/auth.store';
 import { UserRole } from '@/constants/roles';
-import type { DashboardStats } from '@/services/admin.service';
+import type { DashboardStats } from '@/types/admin';
 import ManagerDashboard from '@/components/admin/dashboard/ManagerDashboard';
 import TellerDashboard from '@/components/admin/dashboard/TellerDashboard';
 import SystemDashboard from '@/components/admin/dashboard/SystemDashboard';

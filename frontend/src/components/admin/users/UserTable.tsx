@@ -7,7 +7,7 @@ import {
   DeleteOutlined,
   KeyOutlined,
 } from '@ant-design/icons';
-import type { AdminUser } from '@/services/admin.service';
+import type { AdminUser } from '@/types/admin';
 import { UserRole } from '@/constants/roles';
 
 const { Text } = Typography;

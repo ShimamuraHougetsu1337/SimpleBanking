@@ -1,36 +1,13 @@
 import api from './api';
-
-export interface CreateAccountPayload {
-  name: string;
-  theme: string;
-}
-
-export interface UpdateAccountPayload {
-  name: string;
-  theme: string;
-}
-
-export interface AccountInfo {
-  id: string;
-  accountNumber: string;
-  balance: string;
-  name: string;
-  theme: string;
-  currency: string;
-  user?: {
-    fullName: string;
-    email: string;
-  };
-  [key: string]: unknown;
-}
+import type { Account, CreateAccountPayload, UpdateAccountPayload } from '@/types/account';
 
 export const accountService = {
-  async getAccountsMe(): Promise<AccountInfo[]> {
+  async getAccountsMe(): Promise<Account[]> {
     const { data } = await api.get('/accounts/me');
     return data;
   },
 
-  async getAccountDetail(id: string): Promise<AccountInfo> {
+  async getAccountDetail(id: string): Promise<Account> {
     const { data } = await api.get(`/accounts/${id}`);
     return data;
   },
@@ -40,12 +17,12 @@ export const accountService = {
     return data;
   },
 
-  async createAccount(payload: CreateAccountPayload): Promise<AccountInfo> {
+  async createAccount(payload: CreateAccountPayload): Promise<Account> {
     const { data } = await api.post('/accounts', payload);
     return data;
   },
 
-  async updateAccount(accountId: string, payload: UpdateAccountPayload): Promise<AccountInfo> {
+  async updateAccount(accountId: string, payload: UpdateAccountPayload): Promise<Account> {
     const { data } = await api.patch(`/accounts/${accountId}`, payload);
     return data;
   },

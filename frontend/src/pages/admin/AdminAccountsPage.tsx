@@ -1,7 +1,7 @@
 import { Card, Typography, Space, Input, Tabs } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useAdminAccounts } from '@/hooks/admin/useAdminAccounts';
-import type { AdminAccount } from '@/services/admin.service';
+import type { AdminAccount } from '@/types/admin';
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { AdminAccountTable } from '@/components/admin/accounts/AdminAccountTable';

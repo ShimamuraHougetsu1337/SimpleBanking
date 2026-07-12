@@ -6,7 +6,7 @@ import {
   TransactionOutlined,
 } from '@ant-design/icons';
 import { formatVnd } from '@/utils/format';
-import type { DashboardStats } from '@/services/admin.service';
+import type { DashboardStats } from '@/types/admin';
 
 const { Title, Text } = Typography;
 
