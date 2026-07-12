@@ -14,6 +14,7 @@ import { FeeSettlementLog } from './entities/fee-settlement-log.entity';
 import { AccountsModule } from '@/accounts/accounts.module';
 import { AuditLogsModule } from '@/audit-logs/audit-logs.module';
 import { FeeSettlementCron } from './jobs/fee-settlement.cron';
+import { ReconciliationCron } from './jobs/reconciliation.cron';
 import { LedgerService } from './services/ledger.service';
 import { TransactionRequest } from './entities/transaction-request.entity';
 import { TransactionRateLimitGuard } from './guards/transaction-rate-limit.guard';
@@ -39,6 +40,7 @@ import { User } from '@/users/entities/user.entity';
     LedgerService,
     ReversalService,
     FeeSettlementCron,
+    ReconciliationCron,
     TransactionRateLimitGuard,
     OtpService,
   ],

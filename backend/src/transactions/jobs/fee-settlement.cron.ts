@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { Account } from '@/accounts/entities/account.entity';
@@ -18,8 +18,7 @@ export class FeeSettlementCron {
     private readonly transactionsHelper: TransactionsHelper,
   ) { }
 
-  // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(process.env.FEE_SETTLEMENT_CRON || '0 * * * *')
   async handleFeeSettlement() {
     this.logger.log('Starting fee settlement process...');
 
