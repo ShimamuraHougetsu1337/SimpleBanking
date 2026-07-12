@@ -23,7 +23,8 @@ const CARD_SHADOW_STYLE = {
 
 export default function AdminAuditLogsPage() {
   const currentUser = useAuthStore((s) => s.user);
-  const [activeTab, setActiveTab] = useState('admin');
+  const isManager = currentUser?.role === UserRole.MANAGER;
+  const [activeTab, setActiveTab] = useState(isManager ? 'customer' : 'admin');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null]>([null, null]);
   const [status, setStatus] = useState<string | undefined>(undefined);
 
@@ -34,7 +35,7 @@ export default function AdminAuditLogsPage() {
 
   const { data, isLoading } = useAuditLogs(activeTab, searchParams);
 
-  if (currentUser?.role !== UserRole.SUPERADMIN) {
+  if (currentUser?.role !== UserRole.SUPERADMIN && currentUser?.role !== UserRole.MANAGER) {
     return <Navigate to="/admin/dashboard" replace />;
   }
 
@@ -118,7 +119,7 @@ export default function AdminAuditLogsPage() {
           activeKey={activeTab}
           onChange={handleTabChange}
           items={[
-            {
+            ...(!isManager ? [{
               key: 'admin',
               label: 'Admin Actions',
               children: (
@@ -128,7 +129,7 @@ export default function AdminAuditLogsPage() {
                   pagination={pagination}
                 />
               ),
-            },
+            }] : []),
             {
               key: 'customer',
               label: 'Customer Actions',

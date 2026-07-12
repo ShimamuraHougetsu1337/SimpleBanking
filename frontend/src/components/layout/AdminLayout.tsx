@@ -27,7 +27,7 @@ const getNavGroups = (role?: string) => {
     { key: '/admin/transaction-requests', label: 'Yêu cầu giao dịch', icon: <TransactionOutlined /> },
   ];
 
-  if (role === UserRole.SUPERADMIN) {
+  if (role === UserRole.SUPERADMIN || role === UserRole.MANAGER) {
     items.push({ key: '/admin/audit-logs', label: 'Nhật ký hệ thống', icon: <DatabaseOutlined /> });
   }
 
