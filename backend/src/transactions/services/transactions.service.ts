@@ -238,6 +238,9 @@ export class TransactionsService {
       const feeValue = new Decimal(feeVal ?? 0);
       const totalAmount = amount.plus(feeValue);
 
+      // Lock accounts first to prevent deadlock with FOR KEY SHARE locks on foreign keys
+      await this.transactionsHelper.lockAccounts(manager, dto.from_accountId, toAccountRef.id);
+
       const tx = manager.create(Transaction, {
         fromAccountId: dto.from_accountId,
         toAccountId: toAccountRef.id,
@@ -308,6 +311,9 @@ export class TransactionsService {
     }
 
     return this.transactionsHelper.executeTransaction(async (manager) => {
+      // Lock account first to prevent deadlock with FOR KEY SHARE locks on foreign keys
+      await this.transactionsHelper.lockAccounts(manager, dto.accountId, null);
+
       const tx = manager.create(Transaction, {
         fromAccountId: dto.accountId,
         amount: dto.amount.toString(),

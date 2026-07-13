@@ -50,6 +50,7 @@ describe('TransactionsService', () => {
       executeMovement: jest.fn(),
       applySearchFilter: jest.fn(),
       mapToResult: jest.fn(),
+      lockAccounts: jest.fn(),
     } as unknown as jest.Mocked<TransactionsHelper>;
 
     otpService = {
@@ -125,19 +126,19 @@ describe('TransactionsService', () => {
 
     it('creates PENDING_OTP transaction for customer if amount >= threshold', async () => {
       transactionsHelper.checkIdempotency.mockResolvedValue(null);
-      
+
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
-      
+
       systemSettingsService.getSetting.mockReturnValue(10000000); // threshold is 10,000,000
-      
+
       // setup createPendingOtpTransaction mocks
       const newTx = { id: 'tx-1' } as Transaction;
       transactionRepository.create.mockReturnValue(newTx);
       transactionRepository.save.mockResolvedValue(newTx);
 
       const result = await service.withdraw(dto, currentUserId, idempotencyKey);
-      
+
       expect(result).toBe(newTx);
       expect(otpService.createOtp).toHaveBeenCalled();
       expect(transactionsHelper.executeMovement).not.toHaveBeenCalled();
@@ -146,11 +147,11 @@ describe('TransactionsService', () => {
     it('executes directly if amount < threshold', async () => {
       const smallDto = { ...dto, amount: 500 };
       transactionsHelper.checkIdempotency.mockResolvedValue(null);
-      
+
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
-      
-      systemSettingsService.getSetting.mockReturnValue(10000000); 
+
+      systemSettingsService.getSetting.mockReturnValue(10000000);
 
       const newTx = { id: 'tx-1' } as Transaction;
       (mockManager.create as any).mockReturnValue(newTx);
@@ -181,7 +182,7 @@ describe('TransactionsService', () => {
       transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER, isOtpBlocked: false }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
-      
+
       const newTx = { id: 'tx-1' } as Transaction;
       transactionRepository.create.mockReturnValue(newTx);
       transactionRepository.save.mockResolvedValue(newTx);
@@ -324,7 +325,7 @@ describe('TransactionsService', () => {
     it('verifyOtp processes movement successfully if OTP is valid', async () => {
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: userId, isOtpBlocked: false }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
-      
+
       const mockTx = { id: transactionId, status: TransactionStatus.PENDING_OTP } as Transaction;
       transactionRepository.findOne.mockResolvedValue(mockTx);
       transactionRepository.save.mockResolvedValue({ ...mockTx, status: TransactionStatus.PROCESSING });
@@ -367,11 +368,11 @@ describe('TransactionsService', () => {
 
     it('throws NotFoundException if destination account does not exist (CUSTOMER)', async () => {
       transactionsHelper.checkIdempotency.mockResolvedValue(null);
-      
+
       // We route repositories to avoid mock pollution
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER, isOtpBlocked: false }) };
       const mockAccountRepo = { findOne: jest.fn().mockResolvedValue(null) }; // destination account not found
-      
+
       dataSource.getRepository.mockImplementation((entity) => {
         if (entity === User) return mockUserRepo as any;
         if (entity === Account) return mockAccountRepo as any;
@@ -406,7 +407,7 @@ describe('TransactionsService', () => {
         ]),
       };
       transactionRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder as any);
-      
+
       // Make mapToResult return the tx id and suffix to verify they are called
       transactionsHelper.mapToResult.mockImplementation((tx, dir, counterpart, suffix) => {
         return { id: suffix ? `${tx.id}-${suffix}` : tx.id, direction: dir } as any;
@@ -414,7 +415,7 @@ describe('TransactionsService', () => {
 
       // Call without accountId to hit user-based flatMap
       const result = await service.getTransactionsForUser('user-1', 1, 10);
-      
+
       expect(result.total).toBe(4);
       expect(result.data).toHaveLength(4);
       expect(result.data[0]).toEqual({ id: 'tx-1-debit', direction: 'debit' });
@@ -450,7 +451,7 @@ describe('TransactionsService', () => {
       });
 
       const result = await service.getTransactionsForUser('user-1', 1, 10, 'acc-1');
-      
+
       expect(result.total).toBe(3);
       expect(result.data).toHaveLength(2);
       expect(result.data[0]).toEqual({ id: 'tx-1', direction: 'debit' });
