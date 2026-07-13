@@ -12,6 +12,7 @@ interface OtpVerificationModalProps {
   transactionId: string | null;
   onSuccess: (txData: Record<string, unknown>) => void;
   onCancel: () => void;
+  onFailure?: (errorMsg: string) => void;
 }
 
 export function OtpVerificationModal({
@@ -20,6 +21,7 @@ export function OtpVerificationModal({
   transactionId,
   onSuccess,
   onCancel,
+  onFailure,
 }: OtpVerificationModalProps) {
   const [otpCode, setOtpCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
@@ -65,6 +67,12 @@ export function OtpVerificationModal({
     } catch (err: unknown) {
       const errorMsg = getErrorMessage(err);
       message.error(errorMsg);
+      const lowerMsg = errorMsg.toLowerCase();
+      if (lowerMsg.includes('số dư') && lowerMsg.includes('không đủ')) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        onClose();
+        onFailure?.(errorMsg);
+      }
     } finally {
       setIsVerifying(false);
     }

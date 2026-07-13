@@ -26,6 +26,7 @@ export default function TransferPage() {
     handleConfirm,
     handleCancel,
     handleOtpCancel,
+    handleOtpFailure,
     handleTransferSuccess,
     setResultTx,
     setIsOtpModalVisible,
@@ -69,6 +70,7 @@ export default function TransferPage() {
         transactionId={otpTransactionId}
         onSuccess={handleTransferSuccess}
         onCancel={handleOtpCancel}
+        onFailure={handleOtpFailure}
       />
     </div>
   );

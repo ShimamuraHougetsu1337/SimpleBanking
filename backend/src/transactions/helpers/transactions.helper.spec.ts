@@ -119,6 +119,13 @@ describe('TransactionsHelper', () => {
       ).rejects.toThrow(UnprocessableEntityException);
     });
 
+    it('throws UnprocessableEntityException if totalAmount > availableBalance (balance - holdBalance)', async () => {
+      const fromAccount = { status: AccountStatus.ACTIVE, balance: '100.00', holdBalance: '30.00' } as Account;
+      await expect(
+        validateLimitsAndBalances(mockManager, TransactionType.TRANSFER, fromAccount, null, new Decimal(50), new Decimal(70.01))
+      ).rejects.toThrow(UnprocessableEntityException);
+    });
+
     it('throws BadRequestException if usedDailyLimit + amount > dailyLimit', async () => {
       const fromAccount = {
         id: '123',

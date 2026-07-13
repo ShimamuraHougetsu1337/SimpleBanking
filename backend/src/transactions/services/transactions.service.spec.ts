@@ -154,14 +154,34 @@ describe('TransactionsService', () => {
       systemSettingsService.getSetting.mockReturnValue(10000000);
 
       const newTx = { id: 'tx-1' } as Transaction;
-      (mockManager.create as any).mockReturnValue(newTx);
-      mockManager.save.mockResolvedValue(newTx);
+      transactionRepository.create.mockReturnValue(newTx);
+      transactionRepository.save.mockResolvedValue(newTx);
       transactionsHelper.executeMovement.mockResolvedValue(newTx);
 
       const result = await service.withdraw(smallDto, currentUserId, idempotencyKey);
 
       expect(transactionsHelper.executeMovement).toHaveBeenCalled();
       expect(result).toBe(newTx);
+    });
+
+    it('saves transaction with FAILED status if executeMovement fails', async () => {
+      const smallDto = { ...dto, amount: 500 };
+      transactionsHelper.checkIdempotency.mockResolvedValue(null);
+
+      const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER }) };
+      dataSource.getRepository.mockReturnValue(mockUserRepo as any);
+
+      systemSettingsService.getSetting.mockReturnValue(10000000);
+
+      const newTx = { id: 'tx-1', status: TransactionStatus.PROCESSING } as Transaction;
+      transactionRepository.create.mockReturnValue(newTx);
+      transactionRepository.save.mockResolvedValue(newTx);
+      transactionsHelper.executeMovement.mockRejectedValue(new Error('Validation failed'));
+
+      await expect(service.withdraw(smallDto, currentUserId, idempotencyKey)).rejects.toThrow('Validation failed');
+
+      expect(newTx.status).toBe(TransactionStatus.FAILED);
+      expect(transactionRepository.save).toHaveBeenCalledWith(newTx);
     });
   });
 
@@ -195,9 +215,12 @@ describe('TransactionsService', () => {
     it('throws NotFoundException if destination account does not exist (TELLER)', async () => {
       transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.TELLER }) };
-      dataSource.getRepository.mockReturnValue(mockUserRepo as any);
-
-      mockManager.findOne.mockResolvedValue(null); // toAccountRef not found
+      const mockAccountRepo = { findOne: jest.fn().mockResolvedValue(null) }; // toAccountRef not found
+      dataSource.getRepository.mockImplementation((entity) => {
+        if (entity === User) return mockUserRepo as any;
+        if (entity === Account) return mockAccountRepo as any;
+        return null as any;
+      });
 
       await expect(service.transfer(dto, currentUserId, idempotencyKey)).rejects.toThrow(NotFoundException);
     });
@@ -205,25 +228,50 @@ describe('TransactionsService', () => {
     it('processes transfer directly for TELLER', async () => {
       transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.TELLER }) };
-      dataSource.getRepository.mockReturnValue(mockUserRepo as any);
-
-      mockManager.findOne.mockResolvedValue({ id: 'acc-2' }); // toAccountRef found
+      const mockAccountRepo = { findOne: jest.fn().mockResolvedValue({ id: 'acc-2' }) }; // toAccountRef found
+      dataSource.getRepository.mockImplementation((entity) => {
+        if (entity === User) return mockUserRepo as any;
+        if (entity === Account) return mockAccountRepo as any;
+        return null as any;
+      });
       systemSettingsService.getSetting.mockReturnValue(5); // fee
 
       const newTx = { id: 'tx-1' } as Transaction;
-      (mockManager.create as any).mockReturnValue(newTx);
-      mockManager.save.mockResolvedValue(newTx);
+      transactionRepository.create.mockReturnValue(newTx);
+      transactionRepository.save.mockResolvedValue(newTx);
       transactionsHelper.executeMovement.mockResolvedValue(newTx);
 
       const result = await service.transfer(dto, currentUserId, idempotencyKey);
 
-      expect(mockManager.create).toHaveBeenCalledWith(Transaction, expect.objectContaining({
+      expect(transactionRepository.create).toHaveBeenCalledWith(expect.objectContaining({
         type: TransactionType.TRANSFER,
         fee: '5.00',
         totalAmount: '105.00',
       }));
       expect(transactionsHelper.executeMovement).toHaveBeenCalledWith(mockManager, newTx);
       expect(result).toBe(newTx);
+    });
+
+    it('saves transaction with FAILED status if executeMovement fails (TELLER)', async () => {
+      transactionsHelper.checkIdempotency.mockResolvedValue(null);
+      const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.TELLER }) };
+      const mockAccountRepo = { findOne: jest.fn().mockResolvedValue({ id: 'acc-2' }) }; // toAccountRef found
+      dataSource.getRepository.mockImplementation((entity) => {
+        if (entity === User) return mockUserRepo as any;
+        if (entity === Account) return mockAccountRepo as any;
+        return null as any;
+      });
+      systemSettingsService.getSetting.mockReturnValue(5); // fee
+
+      const newTx = { id: 'tx-1', status: TransactionStatus.PROCESSING } as Transaction;
+      transactionRepository.create.mockReturnValue(newTx);
+      transactionRepository.save.mockResolvedValue(newTx);
+      transactionsHelper.executeMovement.mockRejectedValue(new Error('Validation failed'));
+
+      await expect(service.transfer(dto, currentUserId, idempotencyKey)).rejects.toThrow('Validation failed');
+
+      expect(newTx.status).toBe(TransactionStatus.FAILED);
+      expect(transactionRepository.save).toHaveBeenCalledWith(newTx);
     });
   });
 
@@ -328,7 +376,7 @@ describe('TransactionsService', () => {
 
       const mockTx = { id: transactionId, status: TransactionStatus.PENDING_OTP } as Transaction;
       transactionRepository.findOne.mockResolvedValue(mockTx);
-      transactionRepository.save.mockResolvedValue({ ...mockTx, status: TransactionStatus.PROCESSING });
+      transactionRepository.save.mockImplementation((x: any) => Promise.resolve(x));
 
       await service.verifyOtp(transactionId, '123456', userId);
 
@@ -351,6 +399,22 @@ describe('TransactionsService', () => {
       transactionRepository.findOne.mockResolvedValue(null);
 
       await expect(service.verifyOtp(transactionId, '123456', userId)).rejects.toThrow(NotFoundException);
+    });
+
+    it('verifyOtp saves transaction with FAILED status if executeTransaction fails', async () => {
+      const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: userId, isOtpBlocked: false }) };
+      dataSource.getRepository.mockReturnValue(mockUserRepo as any);
+
+      const mockTx = { id: transactionId, status: TransactionStatus.PENDING_OTP } as Transaction;
+      transactionRepository.findOne.mockResolvedValue(mockTx);
+      transactionRepository.save.mockImplementation((x: any) => Promise.resolve(x));
+
+      transactionsHelper.executeTransaction.mockRejectedValue(new Error('Validation failed'));
+
+      await expect(service.verifyOtp(transactionId, '123456', userId)).rejects.toThrow('Validation failed');
+
+      expect(mockTx.status).toBe(TransactionStatus.FAILED);
+      expect(transactionRepository.save).toHaveBeenCalledWith(mockTx);
     });
 
     it('resendOtp throws ForbiddenException if user is OTP blocked', async () => {
