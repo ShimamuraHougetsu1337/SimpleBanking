@@ -45,6 +45,10 @@ export const queryKeys = {
     auditLogs: {
       all: ['adminAuditLogs'] as const,
       list: (activeTab: string, params: unknown) => [...queryKeys.admin.auditLogs.all, activeTab, params] as const,
+    },
+    reconciliation: {
+      all: ['adminReconciliation'] as const,
+      list: (params: unknown) => [...queryKeys.admin.reconciliation.all, params] as const,
     }
   }
 };

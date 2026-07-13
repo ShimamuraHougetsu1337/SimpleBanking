@@ -7,6 +7,7 @@ import {
   Switch,
   Form,
   Divider,
+  InputNumber,
 } from 'antd';
 import {
   SettingOutlined,
@@ -66,6 +67,18 @@ export default function AdminSettingsPage() {
         <Switch
           checked={Boolean(setting.value)}
           onChange={(checked) => handleUpdateSetting(setting.settingKey, checked)}
+        />
+      );
+    }
+
+    if (setting.groupName === 'transaction') {
+      return (
+        <InputNumber
+          value={setting.value ? Number(setting.value) : undefined}
+          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+          parser={(value) => value ? Number(value.replace(/,/g, '')) : 0}
+          onChange={(val) => handleUpdateSetting(setting.settingKey, val !== null ? String(val) : '')}
+          style={{ width: '100%', minWidth: 200, maxWidth: 300, height: 40, borderRadius: 8, display: 'inline-flex', alignItems: 'center' }}
         />
       );
     }

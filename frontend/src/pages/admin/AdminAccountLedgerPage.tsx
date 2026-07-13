@@ -32,16 +32,21 @@ export default function AdminAccountLedgerPage() {
       title: 'Mã Giao Dịch',
       dataIndex: 'transactionId',
       key: 'transactionId',
-      render: (text: string) => (
-        <Text style={{ fontFamily: 'monospace', color: '#64748b' }}>
-          {text ? text.slice(0, 8) + '...' : '-'}
-        </Text>
-      ),
+      align: 'center' as const,
+      render: (text: string) => {
+        if (!text) return <Text>-</Text>;
+        return (
+          <Text copyable={{ text }} style={{ fontFamily: 'monospace', color: '#64748b' }}>
+            {text.slice(0, 8)}...
+          </Text>
+        );
+      },
     },
     {
       title: 'Thời gian',
       dataIndex: 'createdAt',
       key: 'createdAt',
+      align: 'center' as const,
       render: (date: string) => (
         <Text style={{ fontVariantNumeric: 'tabular-nums', color: '#64748b' }}>
           {new Date(date).toLocaleString('vi-VN')}
@@ -70,7 +75,7 @@ export default function AdminAccountLedgerPage() {
       title: 'Số tiền',
       dataIndex: 'amount',
       key: 'amount',
-      align: 'right' as const,
+      align: 'center' as const,
       render: (amount: string, record: LedgerEntryRecord) => {
         const isCredit = record.type.toUpperCase() === 'CREDIT';
         return (
@@ -90,7 +95,7 @@ export default function AdminAccountLedgerPage() {
       title: 'Số dư sau GD',
       dataIndex: 'balanceAfter',
       key: 'balanceAfter',
-      align: 'right' as const,
+      align: 'center' as const,
       render: (balance: string) => (
         <Text strong style={{ fontVariantNumeric: 'tabular-nums' }}>
           {formatVnd(balance)}

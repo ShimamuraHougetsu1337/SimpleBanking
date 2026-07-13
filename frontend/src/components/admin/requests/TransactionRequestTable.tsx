@@ -127,8 +127,8 @@ export const TransactionRequestTable = ({
           return <Text type="secondary">-</Text>;
         }
 
-        // Teller can't approve/reject pending requests
-        if (currentUser?.role === UserRole.TELLER) {
+        // Only Manager can approve/reject pending requests
+        if (currentUser?.role !== UserRole.MANAGER) {
           return <Text type="secondary">-</Text>;
         }
 

@@ -14,6 +14,7 @@ import AdminTransactionRequestsPage from './pages/admin/AdminTransactionRequests
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAuditLogsPage from './pages/admin/AdminAuditLogsPage';
 import AdminAccountLedgerPage from './pages/admin/AdminAccountLedgerPage';
+import AdminReconciliationPage from '@/pages/admin/AdminReconciliationPage';
 import MaintenancePage from './pages/MaintenancePage';
 
 import { AppLayout } from './components/layout/AppLayout';
@@ -64,6 +65,7 @@ const router = createBrowserRouter([
       { path: 'transactions', element: <AdminTransactionsPage /> },
       { path: 'transaction-requests', element: <AdminTransactionRequestsPage /> },
       { path: 'audit-logs', element: <AdminAuditLogsPage /> },
+      { path: 'reconciliation', element: <AdminReconciliationPage /> },
       { path: 'settings', element: <AdminSettingsPage /> },
     ],
   },

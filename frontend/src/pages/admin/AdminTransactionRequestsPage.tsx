@@ -72,6 +72,7 @@ export default function AdminTransactionRequestsPage() {
             value={statusFilter}
             onChange={handleStatusFilterChange}
             options={[
+              { value: 'all', label: 'Tất cả' },
               { value: 'pending', label: 'Đang chờ duyệt' },
               { value: 'approved', label: 'Đã duyệt' },
               { value: 'rejected', label: 'Đã từ chối' },

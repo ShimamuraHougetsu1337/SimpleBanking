@@ -13,6 +13,7 @@ import {
   DashboardOutlined,
   BankOutlined,
   DatabaseOutlined,
+  AuditOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -28,6 +29,7 @@ const getNavGroups = (role?: string) => {
   ];
 
   if (role === UserRole.SUPERADMIN || role === UserRole.MANAGER) {
+    items.push({ key: '/admin/reconciliation', label: 'Đối soát số dư', icon: <AuditOutlined /> });
     items.push({ key: '/admin/audit-logs', label: 'Nhật ký hệ thống', icon: <DatabaseOutlined /> });
   }
 

@@ -1,4 +1,4 @@
-import { Card, Typography, Space, Button, Input, Switch } from 'antd';
+import { Card, Typography, Space, Button, Input, Switch, Tabs } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useAdminUsers, type AdminUser } from '@/hooks/admin/useAdminUsers';
 import { useCreateUser } from '@/hooks/admin/useCreateUser';
@@ -35,6 +35,8 @@ export default function AdminUsersPage() {
     handleReactivateOtp,
     includeDeleted,
     setIncludeDeleted,
+    roleGroup,
+    handleRoleGroupChange,
     isLoading,
   } = useAdminUsers();
 
@@ -79,6 +81,16 @@ export default function AdminUsersPage() {
         </Space>
       </div>
 
+      <Tabs
+        activeKey={roleGroup}
+        onChange={(key) => handleRoleGroupChange(key as 'customer' | 'staff')}
+        items={[
+          { key: 'customer', label: 'Tài khoản khách hàng' },
+          { key: 'staff', label: 'Nhân viên & Quản trị' },
+        ]}
+        style={{ marginBottom: 16 }}
+      />
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <Space size={16}>
           {currentUser?.role === UserRole.SUPERADMIN && (
@@ -101,7 +113,6 @@ export default function AdminUsersPage() {
               Thêm người dùng mới
             </Button>
           )}
-          <Button style={{ borderRadius: 8, height: 40 }}>Xuất CSV</Button>
         </Space>
       </div>
 

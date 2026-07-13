@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsOptional, IsString, Min, IsBoolean } from 'class-validator';
+import { IsEnum, IsInt, IsOptional, IsString, Min, IsBoolean, IsIn } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { UserStatus } from '@/users/entities/user.entity';
@@ -33,4 +33,9 @@ export class GetUsersQueryDto {
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   includeDeleted?: boolean = false;
+
+  @ApiPropertyOptional({ enum: ['customer', 'staff'] })
+  @IsIn(['customer', 'staff'])
+  @IsOptional()
+  roleGroup?: 'customer' | 'staff';
 }

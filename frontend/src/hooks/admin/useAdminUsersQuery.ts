@@ -10,15 +10,17 @@ export function useAdminUsersQuery() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [includeDeleted, setIncludeDeleted] = useState(false);
+  const [roleGroup, setRoleGroup] = useState<'customer' | 'staff'>('customer');
 
   const { data, isLoading, error } = useQuery({
-    queryKey: queryKeys.admin.users.list({ page, limit: pageSize, search: deferredSearchQuery, includeDeleted }),
+    queryKey: queryKeys.admin.users.list({ page, limit: pageSize, search: deferredSearchQuery, includeDeleted, roleGroup }),
     queryFn: () =>
       adminService.getUsers({
         page,
         limit: pageSize,
         search: deferredSearchQuery || undefined,
         includeDeleted,
+        roleGroup,
       }),
     placeholderData: (previousData) => previousData,
     staleTime: 10000,
@@ -36,6 +38,11 @@ export function useAdminUsersQuery() {
     }
   };
 
+  const handleRoleGroupChange = (value: 'customer' | 'staff') => {
+    setRoleGroup(value);
+    setPage(1);
+  };
+
   return {
     users: data?.data ?? [],
     total: data?.meta?.total ?? 0,
@@ -44,8 +51,10 @@ export function useAdminUsersQuery() {
     searchQuery,
     includeDeleted,
     setIncludeDeleted,
+    roleGroup,
     handleSearchChange,
     handlePageChange,
+    handleRoleGroupChange,
     isLoading,
     error,
   };

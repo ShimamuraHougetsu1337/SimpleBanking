@@ -8,9 +8,7 @@ import type { Account } from '@/types/account';
 export const useDashboardData = () => {
   const { data: accountsData, isLoading: loadingAccounts, error: errorAccounts } = useQuery({
     queryKey: queryKeys.accounts.me(),
-    queryFn: async () => {
-      return await accountService.getAccountsMe() as unknown as Account[];
-    },
+    queryFn: accountService.getAccountsMe,
   });
 
   const { data: txByAccountData, isLoading: loadingTx, error: errorTx } = useQuery({

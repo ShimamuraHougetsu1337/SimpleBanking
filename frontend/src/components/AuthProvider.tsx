@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Restore session state
         setAuth(data.user, data.accessToken);
-      } catch (error) {
+      } catch {
         // Silent failure - user just stays logged out
       } finally {
         setIsInitializing(false);

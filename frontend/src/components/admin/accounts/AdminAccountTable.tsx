@@ -2,6 +2,8 @@ import { Table, Typography, Tag, Space, ConfigProvider, Button, Tooltip } from '
 import { LockOutlined, UnlockOutlined, DollarOutlined, BookOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { AdminAccount } from '@/types/admin';
+import { useAuthStore } from '@/store/auth.store';
+import { UserRole } from '@/constants/roles';
 
 const { Text } = Typography;
 
@@ -37,6 +39,8 @@ export const AdminAccountTable = ({
   isSystemTab = false,
 }: AdminAccountTableProps) => {
   const navigate = useNavigate();
+  const currentUser = useAuthStore((s) => s.user);
+  const canDeposit = currentUser?.role === UserRole.TELLER || currentUser?.role === UserRole.MANAGER;
 
   const columns = [
     {
@@ -140,15 +144,17 @@ export const AdminAccountTable = ({
           </Button>
           {!isSystemTab && (
             <>
-              <Button
-                type="text"
-                icon={<DollarOutlined />}
-                onClick={() => onOpenDepositModal(record)}
-                style={{ color: '#10B981' }}
-                disabled={record.status !== 'active'}
-              >
-                Nạp tiền
-              </Button>
+              {canDeposit && (
+                <Button
+                  type="text"
+                  icon={<DollarOutlined />}
+                  onClick={() => onOpenDepositModal(record)}
+                  style={{ color: '#10B981' }}
+                  disabled={record.status !== 'active'}
+                >
+                  Nạp tiền
+                </Button>
+              )}
               {record.ownerEmail === 'admin@gmail.com' ? (
                 <Tooltip title="Không thể thực hiện thao tác này">
                   <span>
