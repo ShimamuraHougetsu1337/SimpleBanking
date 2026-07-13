@@ -133,6 +133,15 @@ export function useTransferFlow() {
     });
   };
 
+  const handleOtpFailure = (errorMsg: string) => {
+    setIsOtpModalVisible(false);
+    setOtpTransactionId(null);
+    setResultTx({
+      status: 'failed',
+      errorMsg,
+    });
+  };
+
   const handleCancel = () => {
     setIsModalVisible(false);
   };
@@ -155,6 +164,7 @@ export function useTransferFlow() {
     handleConfirm,
     handleCancel,
     handleOtpCancel,
+    handleOtpFailure,
     handleTransferSuccess,
     setResultTx,
     setIsOtpModalVisible,
