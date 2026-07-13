@@ -5,6 +5,7 @@ import { DataSource } from 'typeorm';
 import { Account } from '@/accounts/entities/account.entity';
 import { LedgerService } from '../services/ledger.service';
 import { ReconciliationReport, ReconciliationStatus, MismatchDetail } from '../entities/reconciliation-report.entity';
+import { FeeSettlementCron } from './fee-settlement.cron';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class ReconciliationCron {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly ledgerService: LedgerService,
+    private readonly feeSettlementCron: FeeSettlementCron,
   ) { }
 
   @Cron(process.env.RECONCILIATION_CRON || '0 59 23 * * *')
@@ -31,6 +33,16 @@ export class ReconciliationCron {
 
   async runReconciliation(): Promise<ReconciliationReport> {
     this.logger.log('Starting balance reconciliation process...');
+    
+    // 1. Run fee settlement sweep first to clear and settle all pending fees to zero
+    try {
+      this.logger.log('[Reconciliation] Running pre-reconciliation fee settlement sweep...');
+      await this.feeSettlementCron.handleFeeSettlement();
+    } catch (err) {
+      this.logger.error('Failed to run pre-reconciliation fee settlement sweep', err);
+      throw err;
+    }
+
     const checkedAt = new Date();
 
     const queryRunner = this.dataSource.createQueryRunner();
