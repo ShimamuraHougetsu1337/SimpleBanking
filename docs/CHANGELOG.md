@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Tab-Based User Role Separation**: Added a role group tab configuration in User Management (`AdminUsersPage`) to filter and view "Customer Accounts" and "System Accounts (Staff/Admin)" independently.
 - **Backend Role Group Query Support**: Supported `roleGroup` (`'customer' | 'staff'`) parameter in users retrieve API (`GetUsersQueryDto`, `UsersService`, and `AdminService`) using type-safe `@IsIn` array validation.
 - **Copyable Full Transaction IDs**: Enabled copying full transaction UUIDs from the account Ledger table (`AdminAccountLedgerPage`) using Ant Design's `copyable` configuration.
+- **Unit Tests for Transaction Service** (Module 7.1): Added comprehensive unit tests for `TransactionsService` covering all branches — `transfer`, `deposit`, `withdraw`, `verifyOtp`, `resendOtp`, and `getTransactionsForUser` — achieving **100% Line Coverage** and **~74% Branch Coverage** (remaining uncovered branches are TypeScript decorator transpilation artifacts, not business logic).
+- **Unit Tests for Transactions Helper** (Module 7.1): Added unit tests for `TransactionsHelper` covering `validateAmount`, `validateLimitsAndBalances`, `checkIdempotency`, `applySearchFilter`, `mapToResult`, `getSuspenseAccountId`, `executeTransaction`, `executeMovement` (with and without fee), and `createLedgerEntries`. Achieved **~98.5% Statement Coverage** and **~86% Branch Coverage**.
+- **Integration Test for Rollback Atomicity** (Module 7.2 partial): Added `test/transaction-rollback.spec.ts` running against a real PostgreSQL test database (`banking_db_test`). Verified that a mid-execution database crash triggers a full ROLLBACK — account balances and ledger entries remain unchanged.
+- **Test Database Configuration**: Added `DATABASE_URL_TEST` environment variable to `.env.example` for isolated test database setup.
 
 ### Changed
 - **Reconciliation Page SRP Refactoring**: Refactored `AdminReconciliationPage` into separate presentational sub-components (`ReconciliationTable` and `ReconciliationDetailsModal`) to comply with Clean Code and the Single Responsibility Principle.
