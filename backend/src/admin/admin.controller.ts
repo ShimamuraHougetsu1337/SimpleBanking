@@ -50,7 +50,8 @@ export class AdminController {
       query.limit,
       query.search,
       query.status,
-      query.includeDeleted
+      query.includeDeleted,
+      query.roleGroup,
     );
   }
 

@@ -37,7 +37,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // Strip unknown properties
-      forbidNonWhitelisted: true, // Throw on unknown properties
+      forbidNonWhitelisted: process.env.NODE_ENV !== 'production', // Throw on unknown properties in dev/test only
       transform: true, // Auto-transform payloads to DTO class instances
     }),
   );

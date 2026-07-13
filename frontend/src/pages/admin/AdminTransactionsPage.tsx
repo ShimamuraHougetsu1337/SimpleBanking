@@ -1,5 +1,4 @@
-import { Card, Typography, Space, Button } from 'antd';
-import { FilterOutlined } from '@ant-design/icons';
+import { Card, Typography } from 'antd';
 import { useAdminTransactions } from '@/hooks/admin/useAdminTransactions';
 import { AdminTransactionStats } from '@/components/admin/transactions/AdminTransactionStats';
 import { AdminTransactionFilters } from '@/components/admin/transactions/AdminTransactionFilters';
@@ -28,10 +27,6 @@ export default function AdminTransactionsPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Tất Cả Giao Dịch</Title>
-        <Space>
-          <Button icon={<FilterOutlined />}>Bộ lọc nâng cao</Button>
-          <Button type="primary" style={{ borderRadius: 8, height: 40 }}>Xuất báo cáo</Button>
-        </Space>
       </div>
 
       <AdminTransactionStats stats={stats} />

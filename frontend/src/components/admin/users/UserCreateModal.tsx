@@ -40,7 +40,6 @@ export const UserCreateModal = ({ open, onCancel, onFinish, isPending, currentUs
         layout="vertical"
         onFinish={handleFinish}
         style={{ marginTop: 24 }}
-        initialValues={{ role: UserRole.CUSTOMER }}
       >
         <Form.Item
           name="fullName"
@@ -80,6 +79,7 @@ export const UserCreateModal = ({ open, onCancel, onFinish, isPending, currentUs
               options={[
                 { value: UserRole.TELLER, label: 'Giao dịch viên (Teller)' },
                 { value: UserRole.MANAGER, label: 'Quản lý (Manager)' },
+                { value: UserRole.SUPERADMIN, label: 'Siêu quản trị (SuperAdmin)' },
               ]}
             />
           </Form.Item>

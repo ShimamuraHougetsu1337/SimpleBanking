@@ -6,14 +6,14 @@ import { adminService } from '@/services/admin.service';
 export function useAdminTransactionRequestsQuery() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>('all');
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.admin.transactionRequests.list(page, pageSize, statusFilter),
     queryFn: () => adminService.getTransactionRequests({
       page,
       limit: pageSize,
-      status: statusFilter
+      status: statusFilter === 'all' ? undefined : statusFilter
     }),
   });
 
@@ -23,7 +23,7 @@ export function useAdminTransactionRequestsQuery() {
   };
 
   const handleStatusFilterChange = (status: string | undefined) => {
-    setStatusFilter(status);
+    setStatusFilter(status || 'all');
     setPage(1);
   };
 

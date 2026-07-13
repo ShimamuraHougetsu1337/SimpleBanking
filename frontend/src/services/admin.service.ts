@@ -14,6 +14,8 @@ import type {
   GetAdminAuditLogsResponse,
   GetCustomerAuditLogsResponse,
   AdminTransactionRequest,
+  GetReconciliationReportsResponse,
+  ReconciliationReport,
 } from '@/types/admin';
 
 export const adminService = {
@@ -124,5 +126,15 @@ export const adminService = {
   async updateDailyLimit(id: string, dailyLimit: string | null): Promise<unknown> {
     const response = await api.patch(`/admin/accounts/${id}/daily-limit`, { dailyLimit });
     return response.data;
+  },
+
+  async getReconciliationReports(params?: { page?: number; limit?: number }): Promise<GetReconciliationReportsResponse> {
+    const { data } = await api.get('/admin/reconciliation/reports', { params });
+    return data;
+  },
+
+  async triggerReconciliation(): Promise<ReconciliationReport> {
+    const { data } = await api.post('/admin/reconciliation/trigger');
+    return data;
   }
 };

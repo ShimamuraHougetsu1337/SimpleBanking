@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-13]
+
+### Added
+- **Tab-Based User Role Separation**: Added a role group tab configuration in User Management (`AdminUsersPage`) to filter and view "Customer Accounts" and "System Accounts (Staff/Admin)" independently.
+- **Backend Role Group Query Support**: Supported `roleGroup` (`'customer' | 'staff'`) parameter in users retrieve API (`GetUsersQueryDto`, `UsersService`, and `AdminService`) using type-safe `@IsIn` array validation.
+- **Copyable Full Transaction IDs**: Enabled copying full transaction UUIDs from the account Ledger table (`AdminAccountLedgerPage`) using Ant Design's `copyable` configuration.
+
+### Changed
+- **Reconciliation Page SRP Refactoring**: Refactored `AdminReconciliationPage` into separate presentational sub-components (`ReconciliationTable` and `ReconciliationDetailsModal`) to comply with Clean Code and the Single Responsibility Principle.
+- **Environment-based Validation Pipe**: Configured dynamic `forbidNonWhitelisted` validation in `main.ts` to only reject non-whitelisted properties in non-production environments.
+- **Restricted Deposit/Action Rights**: Restricted the display of Approve/Reject actions in Transaction Requests page to Manager role only, and restricted Deposit buttons in accounts table to Teller and Manager roles only.
+- **Zero-Flow Database Seeding**: Adjusted database seeding (`run-seeds.ts`) to initialize system users and customer accounts with a `0.00` balance and zero initial transactions.
+- **Currency formatting in Admin Settings**: Updated settings under the `transaction` group to use Ant Design's `InputNumber` for currency values, showing commas as separators for easier readability.
+
 ## [2026-07-12]
 
 ### Added

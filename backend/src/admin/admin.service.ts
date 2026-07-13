@@ -95,8 +95,16 @@ export class AdminService {
     search?: string,
     status?: UserStatus,
     includeDeleted: boolean = false,
+    roleGroup?: 'customer' | 'staff',
   ) {
-    const { data, total } = await this.usersService.findAll(page, limit, search, status, includeDeleted);
+    const { data, total } = await this.usersService.findAll(
+      page,
+      limit,
+      search,
+      status,
+      includeDeleted,
+      roleGroup,
+    );
 
     const formattedData = data.map((user) => {
       const balance = (user.accounts || []).reduce((acc, cur) => acc.plus(new Decimal(cur.balance)), new Decimal(0));

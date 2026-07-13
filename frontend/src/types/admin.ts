@@ -17,6 +17,7 @@ export interface GetUsersParams {
   search?: string;
   status?: string;
   includeDeleted?: boolean;
+  roleGroup?: 'customer' | 'staff';
 }
 
 export interface GetUsersResponse {
@@ -219,3 +220,33 @@ export interface AdminTransactionRequest {
   approvedAt: string | null;
   rejectionReason?: string | null;
 }
+
+export interface MismatchDetail {
+  accountId: string;
+  accountNumber: string;
+  cachedBalance: string;
+  computedBalance: string;
+  difference: string;
+}
+
+export interface ReconciliationReport {
+  id: string;
+  checkedAt: string;
+  status: 'OK' | 'MISMATCH';
+  totalAccounts: number;
+  mismatchCount: number;
+  details: MismatchDetail[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GetReconciliationReportsResponse {
+  data: ReconciliationReport[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+

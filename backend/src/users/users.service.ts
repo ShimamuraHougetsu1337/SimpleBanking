@@ -121,6 +121,7 @@ export class UsersService {
     search?: string,
     status?: UserStatus,
     includeDeleted: boolean = false,
+    roleGroup?: 'customer' | 'staff',
   ): Promise<{ data: User[]; total: number }> {
     const queryBuilder = this.userRepository
       .createQueryBuilder('user')
@@ -142,6 +143,14 @@ export class UsersService {
         '(user.fullName ILIKE :search OR user.email ILIKE :search OR user.phoneNumber ILIKE :search)',
         { search: `%${search}%` },
       );
+    }
+
+    if (roleGroup === 'customer') {
+      queryBuilder.andWhere('user.role = :role', { role: UserRole.CUSTOMER });
+    } else if (roleGroup === 'staff') {
+      queryBuilder.andWhere('user.role IN (:...roles)', {
+        roles: [UserRole.TELLER, UserRole.MANAGER, UserRole.SUPERADMIN],
+      });
     }
 
     const [data, total] = await queryBuilder.getManyAndCount();
