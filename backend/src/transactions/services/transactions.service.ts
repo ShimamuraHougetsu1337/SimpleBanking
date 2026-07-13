@@ -226,36 +226,42 @@ export class TransactionsService {
 
     const amount = new Decimal(dto.amount);
 
-    return this.transactionsHelper.executeTransaction(async (manager) => {
-      const toAccountRef = await manager.findOne(Account, {
-        where: { accountNumber: dto.to_accountNumber },
-      });
-      if (!toAccountRef) {
-        throw new NotFoundException('Destination account does not exist');
-      }
-
-      const feeVal = this.systemSettingsService.getSetting<number>('transfer_fee');
-      const feeValue = new Decimal(feeVal ?? 0);
-      const totalAmount = amount.plus(feeValue);
-
-      // Lock accounts first to prevent deadlock with FOR KEY SHARE locks on foreign keys
-      await this.transactionsHelper.lockAccounts(manager, dto.from_accountId, toAccountRef.id);
-
-      const tx = manager.create(Transaction, {
-        fromAccountId: dto.from_accountId,
-        toAccountId: toAccountRef.id,
-        amount: dto.amount,
-        fee: feeValue.toFixed(2),
-        totalAmount: totalAmount.toFixed(2),
-        type: TransactionType.TRANSFER,
-        status: TransactionStatus.PROCESSING,
-        description: dto.description,
-        idempotencyKey,
-      });
-      const savedTx = await manager.save(Transaction, tx);
-
-      return this.transactionsHelper.executeMovement(manager, savedTx);
+    const toAccountRef = await this.dataSource.getRepository(Account).findOne({
+      where: { accountNumber: dto.to_accountNumber },
     });
+    if (!toAccountRef) {
+      throw new NotFoundException('Destination account does not exist');
+    }
+
+    const feeVal = this.systemSettingsService.getSetting<number>('transfer_fee');
+    const feeValue = new Decimal(feeVal ?? 0);
+    const totalAmount = amount.plus(feeValue);
+
+    const tx = this.transactionRepository.create({
+      fromAccountId: dto.from_accountId,
+      toAccountId: toAccountRef.id,
+      amount: dto.amount,
+      fee: feeValue.toFixed(2),
+      totalAmount: totalAmount.toFixed(2),
+      type: TransactionType.TRANSFER,
+      status: TransactionStatus.PROCESSING,
+      description: dto.description,
+      idempotencyKey,
+    });
+    const savedTx = await this.transactionRepository.save(tx);
+
+    try {
+      return await this.transactionsHelper.executeTransaction(async (manager) => {
+        // Lock accounts first to prevent deadlock with FOR KEY SHARE locks on foreign keys
+        await this.transactionsHelper.lockAccounts(manager, dto.from_accountId, toAccountRef.id);
+
+        return await this.transactionsHelper.executeMovement(manager, savedTx);
+      });
+    } catch (error) {
+      savedTx.status = TransactionStatus.FAILED;
+      await this.transactionRepository.save(savedTx);
+      throw error;
+    }
   }
 
   async deposit(dto: DepositDto, currentUserId: string, idempotencyKey: string): Promise<Transaction> {
@@ -310,24 +316,30 @@ export class TransactionsService {
       }
     }
 
-    return this.transactionsHelper.executeTransaction(async (manager) => {
-      // Lock account first to prevent deadlock with FOR KEY SHARE locks on foreign keys
-      await this.transactionsHelper.lockAccounts(manager, dto.accountId, null);
-
-      const tx = manager.create(Transaction, {
-        fromAccountId: dto.accountId,
-        amount: dto.amount.toString(),
-        fee: '0.00',
-        totalAmount: dto.amount.toString(),
-        type: TransactionType.WITHDRAW,
-        status: TransactionStatus.PROCESSING,
-        description: dto.description || 'Withdraw',
-        idempotencyKey,
-      });
-      const savedTx = await manager.save(Transaction, tx);
-
-      return this.transactionsHelper.executeMovement(manager, savedTx);
+    const tx = this.transactionRepository.create({
+      fromAccountId: dto.accountId,
+      amount: dto.amount.toString(),
+      fee: '0.00',
+      totalAmount: dto.amount.toString(),
+      type: TransactionType.WITHDRAW,
+      status: TransactionStatus.PROCESSING,
+      description: dto.description || 'Withdraw',
+      idempotencyKey,
     });
+    const savedTx = await this.transactionRepository.save(tx);
+
+    try {
+      return await this.transactionsHelper.executeTransaction(async (manager) => {
+        // Lock account first to prevent deadlock with FOR KEY SHARE locks on foreign keys
+        await this.transactionsHelper.lockAccounts(manager, dto.accountId, null);
+
+        return await this.transactionsHelper.executeMovement(manager, savedTx);
+      });
+    } catch (error) {
+      savedTx.status = TransactionStatus.FAILED;
+      await this.transactionRepository.save(savedTx);
+      throw error;
+    }
   }
 
   /**
@@ -404,9 +416,15 @@ export class TransactionsService {
     tx.status = TransactionStatus.PROCESSING;
     const processingTx = await this.transactionRepository.save(tx);
 
-    return this.transactionsHelper.executeTransaction(async (manager) => {
-      return this.transactionsHelper.executeMovement(manager, processingTx);
-    });
+    try {
+      return await this.transactionsHelper.executeTransaction(async (manager) => {
+        return await this.transactionsHelper.executeMovement(manager, processingTx);
+      });
+    } catch (error) {
+      processingTx.status = TransactionStatus.FAILED;
+      await this.transactionRepository.save(processingTx);
+      throw error;
+    }
   }
 
   /**

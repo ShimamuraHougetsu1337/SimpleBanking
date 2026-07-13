@@ -252,8 +252,11 @@ export class TransactionsHelper {
       if (!fromAccount || fromAccount.status !== AccountStatus.ACTIVE) {
         throw new UnprocessableEntityException('Source account not found or is locked');
       }
-      if (totalAmount.gt(fromAccount.balance)) {
-        throw new UnprocessableEntityException('Số dư tài khoản không đủ');
+      const balance = new Decimal(fromAccount.balance);
+      const holdBalance = new Decimal(fromAccount.holdBalance || 0);
+      const availableBalance = balance.minus(holdBalance);
+      if (totalAmount.gt(availableBalance)) {
+        throw new UnprocessableEntityException('Số dư tài khoản khả dụng không đủ');
       }
 
       const customLimit = fromAccount.dailyLimit ? new Decimal(fromAccount.dailyLimit) : null;
