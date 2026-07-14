@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { AsyncContextService } from '../context/async-context.service';
 
 interface ExceptionResponseBody {
   message?: string | string[];
@@ -29,9 +30,12 @@ interface ExceptionResponseBody {
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
+  constructor(private readonly asyncContextService: AsyncContextService) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
+    const requestId = this.asyncContextService.getRequestId();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let errorCode = 'INTERNAL_SERVER_ERROR';
@@ -72,6 +76,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       statusCode: status,
       error: errorCode,
       message,
+      ...(requestId ? { requestId } : {}),
       ...(details ? { details } : {}),
       ...(retryAfter !== undefined ? { retryAfter } : {}),
     });

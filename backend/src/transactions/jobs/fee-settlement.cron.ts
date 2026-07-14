@@ -8,6 +8,8 @@ import { LedgerEntry, LedgerEntryType } from '../entities/ledger-entry.entity';
 import { TransactionsHelper } from '../helpers/transactions.helper';
 import { SystemAccount } from '@/common/enums/system-account.enum';
 import Decimal from 'decimal.js';
+import { AsyncContextService } from '@/common/context/async-context.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class FeeSettlementCron {
@@ -16,11 +18,14 @@ export class FeeSettlementCron {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly transactionsHelper: TransactionsHelper,
+    private readonly asyncContextService: AsyncContextService,
   ) { }
 
   @Cron(process.env.FEE_SETTLEMENT_CRON || '0 * * * *')
   async handleFeeSettlement() {
-    this.logger.log('Starting fee settlement process...');
+    const jobId = uuidv4();
+    await this.asyncContextService.run({ requestId: jobId }, async () => {
+      this.logger.log('Starting fee settlement process...');
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -122,8 +127,10 @@ export class FeeSettlementCron {
     } catch (error) {
       this.logger.error('Failed to process fee settlement', error);
       await queryRunner.rollbackTransaction();
+      throw error;
     } finally {
       await queryRunner.release();
     }
+    });
   }
 }
