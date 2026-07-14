@@ -22,10 +22,36 @@ export class AdminAuditLogsService {
     }
   }
 
-  async findAll(params: GetAdminAuditLogsQueryDto) {
+  async findAll(
+    params: GetAdminAuditLogsQueryDto,
+    allowedRoles?: string[],
+    allowedUserIds?: string[],
+  ) {
     const { page = 1, limit = 20, action, status, startDate, endDate } = params;
     
-    const queryBuilder = this.repo.createQueryBuilder('log')
+    const queryBuilder = this.repo.createQueryBuilder('log');
+
+    if ((allowedRoles && allowedRoles.length > 0) || (allowedUserIds && allowedUserIds.length > 0)) {
+      queryBuilder.innerJoin('users', 'u', 'log.adminId = u.id');
+      
+      let condition = '';
+      const parameters: Record<string, any> = {};
+
+      if (allowedRoles && allowedRoles.length > 0) {
+        condition += 'u.role IN (:...allowedRoles)';
+        parameters.allowedRoles = allowedRoles;
+      }
+
+      if (allowedUserIds && allowedUserIds.length > 0) {
+        if (condition) condition += ' OR ';
+        condition += 'log.adminId IN (:...allowedUserIds)';
+        parameters.allowedUserIds = allowedUserIds;
+      }
+
+      queryBuilder.andWhere(`(${condition})`, parameters);
+    }
+
+    queryBuilder
       .orderBy('log.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
