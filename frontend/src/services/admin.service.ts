@@ -81,6 +81,11 @@ export const adminService = {
     return response.data;
   },
 
+  async requestReversal(transactionId: string, reason: string) {
+    const response = await api.post(`/admin/transactions/${transactionId}/request-reversal`, { reason });
+    return response.data;
+  },
+
   async getUserHistory(id: string): Promise<UserHistoryRecord[]> {
     const response = await api.get(`/admin/users/${id}/history`);
     return response.data;

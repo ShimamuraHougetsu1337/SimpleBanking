@@ -6,6 +6,7 @@ import { UserStatus } from '@/users/entities/user.entity';
 import { AccountsService } from '@/accounts/accounts.service';
 import { TransactionsService } from '@/transactions/services/transactions.service';
 import { TransactionRequestsService } from '@/transactions/services/transaction-requests.service';
+import { ReversalService } from '@/transactions/services/reversal.service';
 import { LedgerService } from '@/transactions/services/ledger.service';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { SystemAccount } from '@/common/enums/system-account.enum';
@@ -23,6 +24,7 @@ export class AdminService {
     private readonly accountsService: AccountsService,
     private readonly transactionsService: TransactionsService,
     private readonly transactionRequestsService: TransactionRequestsService,
+    private readonly reversalService: ReversalService,
     private readonly ledgerService: LedgerService,
     private readonly userHistoryService: UserHistoryService,
   ) { }
@@ -337,6 +339,10 @@ export class AdminService {
 
   async rejectRequest(requestId: string, currentUserId: string, rejectionReason: string) {
     return await this.transactionRequestsService.rejectRequest(requestId, currentUserId, rejectionReason);
+  }
+
+  async requestReversal(transactionId: string, requesterId: string, reason: string) {
+    return await this.reversalService.requestReversal(transactionId, requesterId, reason);
   }
 
   async getTransactionRequests(page: number = 1, limit: number = 10, status?: string, tellerId?: string) {

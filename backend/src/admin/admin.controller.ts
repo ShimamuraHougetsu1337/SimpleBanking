@@ -28,6 +28,7 @@ import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 import { ForbiddenException } from '@nestjs/common';
 import { RejectTransactionRequestDto } from './dto/reject-transaction-request.dto';
 import { UpdateDailyLimitDto } from './dto/update-daily-limit.dto';
+import { RequestReversalDto } from './dto/request-reversal.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -264,6 +265,18 @@ export class AdminController {
     );
   }
 
+  @Post('transactions/:id/request-reversal')
+  @Roles(UserRole.TELLER, UserRole.MANAGER, UserRole.SUPERADMIN)
+  @ApiOperation({ summary: 'Create a reversal request for a completed transfer (requires Manager approval)' })
+  @AdminLog(AdminAuditAction.REQUEST_REVERSAL)
+  async requestReversal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RequestReversalDto,
+    @CurrentUser() admin: User,
+  ) {
+    return await this.adminService.requestReversal(id, admin.id, dto.reason);
+  }
+
   @Get('transactions')
   @ApiOperation({ summary: 'List all transactions (Admin only)' })
   async getTransactions(
@@ -273,9 +286,7 @@ export class AdminController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('type') type?: string,
-    @CurrentUser() admin?: User,
   ) {
-    const tellerId = admin?.role === UserRole.TELLER ? admin.id : undefined;
     return this.adminService.getTransactions(
       +page,
       +limit,
@@ -283,7 +294,6 @@ export class AdminController {
       startDate,
       endDate,
       type,
-      tellerId,
     );
   }
 

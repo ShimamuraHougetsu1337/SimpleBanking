@@ -13,6 +13,7 @@ export enum TransactionRequestType {
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
   TRANSFER = 'transfer',
+  REVERSAL = 'reversal',
 }
 
 export enum TransactionRequestStatus {
@@ -78,6 +79,9 @@ export class TransactionRequest {
 
   @Column({ name: 'transaction_id', type: 'uuid', nullable: true })
   transactionId: string | null;
+
+  @Column({ name: 'original_transaction_id', type: 'uuid', nullable: true })
+  originalTransactionId: string | null;
 
   @Column({ name: 'rejection_reason', type: 'text', nullable: true })
   rejectionReason: string | null;

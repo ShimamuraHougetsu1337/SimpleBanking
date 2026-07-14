@@ -95,9 +95,49 @@ export class ReconciliationCron {
     try {
       this.logger.log('[Reconciliation] Running pre-reconciliation fee settlement sweep...');
       await this.feeSettlementCron.handleFeeSettlement();
+
+      this.logger.log('[Reconciliation] Synchronizing system accounts before audit...');
+      await this.syncSystemAccounts();
     } catch (err) {
-      this.logger.error('Failed to run pre-reconciliation fee settlement sweep', err);
+      this.logger.error('Failed to run pre-reconciliation sweep', err);
       throw err;
+    }
+  }
+
+  private async syncSystemAccounts(): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const systemAccounts = await queryRunner.manager.find(Account, {
+        where: [
+          { accountNumber: SystemAccount.CASH_VAULT },
+          { accountNumber: SystemAccount.FEE_SUSPENSE },
+        ],
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      for (const account of systemAccounts) {
+        let computedBalance: Decimal;
+        if (account.accountNumber === (SystemAccount.CASH_VAULT as string)) {
+          computedBalance = await this.ledgerService.calculateAssetBalanceFromLedger(queryRunner.manager, account.id);
+        } else {
+          computedBalance = await this.ledgerService.calculateLiabilityBalanceFromLedger(queryRunner.manager, account.id);
+        }
+
+        account.balance = computedBalance.toFixed(2);
+        await queryRunner.manager.save(Account, account);
+      }
+
+      await queryRunner.commitTransaction();
+      this.logger.log('[Reconciliation] System accounts synchronized successfully.');
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      this.logger.error('Failed to synchronize system accounts:', error);
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 

@@ -46,7 +46,8 @@ export class AuditMetadataBuilder {
       entity = 'account';
     } else if (
       action === AdminAuditAction.APPROVE_TRANSACTION ||
-      action === AdminAuditAction.REJECT_TRANSACTION
+      action === AdminAuditAction.REJECT_TRANSACTION ||
+      action === AdminAuditAction.REQUEST_REVERSAL
     ) {
       entity = 'transaction';
     } else if (action === AdminAuditAction.UPDATE_SETTINGS) {
@@ -124,6 +125,16 @@ export class AuditMetadataBuilder {
       case AdminAuditAction.UPDATE_ACCOUNT_DAILY_LIMIT:
         beforeData = { dailyLimit: responseData?.oldDailyLimit ?? null };
         afterData = { dailyLimit: responseData?.dailyLimit ?? null };
+        break;
+
+      case AdminAuditAction.REQUEST_REVERSAL:
+        beforeData = { status: 'completed' };
+        afterData = {
+          transactionId: ctx.params?.id ?? null,
+          requestId: responseData?.id ?? null,
+          reason: ctx.body?.reason ?? null,
+          holdPlaced: true,
+        };
         break;
 
       case AdminAuditAction.LOGIN_SUCCESS:

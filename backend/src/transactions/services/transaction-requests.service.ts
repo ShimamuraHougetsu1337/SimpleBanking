@@ -7,6 +7,7 @@ import { LedgerEntryType } from '../entities/ledger-entry.entity';
 import { TransactionRequest, TransactionRequestType, TransactionRequestStatus } from '../entities/transaction-request.entity';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { SystemSettingsService } from '@/system-settings/system-settings.service';
+import { ReversalService } from './reversal.service';
 import Decimal from 'decimal.js';
 import { User, UserRole } from '@/users/entities/user.entity';
 
@@ -18,6 +19,7 @@ export class TransactionRequestsService {
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly transactionsHelper: TransactionsHelper,
     private readonly systemSettingsService: SystemSettingsService,
+    private readonly reversalService: ReversalService,
   ) { }
 
   async findAllRequests(page: number = 1, limit: number = 10, status?: string, tellerId?: string) {
@@ -55,6 +57,7 @@ export class TransactionRequestsService {
         createdAt: req.createdAt,
         approvedAt: req.approvedAt,
         rejectionReason: req.rejectionReason,
+        originalTransactionId: req.originalTransactionId,
       })),
       total,
       page,
@@ -203,19 +206,32 @@ export class TransactionRequestsService {
   async approveRequest(requestId: string, currentUserId: string): Promise<Transaction> {
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const request = await this.validateApprovalRequest(manager, requestId, currentUserId);
-      const account = await this.transactionsHelper.getAccountWithLock(manager, request.accountId);
       const amount = new Decimal(request.amount);
 
       let savedTx: Transaction;
 
-      if (request.type === TransactionRequestType.DEPOSIT) {
-        savedTx = await this.executeApprovedDeposit(manager, request, account, amount);
-      } else if (request.type === TransactionRequestType.WITHDRAW) {
-        savedTx = await this.executeApprovedWithdraw(manager, request, account, amount);
-      } else if (request.type === TransactionRequestType.TRANSFER) {
-        savedTx = await this.executeApprovedTransfer(manager, request, account, amount);
+      if (request.type === TransactionRequestType.REVERSAL) {
+        // For REVERSAL: load the original transaction and call executeReversal
+        const original = await manager.findOne(Transaction, {
+          where: { id: request.originalTransactionId! },
+          relations: { fromAccount: true, toAccount: true },
+        });
+        if (!original) {
+          throw new NotFoundException(`Original transaction ${request.originalTransactionId} not found`);
+        }
+        savedTx = await this.reversalService.executeReversal(manager, original, request);
       } else {
-        throw new BadRequestException('Unsupported transaction request type');
+        const account = await this.transactionsHelper.getAccountWithLock(manager, request.accountId);
+
+        if (request.type === TransactionRequestType.DEPOSIT) {
+          savedTx = await this.executeApprovedDeposit(manager, request, account, amount);
+        } else if (request.type === TransactionRequestType.WITHDRAW) {
+          savedTx = await this.executeApprovedWithdraw(manager, request, account, amount);
+        } else if (request.type === TransactionRequestType.TRANSFER) {
+          savedTx = await this.executeApprovedTransfer(manager, request, account, amount);
+        } else {
+          throw new BadRequestException('Unsupported transaction request type');
+        }
       }
 
       request.status = TransactionRequestStatus.APPROVED;
@@ -436,7 +452,10 @@ export class TransactionRequestsService {
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const request = await this.validateRejectionRequest(manager, requestId, currentUserId);
 
-      if (
+      if (request.type === TransactionRequestType.REVERSAL) {
+        // Release the hold placed on recipient's account when reversal was requested
+        await this.reversalService.releaseReversalHold(manager, request);
+      } else if (
         request.type === TransactionRequestType.WITHDRAW ||
         request.type === TransactionRequestType.TRANSFER
       ) {
