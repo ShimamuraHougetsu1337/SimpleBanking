@@ -7,7 +7,10 @@ export class CreateAdminAuditLogDto {
   adminEmail?: string | null;
   action: AdminAuditAction;
   status: AuditStatus;
-  metadata?: Record<string, unknown> | null;
+  entity?: string | null;
+  entityId?: string | null;
+  beforeData?: Record<string, unknown> | null;
+  afterData?: Record<string, unknown> | null;
   ipAddress?: string | null;
   userAgent?: string | null;
 }

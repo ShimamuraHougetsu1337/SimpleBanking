@@ -45,6 +45,7 @@ export class SystemSettingsService implements OnApplicationBootstrap {
       case 'int':
         return parseInt(value, 10);
       case 'float':
+      case 'decimal':
         return parseFloat(value);
       case 'string':
         return value;

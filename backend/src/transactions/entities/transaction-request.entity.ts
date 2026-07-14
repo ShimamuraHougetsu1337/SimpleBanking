@@ -12,6 +12,7 @@ import { User } from '@/users/entities/user.entity';
 export enum TransactionRequestType {
   DEPOSIT = 'deposit',
   WITHDRAW = 'withdraw',
+  TRANSFER = 'transfer',
 }
 
 export enum TransactionRequestStatus {
@@ -41,6 +42,9 @@ export class TransactionRequest {
     enum: TransactionRequestType,
   })
   type: TransactionRequestType;
+
+  @Column({ name: 'to_account_number', type: 'varchar', length: 32, nullable: true })
+  toAccountNumber: string | null;
 
   @Column({
     type: 'enum',

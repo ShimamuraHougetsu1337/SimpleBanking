@@ -472,9 +472,10 @@ describe('TransactionsHelper', () => {
 
       expect(result.status).toBe(TransactionStatus.COMPLETED);
       expect(helper.updateAccountBalance).toHaveBeenCalledTimes(1);
-      expect(mockManager.save).toHaveBeenCalledWith(LedgerEntry, [
+      expect(mockManager.save).toHaveBeenCalledWith(LedgerEntry, expect.arrayContaining([
         expect.objectContaining({ accountId: 'acc-to', amount: '100.00', type: 'credit' }),
-      ]);
+        expect.objectContaining({ accountId: 'suspense-id', amount: '100.00', type: 'debit' }),
+      ]));
     });
   });
 });

@@ -73,10 +73,10 @@ export class LedgerService {
   }
 
   /**
-   * Calculates the current balance for an account by summing all ledger entries.
-   * Used for reconciliation — the source of truth is ledger_entries, not accounts.balance.
+   * Calculates the liability/revenue balance (Credit - Debit).
+   * Used for customer accounts, suspense accounts, and revenue.
    */
-  async calculateBalanceFromLedger(
+  async calculateLiabilityBalanceFromLedger(
     manager: EntityManager,
     accountId: string,
   ): Promise<Decimal> {
@@ -84,6 +84,26 @@ export class LedgerService {
       .createQueryBuilder(LedgerEntry, 'le')
       .select(
         `SUM(CASE WHEN le.type = 'credit' THEN le.amount ELSE -le.amount END)`,
+        'balance',
+      )
+      .where('le.account_id = :accountId', { accountId })
+      .getRawOne<{ balance: string | null }>();
+
+    return new Decimal(result?.balance ?? 0);
+  }
+
+  /**
+   * Calculates the asset balance (Debit - Credit).
+   * Used for asset accounts like SYS_CASH_VAULT.
+   */
+  async calculateAssetBalanceFromLedger(
+    manager: EntityManager,
+    accountId: string,
+  ): Promise<Decimal> {
+    const result = await manager
+      .createQueryBuilder(LedgerEntry, 'le')
+      .select(
+        `SUM(CASE WHEN le.type = 'debit' THEN le.amount ELSE -le.amount END)`,
         'balance',
       )
       .where('le.account_id = :accountId', { accountId })

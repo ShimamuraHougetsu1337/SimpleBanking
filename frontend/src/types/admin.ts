@@ -9,6 +9,7 @@ export interface AdminUser {
   isOtpBlocked?: boolean;
   createdAt: string;
   updatedAt: string;
+  deletedAt?: string | null;
 }
 
 export interface GetUsersParams {
@@ -86,6 +87,9 @@ export interface DashboardStats {
   totalUsers: number;
   totalAccounts: number;
   totalBalance: string;
+  cashVaultBalance?: string;
+  totalCustomerDeposits?: string;
+  bankRevenue?: string;
   weeklyVolume: { date: string; volume: string }[];
   pendingCount?: number;
   approvedCount?: number;

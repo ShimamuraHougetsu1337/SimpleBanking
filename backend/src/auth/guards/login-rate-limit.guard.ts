@@ -74,15 +74,15 @@ export class LoginRateLimitGuard extends ThrottlerGuard {
       action: CustomerAuditAction.LOGIN_RATE_LIMITED,
       status: AuditStatus.FAILED,
       transactionId: null,
-      metadata: {
-        event: CustomerAuditAction.LOGIN_RATE_LIMITED,
+      entity: 'user',
+      entityId: null,
+      beforeData: {},
+      afterData: {
         rateLimitKey: throttlerLimitDetail.tracker,
-        ip,
         attemptedEmail: attemptedEmail ?? null,
         totalHits: throttlerLimitDetail.totalHits,
         limit: throttlerLimitDetail.limit,
         retryAfterSeconds: retryAfter,
-        timestamp: new Date().toISOString(),
       },
       ipAddress: ip,
     });
