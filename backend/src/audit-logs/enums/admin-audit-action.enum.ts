@@ -16,4 +16,5 @@ export enum AdminAuditAction {
   DELETE_USER = 'delete_user',
   REACTIVATE_USER_OTP = 'reactivate_user_otp',
   UPDATE_ACCOUNT_DAILY_LIMIT = 'update_account_daily_limit',
+  REQUEST_REVERSAL = 'request_reversal',
 }

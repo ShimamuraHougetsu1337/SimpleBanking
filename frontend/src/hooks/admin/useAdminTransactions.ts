@@ -46,6 +46,20 @@ export function useAdminTransactions() {
     },
   });
 
+  const requestReversalMutation = useMutation({
+    mutationFn: ({ transactionId, reason }: { transactionId: string; reason: string }) =>
+      adminService.requestReversal(transactionId, reason),
+    onSuccess: () => {
+      message.success('Yêu cầu hoàn tiền đã được tạo. Chờ Manager phê duyệt.');
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.transactions.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.admin.transactionRequests.all });
+    },
+    onError: (err: any) => {
+      const errMsg = err.response?.data?.message || 'Không thể tạo yêu cầu hoàn tiền';
+      message.error(errMsg);
+    },
+  });
+
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     setPage(1); // Reset page
@@ -76,6 +90,10 @@ export function useAdminTransactions() {
     reverseMutation.mutate(transactionId);
   };
 
+  const handleRequestReversal = (transactionId: string, reason: string) => {
+    requestReversalMutation.mutate({ transactionId, reason });
+  };
+
   const transactions = data?.data ?? [];
 
   return {
@@ -91,6 +109,7 @@ export function useAdminTransactions() {
     handleDateRangeChange,
     handlePageChange,
     handleReverseTransaction,
+    handleRequestReversal,
     stats: {
       totalVolume: data?.meta?.totalVolume ?? '0',
       successfulCount: data?.meta?.successfulCount ?? 0,

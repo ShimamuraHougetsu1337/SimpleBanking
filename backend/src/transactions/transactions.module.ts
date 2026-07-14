@@ -54,6 +54,6 @@ import { User } from '@/users/entities/user.entity';
     TransactionRateLimitGuard,
     OtpService,
   ],
-  exports: [TransactionsService, TransactionRequestsService, LedgerService, TransactionRateLimitGuard, OtpService],
+  exports: [TransactionsService, TransactionRequestsService, LedgerService, TransactionRateLimitGuard, OtpService, ReversalService],
 })
 export class TransactionsModule { }

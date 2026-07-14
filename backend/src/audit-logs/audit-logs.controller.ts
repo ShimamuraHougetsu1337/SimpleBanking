@@ -3,7 +3,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '@/common/guards/roles.guard';
 import { Roles } from '@/common/decorators/roles.decorator';
-import { UserRole } from '@/users/entities/user.entity';
+import { User, UserRole } from '@/users/entities/user.entity';
+import { CurrentUser } from '@/common/decorators/current-user.decorator';
 import { AdminAuditLogsService } from './admin-audit-logs.service';
 import { CustomerAuditLogsService } from './customer-audit-logs.service';
 import { GetAdminAuditLogsQueryDto } from './dto/get-admin-audit-logs-query.dto';
@@ -20,9 +21,15 @@ export class AuditLogsController {
   ) {}
 
   @Get('admin')
-  @Roles(UserRole.SUPERADMIN)
-  @ApiOperation({ summary: 'Get admin audit logs (SuperAdmin only)' })
-  async getAdminLogs(@Query() query: GetAdminAuditLogsQueryDto) {
+  @Roles(UserRole.SUPERADMIN, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Get admin audit logs (SuperAdmin & Manager only)' })
+  async getAdminLogs(
+    @Query() query: GetAdminAuditLogsQueryDto,
+    @CurrentUser() user: User,
+  ) {
+    if (user.role === UserRole.MANAGER) {
+      return this.adminAuditLogsService.findAll(query, [UserRole.TELLER], [user.id]);
+    }
     return this.adminAuditLogsService.findAll(query);
   }
 

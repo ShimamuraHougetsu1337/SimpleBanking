@@ -50,22 +50,36 @@ export const TransactionRequestTable = ({
       dataIndex: 'type',
       key: 'type',
       align: 'center' as const,
-      render: (type: string) => (
-        <Tag color={type === 'deposit' ? 'blue' : 'volcano'} style={{ borderRadius: 12, padding: '0 12px' }}>
-          {type === 'deposit' ? 'NẠP TIỀN' : 'RÚT TIỀN'}
-        </Tag>
-      ),
+      render: (type: string) => {
+        let color = 'default';
+        let label = type.toUpperCase();
+        if (type === 'deposit') { color = 'blue'; label = 'NẠP TIỀN'; }
+        else if (type === 'withdraw') { color = 'volcano'; label = 'RÚT TIỀN'; }
+        else if (type === 'transfer') { color = 'cyan'; label = 'CHUYỂN TIỀN'; }
+        else if (type === 'reversal') { color = 'purple'; label = 'HOÀN TIỀN'; }
+
+        return (
+          <Tag color={color} style={{ borderRadius: 12, padding: '0 12px' }}>
+            {label}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Số tiền',
       dataIndex: 'amount',
       key: 'amount',
       align: 'center' as const,
-      render: (amount: string, record: AdminTransactionRequest) => (
-        <Text strong style={{ color: record.type === 'deposit' ? '#10B981' : '#EF4444', fontVariantNumeric: 'tabular-nums' }}>
-          {record.type === 'deposit' ? '+' : '-'}{formatVND(amount)}
-        </Text>
-      ),
+      render: (amount: string, record: AdminTransactionRequest) => {
+        const isCredit = record.type === 'deposit' || record.type === 'reversal';
+        const color = isCredit ? '#10B981' : '#EF4444';
+
+        return (
+          <Text strong style={{ color, fontVariantNumeric: 'tabular-nums' }}>
+            {formatVND(amount)}
+          </Text>
+        );
+      },
     },
     {
       title: 'Trạng thái',

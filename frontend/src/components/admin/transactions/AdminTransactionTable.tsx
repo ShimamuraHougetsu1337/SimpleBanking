@@ -1,48 +1,65 @@
 import { useState } from 'react';
 import { Table, Typography, Tag, Space, ConfigProvider, Button, Modal, Descriptions } from 'antd';
-import { RollbackOutlined, EyeOutlined } from '@ant-design/icons';
+import { RollbackOutlined, EyeOutlined, ExceptionOutlined } from '@ant-design/icons';
 import { formatVnd } from '@/utils/format';
 import type { AdminTransaction } from '@/types/admin';
+import { RequestReversalModal } from './RequestReversalModal';
 
 const { Text } = Typography;
 
-export const getColumns = (
+const getColumns = (
   onReverse: (id: string) => void,
   onViewDetails: (record: AdminTransaction) => void,
+  onRequestReversal: (record: AdminTransaction) => void,
+  userRole: string,
 ) => [
   {
-    title: 'Transaction ID',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Mã giao dịch</span>,
     dataIndex: 'id',
     key: 'id',
     align: 'center' as const,
-    render: (id: string) => <Text type="secondary" copyable>{id}</Text>,
+    width: 130,
+    render: (id: string) => (
+      <Text
+        style={{ fontFamily: 'monospace', fontSize: 13, color: '#475569', whiteSpace: 'nowrap' }}
+        copyable={{ text: id, tooltips: ['Sao chép mã', 'Đã sao chép!'] }}
+      >
+        {`#${id.substring(0, 8)}`}
+      </Text>
+    ),
   },
   {
-    title: 'Date & Time',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Thời gian</span>,
     dataIndex: 'createdAt',
     key: 'createdAt',
     align: 'center' as const,
+    width: 130,
     render: (date: string) => (
-      <Space orientation="vertical" size={0} align="center">
-        <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
+      <Space direction="vertical" size={2} align="center">
+        <Text style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#0f172a', fontWeight: 500 }}>
           {new Date(date).toLocaleDateString('vi-VN')}
         </Text>
         <Text type="secondary" style={{ fontSize: 12, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>
-          {new Date(date).toLocaleTimeString('vi-VN')}
+          {new Date(date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </Text>
       </Space>
     ),
   },
   {
-    title: 'Sender',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Người gửi</span>,
     dataIndex: 'fromUserName',
     key: 'sender_name',
     align: 'center' as const,
+    width: 160,
     render: (name: string, record: AdminTransaction) => (
-      <Space orientation="vertical" size={0} align="center">
-        <Text strong style={{ color: '#1e293b' }}>{name || '-'}</Text>
+      <Space direction="vertical" size={2} align="center">
+        <Text strong style={{ color: '#0f172a', whiteSpace: 'nowrap' }}>{name || '-'}</Text>
         {record.fromAccount && (
-          <Text type="secondary" style={{ fontSize: 12, color: '#64748b' }} copyable>
+          <Text
+            type="secondary"
+            style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace', whiteSpace: 'nowrap' }}
+            copyable={{ text: record.fromAccount, tooltips: ['Sao chép số tài khoản', 'Đã sao chép!'] }}
+          >
             {record.fromAccount}
           </Text>
         )}
@@ -50,15 +67,20 @@ export const getColumns = (
     ),
   },
   {
-    title: 'Receiver',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Người nhận</span>,
     dataIndex: 'toUserName',
     key: 'receiver_name',
     align: 'center' as const,
+    width: 160,
     render: (name: string, record: AdminTransaction) => (
-      <Space orientation="vertical" size={0} align="center">
-        <Text strong style={{ color: '#1e293b' }}>{name || '-'}</Text>
+      <Space direction="vertical" size={2} align="center">
+        <Text strong style={{ color: '#0f172a', whiteSpace: 'nowrap' }}>{name || '-'}</Text>
         {record.toAccount && (
-          <Text type="secondary" style={{ fontSize: 12, color: '#64748b' }} copyable>
+          <Text
+            type="secondary"
+            style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace', whiteSpace: 'nowrap' }}
+            copyable={{ text: record.toAccount, tooltips: ['Sao chép số tài khoản', 'Đã sao chép!'] }}
+          >
             {record.toAccount}
           </Text>
         )}
@@ -66,88 +88,124 @@ export const getColumns = (
     ),
   },
   {
-    title: 'Type',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Phân loại</span>,
     dataIndex: 'type',
     key: 'type',
     align: 'center' as const,
-    render: (type: string) => (
-      <Tag variant="filled" color={type === 'deposit' ? 'blue' : type === 'reversal' ? 'purple' : 'default'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
-        {type.toUpperCase()}
-      </Tag>
-    ),
-  },
-  {
-    title: 'Status',
-    dataIndex: 'status',
-    key: 'status',
-    align: 'center' as const,
-    render: (status: string) => {
+    width: 100,
+    render: (type: string) => {
       let color = 'default';
-      if (status === 'completed') color = 'success';
-      if (status === 'failed') color = 'error';
-      if (status === 'pending') color = 'warning';
-      return <Tag variant="filled" color={color} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>{status.toUpperCase()}</Tag>;
+      if (type === 'deposit') color = 'blue';
+      else if (type === 'withdraw') color = 'warning';
+      else if (type === 'reversal') color = 'purple';
+      else if (type === 'transfer') color = 'cyan';
+      return (
+        <Tag bordered={false} color={color} style={{ borderRadius: 6, fontWeight: 600, fontSize: 11, padding: '2px 8px' }}>
+          {type.toUpperCase()}
+        </Tag>
+      );
     },
   },
   {
-    title: 'Amount',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Trạng thái</span>,
+    dataIndex: 'status',
+    key: 'status',
+    align: 'center' as const,
+    width: 110,
+    render: (status: string) => {
+      let color = 'default';
+      if (status === 'completed') color = 'success';
+      else if (status === 'failed') color = 'error';
+      else if (status === 'pending' || status === 'processing') color = 'processing';
+      return (
+        <Tag bordered={false} color={color} style={{ borderRadius: 6, fontWeight: 600, fontSize: 11, padding: '2px 8px' }}>
+          {status.toUpperCase()}
+        </Tag>
+      );
+    },
+  },
+  {
+    title: <span style={{ whiteSpace: 'nowrap' }}>Số tiền</span>,
     dataIndex: 'amount',
     key: 'amount',
     align: 'center' as const,
-    render: (amount: string) => (
-      <Text strong style={{ fontSize: '15px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#1e293b' }}>
-        {formatVnd(amount)}
-      </Text>
-    ),
+    width: 130,
+    render: (amount: string, record: AdminTransaction) => {
+      const isNegative = record.type === 'withdraw';
+      return (
+        <Text strong style={{ fontSize: '14px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: isNegative ? '#b91c1c' : '#0f172a' }}>
+          {isNegative ? '-' : ''}{formatVnd(amount)}
+        </Text>
+      );
+    },
   },
   {
-    title: 'Fee',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Phí</span>,
     dataIndex: 'fee',
     key: 'fee',
     align: 'center' as const,
+    width: 100,
     render: (fee: string, record: AdminTransaction) => {
       const feeNum = Number(fee || 0);
-      if (feeNum === 0 || record.type !== 'transfer') return <Text type="secondary">-</Text>;
+      if (feeNum === 0 || record.type !== 'transfer') return <Text type="secondary" style={{ color: '#94a3b8' }}>-</Text>;
       return (
-        <Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        <Text type="secondary" style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#64748b' }}>
           {formatVnd(fee)}
         </Text>
       );
     },
   },
   {
-    title: 'Total',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Tổng cộng</span>,
     dataIndex: 'totalAmount',
     key: 'totalAmount',
     align: 'center' as const,
+    width: 130,
     render: (totalAmount: string, record: AdminTransaction) => {
       const val = totalAmount || record.amount;
+      const isNegative = record.type === 'withdraw';
       return (
-        <Text strong style={{ fontSize: '15px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: '#dc2626' }}>
-          {formatVnd(val)}
+        <Text strong style={{ fontSize: '14px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', color: isNegative ? '#b91c1c' : '#0f172a' }}>
+          {isNegative ? '-' : ''}{formatVnd(val)}
         </Text>
       );
     },
   },
   {
-    title: 'Hành động',
+    title: <span style={{ whiteSpace: 'nowrap' }}>Hành động</span>,
     key: 'action',
     align: 'center' as const,
-    render: (record: AdminTransaction) => {
-      const isReversible = record.status === 'completed' && record.type === 'transfer';
+    width: 120,
+    render: (_: unknown, record: AdminTransaction) => {
+      const isCompletedTransfer = record.status === 'completed' && record.type === 'transfer';
+      const canDirectReverse = isCompletedTransfer && (userRole === 'manager' || userRole === 'superadmin');
+      const canRequestReversal = isCompletedTransfer;
 
       return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4 }}>
           <Button
             type="text"
+            shape="circle"
             icon={<EyeOutlined />}
             onClick={() => onViewDetails(record)}
-            style={{ color: '#3b82f6' }}
+            style={{ color: '#64748b' }}
             title="Chi tiết"
           />
-          {isReversible && (
+          {canRequestReversal && (
             <Button
               type="text"
+              shape="circle"
+              icon={<ExceptionOutlined />}
+              onClick={() => onRequestReversal(record)}
+              style={{ color: '#f59e0b' }}
+              title="Yêu cầu hoàn tiền"
+              id={`btn-request-reversal-${record.id}`}
+            />
+          )}
+          {canDirectReverse && (
+            <Button
+              type="text"
+              shape="circle"
               danger
               icon={<RollbackOutlined />}
               onClick={() => Modal.confirm({
@@ -158,7 +216,8 @@ export const getColumns = (
                 cancelText: 'Hủy',
                 onOk: () => onReverse(record.id)
               })}
-              title="Hoàn tác"
+              title="Hoàn tác trực tiếp (Manager)"
+              id={`btn-direct-reverse-${record.id}`}
             />
           )}
         </div>
@@ -174,6 +233,8 @@ interface AdminTransactionTableProps {
   total: number;
   onPageChange: (page: number, pageSize: number) => void;
   onReverse: (id: string) => void;
+  onRequestReversal: (transactionId: string, reason: string) => void;
+  userRole: string;
 }
 
 export const AdminTransactionTable = ({
@@ -183,8 +244,11 @@ export const AdminTransactionTable = ({
   total,
   onPageChange,
   onReverse,
+  onRequestReversal,
+  userRole,
 }: AdminTransactionTableProps) => {
   const [selectedTx, setSelectedTx] = useState<AdminTransaction | null>(null);
+  const [reversalTx, setReversalTx] = useState<AdminTransaction | null>(null);
 
   return (
     <ConfigProvider
@@ -202,9 +266,15 @@ export const AdminTransactionTable = ({
       }}
     >
       <Table
-        columns={getColumns(onReverse, (record) => setSelectedTx(record))}
+        columns={getColumns(
+          onReverse,
+          (record) => setSelectedTx(record),
+          (record) => setReversalTx(record),
+          userRole,
+        )}
         dataSource={transactions}
         rowKey="id"
+        scroll={{ x: 1200 }}
         pagination={{
           current: page,
           pageSize: pageSize,
@@ -216,7 +286,7 @@ export const AdminTransactionTable = ({
               {total} giao dịch
             </Text>
           ),
-          placement: ['bottomCenter'] as any,
+          placement: ['bottomCenter'],
           style: { padding: '16px 24px', margin: 0 },
         }}
       />
@@ -289,6 +359,15 @@ export const AdminTransactionTable = ({
           </Descriptions>
         )}
       </Modal>
+      <RequestReversalModal
+        open={!!reversalTx}
+        transaction={reversalTx}
+        onCancel={() => setReversalTx(null)}
+        onConfirm={(txId, reason) => {
+          onRequestReversal(txId, reason);
+          setReversalTx(null);
+        }}
+      />
     </ConfigProvider>
   );
 };

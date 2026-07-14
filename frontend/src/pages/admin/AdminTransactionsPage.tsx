@@ -1,5 +1,6 @@
 import { Card, Typography } from 'antd';
 import { useAdminTransactions } from '@/hooks/admin/useAdminTransactions';
+import { useAuthStore } from '@/store/auth.store';
 import { AdminTransactionStats } from '@/components/admin/transactions/AdminTransactionStats';
 import { AdminTransactionFilters } from '@/components/admin/transactions/AdminTransactionFilters';
 import { AdminTransactionTable } from '@/components/admin/transactions/AdminTransactionTable';
@@ -8,6 +9,9 @@ import { CARD_SHADOW_STYLE } from '@/components/admin/transactions/admin-transac
 const { Title } = Typography;
 
 export default function AdminTransactionsPage() {
+  const currentUser = useAuthStore((s) => s.user);
+  const userRole = currentUser?.role ?? '';
+
   const {
     transactions,
     total,
@@ -20,6 +24,7 @@ export default function AdminTransactionsPage() {
     handleDateRangeChange,
     handlePageChange,
     handleReverseTransaction,
+    handleRequestReversal,
     stats,
   } = useAdminTransactions();
 
@@ -47,6 +52,8 @@ export default function AdminTransactionsPage() {
           total={total}
           onPageChange={handlePageChange}
           onReverse={handleReverseTransaction}
+          onRequestReversal={handleRequestReversal}
+          userRole={userRole}
         />
       </Card>
     </div>

@@ -223,6 +223,7 @@ export interface AdminTransactionRequest {
   createdAt: string;
   approvedAt: string | null;
   rejectionReason?: string | null;
+  originalTransactionId?: string | null;
 }
 
 export interface MismatchDetail {
