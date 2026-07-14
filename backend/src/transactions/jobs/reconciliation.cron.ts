@@ -9,6 +9,8 @@ import { ReconciliationReport, ReconciliationStatus, MismatchDetail } from '../e
 import { FeeSettlementCron } from './fee-settlement.cron';
 import { SystemAccount } from '@/common/enums/system-account.enum';
 import Decimal from 'decimal.js';
+import { AsyncContextService } from '@/common/context/async-context.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ReconciliationCron {
@@ -18,11 +20,14 @@ export class ReconciliationCron {
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly ledgerService: LedgerService,
     private readonly feeSettlementCron: FeeSettlementCron,
+    private readonly asyncContextService: AsyncContextService,
   ) { }
 
   @Cron(process.env.RECONCILIATION_CRON || '0 59 23 * * *')
   async handleReconciliation() {
-    this.logger.log('Triggering scheduled daily reconciliation...');
+    const jobId = uuidv4();
+    await this.asyncContextService.run({ requestId: jobId }, async () => {
+      this.logger.log('Triggering scheduled daily reconciliation...');
     try {
       const report = await this.runReconciliation();
       this.logger.log(
@@ -31,6 +36,7 @@ export class ReconciliationCron {
     } catch (error) {
       this.logger.error('Failed to run scheduled reconciliation:', error);
     }
+    });
   }
 
   async runReconciliation(): Promise<ReconciliationReport> {

@@ -6,6 +6,8 @@ import { DataSource } from 'typeorm';
 import { SystemSettingsService } from '@/system-settings/system-settings.service';
 import { AdminAuditLogsService } from '@/audit-logs/admin-audit-logs.service';
 import { CustomerAuditLogsService } from '@/audit-logs/customer-audit-logs.service';
+import { AsyncContextService } from '@/common/context/async-context.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class TasksService {
@@ -16,35 +18,40 @@ export class TasksService {
     private readonly systemSettingsService: SystemSettingsService,
     private readonly adminAuditLogsService: AdminAuditLogsService,
     private readonly customerAuditLogsService: CustomerAuditLogsService,
+    private readonly asyncContextService: AsyncContextService,
   ) { }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleResetDailyLimits(): Promise<void> {
-    this.logger.log('Running daily limit reset task...');
-    try {
-      const result = (await this.dataSource.query(
-        'UPDATE accounts SET used_daily_limit = 0;',
-      )) as unknown as [unknown, number];
-      this.logger.log(`Daily limits reset successfully. Affected rows: ${result?.[1] ?? 'unknown'}`);
-    } catch (error) {
-      this.logger.error('Failed to reset daily limits', error);
-    }
+    await this.asyncContextService.run({ requestId: uuidv4() }, async () => {
+      this.logger.log('Running daily limit reset task...');
+      try {
+        const result = (await this.dataSource.query(
+          'UPDATE accounts SET used_daily_limit = 0;',
+        )) as unknown as [unknown, number];
+        this.logger.log(`Daily limits reset successfully. Affected rows: ${result?.[1] ?? 'unknown'}`);
+      } catch (error) {
+        this.logger.error('Failed to reset daily limits', error);
+      }
+    });
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCleanupAuditLogs(): Promise<void> {
-    this.logger.log('Running audit logs cleanup task...');
-    try {
-      const adminRetentionDays = this.systemSettingsService.getSetting<number>('admin_audit_retention_days') || 365;
-      const customerRetentionDays = this.systemSettingsService.getSetting<number>('customer_audit_retention_days') || 180;
+    await this.asyncContextService.run({ requestId: uuidv4() }, async () => {
+      this.logger.log('Running audit logs cleanup task...');
+      try {
+        const adminRetentionDays = this.systemSettingsService.getSetting<number>('admin_audit_retention_days') || 365;
+        const customerRetentionDays = this.systemSettingsService.getSetting<number>('customer_audit_retention_days') || 180;
 
-      await this.adminAuditLogsService.deleteOlderThan(adminRetentionDays);
-      this.logger.log(`Cleaned up admin audit logs older than ${adminRetentionDays} days.`);
+        await this.adminAuditLogsService.deleteOlderThan(adminRetentionDays);
+        this.logger.log(`Cleaned up admin audit logs older than ${adminRetentionDays} days.`);
 
-      await this.customerAuditLogsService.deleteOlderThan(customerRetentionDays);
-      this.logger.log(`Cleaned up customer audit logs older than ${customerRetentionDays} days.`);
-    } catch (error) {
-      this.logger.error('Failed to clean up audit logs', error);
-    }
+        await this.customerAuditLogsService.deleteOlderThan(customerRetentionDays);
+        this.logger.log(`Cleaned up customer audit logs older than ${customerRetentionDays} days.`);
+      } catch (error) {
+        this.logger.error('Failed to clean up audit logs', error);
+      }
+    });
   }
 }
