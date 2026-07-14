@@ -40,6 +40,12 @@ export class ReconciliationReport {
   @Column({ name: 'mismatch_count', type: 'integer' })
   mismatchCount: number;
 
+  @Column({ name: 'accumulated_debit', type: 'numeric', precision: 18, scale: 2, default: '0.00' })
+  accumulatedDebit: string;
+
+  @Column({ name: 'accumulated_credit', type: 'numeric', precision: 18, scale: 2, default: '0.00' })
+  accumulatedCredit: string;
+
   @Column({ type: 'jsonb', nullable: true })
   details: MismatchDetail[] | null;
 

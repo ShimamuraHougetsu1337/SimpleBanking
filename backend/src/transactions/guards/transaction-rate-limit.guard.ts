@@ -69,14 +69,14 @@ export class TransactionRateLimitGuard extends ThrottlerGuard {
       action: CustomerAuditAction.TRANSACTION_RATE_LIMITED,
       status: AuditStatus.FAILED,
       transactionId: null,
-      metadata: {
-        event: CustomerAuditAction.TRANSACTION_RATE_LIMITED,
+      entity: 'transaction',
+      entityId: null,
+      beforeData: {},
+      afterData: {
         rateLimitKey: throttlerLimitDetail.tracker,
-        ip,
         totalHits: throttlerLimitDetail.totalHits,
         limit: throttlerLimitDetail.limit,
         retryAfterSeconds: retryAfter,
-        timestamp: new Date().toISOString(),
       },
       ipAddress: ip,
     });

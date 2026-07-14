@@ -18,6 +18,9 @@ export class TransactionsHelper {
   /** Cached suspense account ID — loaded once on first use. */
   private suspenseAccountId: string | null = null;
 
+  /** Cached cash vault account ID — loaded once on first use. */
+  private cashVaultAccountId: string | null = null;
+
   /**
    * Returns the ID of the SYS_FEE_SUSPENSE internal account.
    * The result is cached in memory after the first DB lookup.
@@ -36,6 +39,26 @@ export class TransactionsHelper {
 
     this.suspenseAccountId = account.id;
     return this.suspenseAccountId;
+  }
+
+  /**
+   * Returns the ID of the SYS_CASH_VAULT internal account.
+   * The result is cached in memory after the first DB lookup.
+   */
+  async getCashVaultAccountId(): Promise<string> {
+    if (this.cashVaultAccountId) return this.cashVaultAccountId;
+
+    const account = await this.dataSource.getRepository(Account).findOne({
+      where: { accountNumber: SystemAccount.CASH_VAULT as string },
+      withDeleted: false,
+    });
+
+    if (!account) {
+      throw new Error(`${SystemAccount.CASH_VAULT} account not found. Please run the seed script.`);
+    }
+
+    this.cashVaultAccountId = account.id;
+    return this.cashVaultAccountId;
   }
 
   async executeTransaction<T>(operation: (manager: EntityManager) => Promise<T>): Promise<T> {
@@ -101,8 +124,9 @@ export class TransactionsHelper {
     operation: 'add' | 'subtract',
   ): Promise<Decimal> {
     const suspenseId = await this.getSuspenseAccountId();
-    if (accountId === suspenseId) {
-      // Suspense account: INSERT-only ledger entries, never update balance to avoid lock contention.
+    const cashVaultId = await this.getCashVaultAccountId();
+    if (accountId === suspenseId || accountId === cashVaultId) {
+      // System accounts: INSERT-only ledger entries, never update balance in DB to avoid lock contention.
       return new Decimal(0);
     }
 
@@ -136,12 +160,16 @@ export class TransactionsHelper {
     }[]
   ): Promise<void> {
     const suspenseId = await this.getSuspenseAccountId();
+    const cashVaultId = await this.getCashVaultAccountId();
     const records = entries.map(e => manager.create(LedgerEntry, {
       accountId: e.accountId,
       transactionId: e.transactionId,
       type: e.type,
       amount: e.amount.toFixed(2),
-      balanceAfter: e.accountId === suspenseId ? '0.00' : e.balanceAfter.toFixed(2),
+      balanceAfter:
+        (e.accountId === suspenseId || e.accountId === cashVaultId)
+          ? '0.00'
+          : e.balanceAfter.toFixed(2),
     }));
     await manager.save(LedgerEntry, records);
   }
@@ -380,6 +408,26 @@ export class TransactionsHelper {
         type: LedgerEntryType.CREDIT,
         amount,
         balanceAfter: balances.creditAfter,
+      });
+    }
+
+    if (tx.type === TransactionType.DEPOSIT) {
+      const cashVaultId = await this.getCashVaultAccountId();
+      ledgerEntries.push({
+        accountId: cashVaultId,
+        transactionId: tx.id,
+        type: LedgerEntryType.DEBIT,
+        amount,
+        balanceAfter: new Decimal(0),
+      });
+    } else if (tx.type === TransactionType.WITHDRAW) {
+      const cashVaultId = await this.getCashVaultAccountId();
+      ledgerEntries.push({
+        accountId: cashVaultId,
+        transactionId: tx.id,
+        type: LedgerEntryType.CREDIT,
+        amount,
+        balanceAfter: new Decimal(0),
       });
     }
 

@@ -1,205 +1,287 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { AdminAuditAction } from '@/audit-logs/enums/admin-audit-action.enum';
 import { CustomerAuditAction } from '@/audit-logs/enums/customer-audit-action.enum';
 import type { AuditRequestContext } from './audit-context.helper';
-import { HttpException } from '@nestjs/common';
 
-export interface StandardAuditSchema {
-  timestamp: string;
-  action: string;
-  actor: {
-    type: string | null;
-    id: string | null;
-  };
-  context: {
-    ip_address: string | null;
-    user_agent: string | null;
-  };
-  data_changes: {
-    old_data: Record<string, unknown>;
-    new_data: Record<string, unknown>;
-  };
-  outcome: {
-    status: 'SUCCESS' | 'FAILED';
-    error_code: string | null;
-    error_message: string | null;
-  };
-  [key: string]: unknown;
+export interface AuditExtractResult {
+  entity: string | null;
+  entityId: string | null;
+  beforeData: Record<string, any> | null;
+  afterData: Record<string, any> | null;
 }
 
 export class AuditMetadataBuilder {
-  static createBaseSchema(
-    action: string,
-    ctx: Partial<AuditRequestContext>,
-    status: 'SUCCESS' | 'FAILED',
-    err?: Error
-  ): StandardAuditSchema {
-    return {
-      timestamp: new Date().toISOString(),
-      action,
-      actor: {
-        type: ctx.userRole ? ctx.userRole.toUpperCase() : null,
-        id: ctx.userId ?? null,
-      },
-      context: {
-        ip_address: ctx.ip ?? null,
-        user_agent: ctx.userAgent ?? null,
-      },
-      data_changes: {
-        old_data: {},
-        new_data: {},
-      },
-      outcome: {
-        status,
-        error_code: err
-          ? err instanceof HttpException
-            ? err.getStatus().toString()
-            : err && typeof err === 'object' && 'status' in err && typeof (err as Record<string, unknown>).status === 'number'
-              ? String((err as Record<string, unknown>).status)
-              : err && typeof err === 'object' && 'statusCode' in err && typeof (err as Record<string, unknown>).statusCode === 'number'
-                ? String((err as Record<string, unknown>).statusCode)
-                : '500'
-          : null,
-        error_message: err ? err.message : null,
-      },
+  /**
+   * Extract audit log properties for Admin actions (Success path)
+   */
+  static buildAdminSuccess(
+    action: AdminAuditAction,
+    ctx: AuditRequestContext,
+    responseData: Record<string, any> | null,
+  ): AuditExtractResult {
+    let entity: string | null = null;
+    let entityId: string | null = null;
+    let beforeData: Record<string, any> | null = null;
+    let afterData: Record<string, any> | null = null;
+
+    // Determine target entity type
+    if (
+      action === AdminAuditAction.LOCK_USER ||
+      action === AdminAuditAction.UNLOCK_USER ||
+      action === AdminAuditAction.CREATE_USER ||
+      action === AdminAuditAction.DELETE_USER ||
+      action === AdminAuditAction.REACTIVATE_USER_OTP ||
+      action === AdminAuditAction.LOGIN_SUCCESS ||
+      action === AdminAuditAction.LOGOUT
+    ) {
+      entity = 'user';
+    } else if (
+      action === AdminAuditAction.FREEZE_ACCOUNT ||
+      action === AdminAuditAction.UNFREEZE_ACCOUNT ||
+      action === AdminAuditAction.ADMIN_DEPOSIT ||
+      action === AdminAuditAction.ADMIN_WITHDRAW ||
+      action === AdminAuditAction.ADMIN_TRANSFER ||
+      action === AdminAuditAction.UPDATE_ACCOUNT_DAILY_LIMIT
+    ) {
+      entity = 'account';
+    } else if (
+      action === AdminAuditAction.APPROVE_TRANSACTION ||
+      action === AdminAuditAction.REJECT_TRANSACTION
+    ) {
+      entity = 'transaction';
+    } else if (action === AdminAuditAction.UPDATE_SETTINGS) {
+      entity = 'system_settings';
+    }
+
+    // Determine entityId
+    if (responseData?.id) {
+      entityId = responseData.id;
+    } else if (ctx.params?.id) {
+      entityId = ctx.params.id;
+    } else if (responseData?.accountId) {
+      entityId = responseData.accountId;
+    }
+
+    // Determine beforeData / afterData
+    switch (action) {
+      case AdminAuditAction.LOCK_USER:
+      case AdminAuditAction.UNLOCK_USER:
+      case AdminAuditAction.FREEZE_ACCOUNT:
+      case AdminAuditAction.UNFREEZE_ACCOUNT:
+        beforeData = { status: responseData?.oldStatus ?? null };
+        afterData = { status: responseData?.status ?? null };
+        break;
+
+      case AdminAuditAction.ADMIN_DEPOSIT:
+      case AdminAuditAction.ADMIN_WITHDRAW:
+      case AdminAuditAction.ADMIN_TRANSFER:
+        beforeData = {};
+        afterData = {
+          accountId: ctx.params?.id ?? null,
+          toAccountNumber: ctx.body?.toAccountNumber ?? null,
+          amount: ctx.body?.amount ?? null,
+          description: ctx.body?.description ?? null,
+          transactionId: responseData?.id ?? null,
+          status: responseData?.status ?? null,
+        };
+        break;
+
+      case AdminAuditAction.APPROVE_TRANSACTION:
+      case AdminAuditAction.REJECT_TRANSACTION:
+        beforeData = { status: 'pending' };
+        afterData = {
+          requestId: ctx.params?.id ?? null,
+          transactionId: responseData?.id ?? null,
+          status: responseData?.status ?? null,
+        };
+        break;
+
+      case AdminAuditAction.UPDATE_SETTINGS:
+        beforeData = (responseData?.oldValues as Record<string, any>) ?? {};
+        afterData = (responseData?.newValues as Record<string, any>) ?? {};
+        break;
+
+      case AdminAuditAction.CREATE_USER:
+        beforeData = null;
+        afterData = {
+          id: responseData?.id ?? null,
+          fullName: responseData?.fullName ?? null,
+          email: responseData?.email ?? null,
+          role: responseData?.role ?? null,
+        };
+        break;
+
+      case AdminAuditAction.DELETE_USER:
+        beforeData = {};
+        afterData = { deleted: true };
+        break;
+
+      case AdminAuditAction.REACTIVATE_USER_OTP:
+        beforeData = {};
+        afterData = { otpReactivated: true };
+        break;
+
+      case AdminAuditAction.UPDATE_ACCOUNT_DAILY_LIMIT:
+        beforeData = { dailyLimit: responseData?.oldDailyLimit ?? null };
+        afterData = { dailyLimit: responseData?.dailyLimit ?? null };
+        break;
+
+      case AdminAuditAction.LOGIN_SUCCESS:
+        beforeData = {};
+        afterData = { success: true };
+        break;
+
+      case AdminAuditAction.LOGOUT:
+        beforeData = {};
+        afterData = { logout: true };
+        break;
+
+      default:
+        beforeData = {};
+        afterData = responseData ? { ...responseData } : {};
+        break;
+    }
+
+    return { entity, entityId, beforeData, afterData };
+  }
+
+  /**
+   * Extract audit log properties for Customer actions (Success path)
+   */
+  static buildCustomerSuccess(
+    action: CustomerAuditAction,
+    ctx: AuditRequestContext,
+    responseData: Record<string, any> | null,
+  ): AuditExtractResult {
+    let entity: string | null = null;
+    let entityId: string | null = null;
+    let beforeData: Record<string, any> | null = null;
+    let afterData: Record<string, any> | null = null;
+
+    // Determine target entity type
+    if (
+      action === CustomerAuditAction.LOGIN_SUCCESS ||
+      action === CustomerAuditAction.LOGOUT ||
+      action === CustomerAuditAction.UPDATE_PROFILE ||
+      action === CustomerAuditAction.CHANGE_PASSWORD
+    ) {
+      entity = 'user';
+    } else if (
+      action === CustomerAuditAction.TRANSFER ||
+      action === CustomerAuditAction.DEPOSIT ||
+      action === CustomerAuditAction.WITHDRAW
+    ) {
+      entity = 'transaction';
+    }
+
+    // Determine entityId
+    if (responseData?.id) {
+      entityId = responseData.id;
+    } else if (ctx.userId) {
+      entityId = ctx.userId;
+    }
+
+    // Determine beforeData / afterData
+    switch (action) {
+      case CustomerAuditAction.UPDATE_PROFILE: {
+        const resObj = responseData as {
+          fullName?: string;
+          email?: string;
+          phoneNumber?: string;
+          oldValues?: {
+            fullName?: string;
+            email?: string;
+            phoneNumber?: string;
+          };
+        } | null;
+        beforeData = {
+          fullName: resObj?.oldValues?.fullName ?? ctx.userName ?? null,
+          email: resObj?.oldValues?.email ?? ctx.userEmail ?? null,
+          phoneNumber: resObj?.oldValues?.phoneNumber ?? null,
+        };
+        afterData = {
+          fullName: resObj?.fullName ?? ctx.body?.fullName ?? null,
+          email: resObj?.email ?? ctx.body?.email ?? null,
+          phoneNumber: resObj?.phoneNumber ?? ctx.body?.phoneNumber ?? null,
+        };
+        break;
+      }
+
+      case CustomerAuditAction.CHANGE_PASSWORD:
+        beforeData = {};
+        afterData = { passwordChanged: true, changedAt: new Date().toISOString() };
+        break;
+
+      case CustomerAuditAction.TRANSFER:
+        beforeData = {};
+        afterData = {
+          fromAccountId: ctx.body?.fromAccountId ?? null,
+          toAccountNumber: ctx.body?.toAccountNumber ?? null,
+          amount: ctx.body?.amount ?? null,
+          transactionId: responseData?.id ?? null,
+        };
+        break;
+
+      case CustomerAuditAction.DEPOSIT:
+      case CustomerAuditAction.WITHDRAW:
+        beforeData = {};
+        afterData = {
+          accountId: ctx.body?.accountId ?? null,
+          amount: ctx.body?.amount ?? null,
+          transactionId: responseData?.id ?? null,
+        };
+        break;
+
+      case CustomerAuditAction.LOGIN_SUCCESS:
+        beforeData = {};
+        afterData = { success: true };
+        break;
+
+      case CustomerAuditAction.LOGOUT:
+        beforeData = {};
+        afterData = { logout: true };
+        break;
+
+      default:
+        beforeData = {};
+        afterData = responseData ? { ...responseData } : {};
+        break;
+    }
+
+    return { entity, entityId, beforeData, afterData };
+  }
+
+  /**
+   * Extract audit log properties for Admin actions (Failure path)
+   */
+  static buildAdminFail(
+    action: AdminAuditAction,
+    ctx: AuditRequestContext,
+    err: Error,
+  ): AuditExtractResult {
+    const successResult = this.buildAdminSuccess(action, ctx, null);
+    successResult.beforeData = successResult.beforeData ?? {};
+    successResult.afterData = {
+      status: 'FAILED',
+      errorMessage: err.message,
     };
+    return successResult;
   }
 
-  static buildAdminSuccessMetadata(
-    action: AdminAuditAction,
-    ctx: AuditRequestContext,
-    responseData: Record<string, unknown> | null,
-  ): StandardAuditSchema {
-    const meta = this.createBaseSchema(action, ctx, 'SUCCESS');
-    switch (action) {
-      case AdminAuditAction.LOCK_USER:
-      case AdminAuditAction.UNLOCK_USER:
-      case AdminAuditAction.FREEZE_ACCOUNT:
-      case AdminAuditAction.UNFREEZE_ACCOUNT:
-        meta.data_changes.old_data = { status: responseData?.['oldStatus'] ?? null };
-        meta.data_changes.new_data = { status: responseData?.['status'] ?? null };
-        break;
-      case AdminAuditAction.ADMIN_DEPOSIT:
-      case AdminAuditAction.ADMIN_WITHDRAW:
-        meta.data_changes.new_data = {
-          accountId: ctx.params?.['id'] ?? null,
-          amount: ctx.body['amount'] ?? null,
-          description: ctx.body['description'] ?? null,
-          transactionId: responseData?.['id'] ?? null,
-          status: responseData?.['status'] ?? null,
-        };
-        break;
-      case AdminAuditAction.APPROVE_TRANSACTION:
-      case AdminAuditAction.REJECT_TRANSACTION:
-        meta.data_changes.new_data = {
-          requestId: ctx.params?.['id'] ?? null,
-          transactionId: responseData?.['id'] ?? null,
-          status: responseData?.['status'] ?? null,
-        };
-        break;
-      case AdminAuditAction.UPDATE_SETTINGS:
-        meta.data_changes.old_data = (responseData as Record<string, unknown>)?.['oldValues'] as Record<string, unknown> ?? {};
-        meta.data_changes.new_data = (responseData as Record<string, unknown>)?.['newValues'] as Record<string, unknown> ?? {};
-        break;
-      default:
-        break;
-    }
-    return meta;
-  }
-
-  static buildCustomerSuccessMetadata(
-    action: CustomerAuditAction,
-    ctx: AuditRequestContext,
-    responseData?: Record<string, unknown> | null,
-  ): StandardAuditSchema {
-    const meta = this.createBaseSchema(action, ctx, 'SUCCESS');
-    switch (action) {
-      case CustomerAuditAction.UPDATE_PROFILE:
-        meta.data_changes.new_data = { fullName: ctx.body['fullName'] ?? null };
-        break;
-      case CustomerAuditAction.TRANSFER:
-        meta.data_changes.new_data = {
-          fromAccountId: ctx.body['fromAccountId'] ?? null,
-          toAccountNumber: ctx.body['toAccountNumber'] ?? null,
-          amount: ctx.body['amount'] ?? null,
-          transactionId: responseData?.['id'] ?? null,
-        };
-        break;
-      case CustomerAuditAction.DEPOSIT:
-      case CustomerAuditAction.WITHDRAW:
-        meta.data_changes.new_data = {
-          accountId: ctx.body['accountId'] ?? null,
-          amount: ctx.body['amount'] ?? null,
-          transactionId: responseData?.['id'] ?? null,
-        };
-        break;
-      default:
-        break;
-    }
-    return meta;
-  }
-
-  static buildAdminFailMetadata(
-    action: AdminAuditAction,
-    ctx: AuditRequestContext,
-    err: Error,
-  ): StandardAuditSchema {
-    const meta = this.createBaseSchema(action, ctx, 'FAILED', err);
-    switch (action) {
-      case AdminAuditAction.LOCK_USER:
-      case AdminAuditAction.UNLOCK_USER:
-      case AdminAuditAction.FREEZE_ACCOUNT:
-      case AdminAuditAction.UNFREEZE_ACCOUNT:
-        meta.data_changes.new_data = { attemptedStatus: ctx.body['status'] ?? null };
-        break;
-      case AdminAuditAction.ADMIN_DEPOSIT:
-      case AdminAuditAction.ADMIN_WITHDRAW:
-        meta.data_changes.new_data = { 
-          accountId: ctx.params?.['id'] ?? null,
-          attemptedAmount: ctx.body['amount'] ?? null 
-        };
-        break;
-      case AdminAuditAction.APPROVE_TRANSACTION:
-      case AdminAuditAction.REJECT_TRANSACTION:
-        meta.data_changes.new_data = {
-          requestId: ctx.params?.['id'] ?? null,
-        };
-        break;
-      case AdminAuditAction.UPDATE_SETTINGS:
-        meta.data_changes.new_data = { attemptedUpdates: ctx.body['updates'] ?? null };
-        break;
-      default:
-        break;
-    }
-    return meta;
-  }
-
-  static buildCustomerFailMetadata(
+  /**
+   * Extract audit log properties for Customer actions (Failure path)
+   */
+  static buildCustomerFail(
     action: CustomerAuditAction,
     ctx: AuditRequestContext,
     err: Error,
-  ): StandardAuditSchema {
-    const meta = this.createBaseSchema(action, ctx, 'FAILED', err);
-    switch (action) {
-      case CustomerAuditAction.TRANSFER:
-        meta.data_changes.new_data = {
-          fromAccountId: ctx.body['fromAccountId'] ?? null,
-          toAccountNumber: ctx.body['toAccountNumber'] ?? null,
-          attemptedAmount: ctx.body['amount'] ?? null,
-        };
-        break;
-      case CustomerAuditAction.DEPOSIT:
-      case CustomerAuditAction.WITHDRAW:
-        meta.data_changes.new_data = {
-          accountId: ctx.body['accountId'] ?? null,
-          attemptedAmount: ctx.body['amount'] ?? null,
-        };
-        break;
-      case CustomerAuditAction.UPDATE_PROFILE:
-        meta.data_changes.new_data = { attemptedName: ctx.body['fullName'] ?? null };
-        break;
-      default:
-        break;
-    }
-    return meta;
+  ): AuditExtractResult {
+    const successResult = this.buildCustomerSuccess(action, ctx, null);
+    successResult.beforeData = successResult.beforeData ?? {};
+    successResult.afterData = {
+      status: 'FAILED',
+      errorMessage: err.message,
+    };
+    return successResult;
   }
 }

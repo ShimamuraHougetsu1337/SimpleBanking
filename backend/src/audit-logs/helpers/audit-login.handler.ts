@@ -45,55 +45,73 @@ export class AuditLoginHandler {
   }
 
   private async logLoginSuccess(user: any, ip: string): Promise<void> {
-    const action = user.role !== UserRole.CUSTOMER ? AdminAuditAction.LOGIN_SUCCESS : CustomerAuditAction.LOGIN_SUCCESS;
-    const ctx = { ip, userId: user.id, userRole: user.role, userEmail: user.email };
-    const metadata = AuditMetadataBuilder.createBaseSchema(action, ctx, 'SUCCESS');
+    const isCustomer = user.role === UserRole.CUSTOMER;
+    const action = isCustomer ? CustomerAuditAction.LOGIN_SUCCESS : AdminAuditAction.LOGIN_SUCCESS;
+    const ctx = { ip, userId: user.id, userRole: user.role, userEmail: user.email, body: {}, params: {}, userAgent: null, userName: user.fullName };
 
-    const base = {
-      status: AuditStatus.SUCCESS,
-      ipAddress: ip,
-      metadata,
-    };
-    if (user.role !== UserRole.CUSTOMER) {
+    if (!isCustomer) {
+      const ext = AuditMetadataBuilder.buildAdminSuccess(action as AdminAuditAction, ctx, user as Record<string, any>);
       await this.adminAuditLogsService.log({
-        ...base,
-        action: AdminAuditAction.LOGIN_SUCCESS,
+        action: action as AdminAuditAction,
         adminId: user.id,
         adminName: user.fullName,
         adminEmail: user.email,
+        status: AuditStatus.SUCCESS,
+        ipAddress: ip,
+        entity: ext.entity,
+        entityId: ext.entityId,
+        beforeData: ext.beforeData,
+        afterData: ext.afterData,
       });
     } else {
+      const ext = AuditMetadataBuilder.buildCustomerSuccess(action as CustomerAuditAction, ctx, user as Record<string, any>);
       await this.customerAuditLogsService.log({
-        ...base,
-        action: CustomerAuditAction.LOGIN_SUCCESS,
+        action: action as CustomerAuditAction,
         customerId: user.id,
         customerName: user.fullName,
         customerEmail: user.email,
+        status: AuditStatus.SUCCESS,
+        ipAddress: ip,
+        entity: ext.entity,
+        entityId: ext.entityId,
+        beforeData: ext.beforeData,
+        afterData: ext.afterData,
       });
     }
   }
 
   private async logLogout(user: any, ip: string): Promise<void> {
-    const action = user.role !== UserRole.CUSTOMER ? AdminAuditAction.LOGOUT : CustomerAuditAction.LOGOUT;
-    const ctx = { ip, userId: user.id, userRole: user.role, userEmail: user.email };
-    const metadata = AuditMetadataBuilder.createBaseSchema(action, ctx, 'SUCCESS');
+    const isCustomer = user.role === UserRole.CUSTOMER;
+    const action = isCustomer ? CustomerAuditAction.LOGOUT : AdminAuditAction.LOGOUT;
+    const ctx = { ip, userId: user.id, userRole: user.role, userEmail: user.email, body: {}, params: {}, userAgent: null, userName: user.fullName };
 
-    const base = { status: AuditStatus.SUCCESS, ipAddress: ip, metadata };
-    if (user.role !== UserRole.CUSTOMER) {
+    if (!isCustomer) {
+      const ext = AuditMetadataBuilder.buildAdminSuccess(action as AdminAuditAction, ctx, user as Record<string, any>);
       await this.adminAuditLogsService.log({
-        ...base,
-        action: AdminAuditAction.LOGOUT,
+        action: action as AdminAuditAction,
         adminId: user.id,
         adminName: user.fullName,
         adminEmail: user.email,
+        status: AuditStatus.SUCCESS,
+        ipAddress: ip,
+        entity: ext.entity,
+        entityId: ext.entityId,
+        beforeData: ext.beforeData,
+        afterData: ext.afterData,
       });
     } else {
+      const ext = AuditMetadataBuilder.buildCustomerSuccess(action as CustomerAuditAction, ctx, user as Record<string, any>);
       await this.customerAuditLogsService.log({
-        ...base,
-        action: CustomerAuditAction.LOGOUT,
+        action: action as CustomerAuditAction,
         customerId: user.id,
         customerName: user.fullName,
         customerEmail: user.email,
+        status: AuditStatus.SUCCESS,
+        ipAddress: ip,
+        entity: ext.entity,
+        entityId: ext.entityId,
+        beforeData: ext.beforeData,
+        afterData: ext.afterData,
       });
     }
   }
@@ -111,29 +129,37 @@ export class AuditLoginHandler {
       foundRole = found?.role ?? null;
     }
 
-    const action = foundRole && foundRole !== UserRole.CUSTOMER ? AdminAuditAction.LOGIN_FAILED : CustomerAuditAction.LOGIN_FAILED;
-    const ctx = { ip, userEmail: attemptedEmail ?? null };
-    const metadata = AuditMetadataBuilder.createBaseSchema(action, ctx, 'FAILED', err);
+    const isAdmin = foundRole && foundRole !== UserRole.CUSTOMER;
+    const action = isAdmin ? AdminAuditAction.LOGIN_FAILED : CustomerAuditAction.LOGIN_FAILED;
+    const ctx = { ip, userEmail: attemptedEmail ?? null, userId: foundUserId, userRole: foundRole, body: {}, params: {}, userAgent: null, userName: foundUserName };
 
-    if (foundRole && foundRole !== UserRole.CUSTOMER) {
+    if (isAdmin) {
+      const ext = AuditMetadataBuilder.buildAdminFail(action as AdminAuditAction, ctx, err);
       await this.adminAuditLogsService.log({
         status: AuditStatus.FAILED,
-        action: AdminAuditAction.LOGIN_FAILED,
+        action: action as AdminAuditAction,
         adminId: foundUserId,
         adminName: foundUserName,
         adminEmail: attemptedEmail ?? null,
-        metadata,
         ipAddress: ip,
+        entity: ext.entity,
+        entityId: ext.entityId,
+        beforeData: ext.beforeData,
+        afterData: ext.afterData,
       });
     } else {
+      const ext = AuditMetadataBuilder.buildCustomerFail(action as CustomerAuditAction, ctx, err);
       await this.customerAuditLogsService.log({
         status: AuditStatus.FAILED,
-        action: CustomerAuditAction.LOGIN_FAILED,
+        action: action as CustomerAuditAction,
         customerId: foundUserId,
         customerName: foundUserName,
         customerEmail: attemptedEmail ?? null,
-        metadata,
         ipAddress: ip,
+        entity: ext.entity,
+        entityId: ext.entityId,
+        beforeData: ext.beforeData,
+        afterData: ext.afterData,
       });
     }
   }

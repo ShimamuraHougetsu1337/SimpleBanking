@@ -131,6 +131,16 @@ async function run() {
     await queryRunner.manager.save(Account, revenueAccount);
     console.log('SYS_REVENUE account created.');
 
+    const cashVaultAccount = new Account();
+    cashVaultAccount.user = savedSystemUser;
+    cashVaultAccount.accountNumber = 'SYS_CASH_VAULT';
+    cashVaultAccount.name = 'Két Quỹ Tiền Mặt Hệ Thống';
+    cashVaultAccount.balance = '0.00';
+    cashVaultAccount.currency = 'VND';
+    cashVaultAccount.status = AccountStatus.ACTIVE;
+    await queryRunner.manager.save(Account, cashVaultAccount);
+    console.log('SYS_CASH_VAULT account created.');
+
     console.log('Creating accounts...');
 
     // Create Admin Account

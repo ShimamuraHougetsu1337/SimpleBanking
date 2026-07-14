@@ -49,6 +49,16 @@ export const adminService = {
     return data;
   },
 
+  async withdrawFromAccount(id: string, amount: string, description?: string): Promise<unknown> {
+    const { data } = await api.post(`/admin/accounts/${id}/withdraw`, { amount, description });
+    return data;
+  },
+
+  async transferFromAccount(id: string, toAccountNumber: string, amount: string, description?: string): Promise<unknown> {
+    const { data } = await api.post(`/admin/accounts/${id}/transfer`, { toAccountNumber, amount, description });
+    return data;
+  },
+
   async getTransactions(params?: { page?: number; limit?: number; search?: string; startDate?: string; endDate?: string; type?: string }): Promise<GetTransactionsResponse> {
     const { data } = await api.get('/admin/transactions', { params });
     return data;

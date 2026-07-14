@@ -17,5 +17,6 @@ export enum SystemAccount {
    */
   FEE_SUSPENSE = 'SYS_FEE_SUSPENSE',
   REVENUE = 'SYS_REVENUE',
+  CASH_VAULT = 'SYS_CASH_VAULT',
   EMAIL = 'system@banking.local'
 }

@@ -67,17 +67,7 @@ export default function CustomerAuditLogTable({ logs, loading, pagination }: Pro
         </Tag>
       ),
     },
-    {
-      title: 'Transaction ID',
-      dataIndex: 'transactionId',
-      key: 'transactionId',
-      align: 'center',
-      render: (txId) => txId ? (
-        <Text copyable style={{ fontFamily: 'monospace' }}>
-          {txId}
-        </Text>
-      ) : '-',
-    },
+
     {
       title: 'IP Address',
       dataIndex: 'ipAddress',
@@ -100,11 +90,19 @@ export default function CustomerAuditLogTable({ logs, loading, pagination }: Pro
       scroll={{ x: 'max-content' }}
       expandable={{
         expandedRowRender: (record) => (
-          <div style={{ padding: '8px 16px' }}>
+          <div style={{ padding: '8px 16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {record.transactionId && (
+              <div style={{ background: '#f8fafc', borderRadius: 8, padding: '12px 16px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Text strong style={{ color: '#475569', fontSize: 13 }}>Mã giao dịch (Transaction ID):</Text>
+                <Text copyable style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: 13 }}>
+                  {record.transactionId}
+                </Text>
+              </div>
+            )}
             <AuditMetadataViewer metadata={record.metadata} />
           </div>
         ),
-        rowExpandable: (record) => !!record.metadata,
+        rowExpandable: (record) => !!record.metadata || !!record.transactionId,
       }}
     />
   );

@@ -55,11 +55,36 @@ export default function SystemDashboard({ stats }: SystemDashboardProps) {
         <Col xs={24} sm={8}>
           <Card style={CARD_SHADOW_STYLE} styles={{ body: { padding: '24px' } }}>
             <Statistic
-              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Tổng số dư hệ thống</span>}
-              value={stats.totalBalance}
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Tổng tiền ký gửi khách hàng</span>}
+              value={stats.totalCustomerDeposits || stats.totalBalance}
               formatter={(value) => formatVnd(value.toString())}
               prefix={<WalletOutlined style={{ color: '#8B5CF6' }} />}
               styles={{ content: { color: '#8B5CF6', fontWeight: 700, fontSize: 20 } }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[24, 24]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12}>
+          <Card style={CARD_SHADOW_STYLE} styles={{ body: { padding: '24px' } }}>
+            <Statistic
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Két quỹ tiền mặt hệ thống (Cash Vault)</span>}
+              value={stats.cashVaultBalance || '0.00'}
+              formatter={(value) => formatVnd(value.toString())}
+              prefix={<BankOutlined style={{ color: '#059669' }} />}
+              styles={{ content: { color: '#059669', fontWeight: 700, fontSize: 20 } }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Card style={CARD_SHADOW_STYLE} styles={{ body: { padding: '24px' } }}>
+            <Statistic
+              title={<span style={{ color: '#64748b', fontWeight: 500 }}>Doanh thu từ phí dịch vụ (Revenue)</span>}
+              value={stats.bankRevenue || '0.00'}
+              formatter={(value) => formatVnd(value.toString())}
+              prefix={<WalletOutlined style={{ color: '#D97706' }} />}
+              styles={{ content: { color: '#D97706', fontWeight: 700, fontSize: 20 } }}
             />
           </Card>
         </Col>

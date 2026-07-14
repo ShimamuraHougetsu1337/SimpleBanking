@@ -60,13 +60,17 @@ export class AuditInterceptor implements NestInterceptor {
 
         // --- Admin Actions ---
         if (adminAction) {
+          const ext = AuditMetadataBuilder.buildAdminSuccess(adminAction, ctx, responseData as Record<string, unknown> | null);
           await this.adminAuditLogsService.log({
             adminId: ctx.userId,
             adminName: ctx.userName,
             adminEmail: ctx.userEmail,
             action: adminAction,
             status: AuditStatus.SUCCESS,
-            metadata: AuditMetadataBuilder.buildAdminSuccessMetadata(adminAction, ctx, responseData as Record<string, unknown>),
+            entity: ext.entity,
+            entityId: ext.entityId,
+            beforeData: ext.beforeData,
+            afterData: ext.afterData,
             ipAddress: ctx.ip,
             userAgent: ctx.userAgent,
           });
@@ -74,6 +78,7 @@ export class AuditInterceptor implements NestInterceptor {
 
         // --- Customer Actions ---
         if (customerAction) {
+          const ext = AuditMetadataBuilder.buildCustomerSuccess(customerAction, ctx, responseData as Record<string, unknown> | null);
           const transactionId = AuditContextHelper.extractTransactionId(customerAction, responseData);
           await this.customerAuditLogsService.log({
             customerId: ctx.userId,
@@ -82,8 +87,10 @@ export class AuditInterceptor implements NestInterceptor {
             action: customerAction,
             status: AuditStatus.SUCCESS,
             transactionId,
-            // Luôn ghi lại schema chuẩn mới
-            metadata: AuditMetadataBuilder.buildCustomerSuccessMetadata(customerAction, ctx, responseData as Record<string, unknown> | null),
+            entity: ext.entity,
+            entityId: ext.entityId,
+            beforeData: ext.beforeData,
+            afterData: ext.afterData,
             ipAddress: ctx.ip,
             userAgent: ctx.userAgent,
           });
@@ -96,19 +103,24 @@ export class AuditInterceptor implements NestInterceptor {
         }
         // --- Admin Action Failed ---
         else if (adminAction) {
+          const ext = AuditMetadataBuilder.buildAdminFail(adminAction, ctx, err);
           await this.adminAuditLogsService.log({
             adminId: ctx.userId,
             adminName: ctx.userName,
             adminEmail: ctx.userEmail,
             action: adminAction,
             status: AuditStatus.FAILED,
-            metadata: AuditMetadataBuilder.buildAdminFailMetadata(adminAction, ctx, err),
+            entity: ext.entity,
+            entityId: ext.entityId,
+            beforeData: ext.beforeData,
+            afterData: ext.afterData,
             ipAddress: ctx.ip,
             userAgent: ctx.userAgent,
           });
         }
         // --- Customer Action Failed ---
         else if (customerAction) {
+          const ext = AuditMetadataBuilder.buildCustomerFail(customerAction, ctx, err);
           await this.customerAuditLogsService.log({
             customerId: ctx.userId,
             customerName: ctx.userName,
@@ -116,7 +128,10 @@ export class AuditInterceptor implements NestInterceptor {
             action: customerAction,
             status: AuditStatus.FAILED,
             transactionId: null,
-            metadata: AuditMetadataBuilder.buildCustomerFailMetadata(customerAction, ctx, err),
+            entity: ext.entity,
+            entityId: ext.entityId,
+            beforeData: ext.beforeData,
+            afterData: ext.afterData,
             ipAddress: ctx.ip,
             userAgent: ctx.userAgent,
           });

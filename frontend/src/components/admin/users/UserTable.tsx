@@ -76,13 +76,21 @@ export const UserTable = ({
       align: 'center' as const,
       render: (record: AdminUser) => (
         <Space size={4} wrap>
-          <Tag variant="filled" color={record.status === 'active' ? 'success' : 'error'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
-            {record.status.toUpperCase()}
-          </Tag>
-          {record.isOtpBlocked && (
-            <Tag color="warning" style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
-              OTP BỊ KHÓA
+          {record.deletedAt ? (
+            <Tag variant="filled" color="default" style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500, backgroundColor: '#e2e8f0', color: '#475569' }}>
+              ĐÃ XÓA
             </Tag>
+          ) : (
+            <>
+              <Tag variant="filled" color={record.status === 'active' ? 'success' : 'error'} style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
+                {record.status.toUpperCase()}
+              </Tag>
+              {record.isOtpBlocked && (
+                <Tag color="warning" style={{ borderRadius: 12, padding: '0 12px', fontWeight: 500 }}>
+                  OTP BỊ KHÓA
+                </Tag>
+              )}
+            </>
           )}
         </Space>
       ),
@@ -145,6 +153,23 @@ export const UserTable = ({
             title="Lịch sử"
           />
           {(() => {
+            if (record.deletedAt) {
+              return (
+                <Tooltip title="Không thể thay đổi trạng thái của tài khoản đã bị xóa">
+                  <span>
+                    <Button
+                      type="text"
+                      disabled
+                      icon={<LockOutlined />}
+                      style={{ display: 'inline-flex', alignItems: 'center', pointerEvents: 'none' }}
+                    >
+                      Khóa
+                    </Button>
+                  </span>
+                </Tooltip>
+              );
+            }
+
             const cannotChangeStatus = 
               currentUser?.role !== UserRole.SUPERADMIN &&
               (currentUser?.role !== UserRole.MANAGER || record.role !== UserRole.CUSTOMER);
@@ -192,7 +217,7 @@ export const UserTable = ({
               </Button>
             );
           })()}
-          {record.isOtpBlocked && (currentUser?.role === UserRole.SUPERADMIN || currentUser?.role === UserRole.MANAGER) && record.role === UserRole.CUSTOMER && (
+          {record.isOtpBlocked && !record.deletedAt && (currentUser?.role === UserRole.SUPERADMIN || currentUser?.role === UserRole.MANAGER) && record.role === UserRole.CUSTOMER && (
             <Button
               type="text"
               style={{ color: '#D97706', display: 'inline-flex', alignItems: 'center' }}
@@ -211,21 +236,35 @@ export const UserTable = ({
             </Button>
           )}
           {currentUser?.role === UserRole.SUPERADMIN && (
-            <Button
-              danger
-              type="text"
-              icon={<DeleteOutlined />}
-              onClick={() => Modal.confirm({
-                title: 'Xác nhận xóa người dùng?',
-                content: 'Hành động này sẽ vô hiệu hóa hoàn toàn người dùng (Xóa mềm). Bạn có chắc chắn không?',
-                okText: 'Xóa',
-                okType: 'danger',
-                cancelText: 'Hủy',
-                onOk: () => onDeleteUser(record.id)
-              })}
-              style={{ display: 'inline-flex', alignItems: 'center' }}
-              title="Xóa mềm"
-            />
+            record.deletedAt ? (
+              <Tooltip title="Tài khoản này đã được xóa trước đó">
+                <span>
+                  <Button
+                    danger
+                    type="text"
+                    disabled
+                    icon={<DeleteOutlined />}
+                    style={{ display: 'inline-flex', alignItems: 'center', pointerEvents: 'none' }}
+                  />
+                </span>
+              </Tooltip>
+            ) : (
+              <Button
+                danger
+                type="text"
+                icon={<DeleteOutlined />}
+                onClick={() => Modal.confirm({
+                  title: 'Xác nhận xóa người dùng?',
+                  content: 'Hành động này sẽ vô hiệu hóa hoàn toàn người dùng (Xóa mềm). Bạn có chắc chắn không?',
+                  okText: 'Xóa',
+                  okType: 'danger',
+                  cancelText: 'Hủy',
+                  onOk: () => onDeleteUser(record.id)
+                })}
+                style={{ display: 'inline-flex', alignItems: 'center' }}
+                title="Xóa mềm"
+              />
+            )
           )}
         </div>
       ),

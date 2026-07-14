@@ -1,15 +1,18 @@
 import { useState, useDeferredValue } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { queryKeys } from '@/constants/queryKeys';
 import { adminService } from '@/services/admin.service';
 
 export function useAdminAccountsQuery() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const type = (searchParams.get('tab') as 'customer' | 'system') || 'customer';
+
   const [searchQuery, setSearchQuery] = useState('');
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [type, setType] = useState<'customer' | 'system'>('customer');
 
   const { data, isLoading, error } = useQuery({
     queryKey: [...queryKeys.admin.accounts.all, { page, limit: pageSize, search: deferredSearchQuery, type }],
@@ -37,7 +40,11 @@ export function useAdminAccountsQuery() {
   };
 
   const handleTypeChange = (newType: 'customer' | 'system') => {
-    setType(newType);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', newType);
+      return next;
+    }, { replace: true });
     setPage(1);
   };
 

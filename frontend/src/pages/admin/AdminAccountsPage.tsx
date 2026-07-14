@@ -5,7 +5,7 @@ import type { AdminAccount } from '@/types/admin';
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { AdminAccountTable } from '@/components/admin/accounts/AdminAccountTable';
-import { AdminDepositModal } from '@/components/admin/accounts/AdminDepositModal';
+import { AdminTransactionModal } from '@/components/admin/accounts/AdminTransactionModal';
 import { LimitModal } from '@/components/admin/accounts/LimitModal';
 import { useAuthStore } from '@/store/auth.store';
 import { UserRole } from '@/constants/roles';
@@ -33,24 +33,28 @@ export default function AdminAccountsPage() {
     handleFreezeAccount,
     handleUnfreezeAccount,
     handleDeposit,
+    handleWithdraw,
+    handleTransfer,
     handleUpdateDailyLimit,
     isUpdatingDailyLimit,
     isDepositing,
+    isWithdrawing,
+    isTransferring,
     isLoading,
   } = useAdminAccounts();
 
-  const [depositModalVisible, setDepositModalVisible] = useState(false);
+  const [transactionModalVisible, setTransactionModalVisible] = useState(false);
   const [limitModalVisible, setLimitModalVisible] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<AdminAccount | null>(null);
   const currentUser = useAuthStore((s) => s.user);
 
-  const openDepositModal = (account: AdminAccount) => {
+  const openTransactionModal = (account: AdminAccount) => {
     setSelectedAccount(account);
-    setDepositModalVisible(true);
+    setTransactionModalVisible(true);
   };
 
-  const closeDepositModal = () => {
-    setDepositModalVisible(false);
+  const closeTransactionModal = () => {
+    setTransactionModalVisible(false);
     setSelectedAccount(null);
   };
 
@@ -101,18 +105,22 @@ export default function AdminAccountsPage() {
           onPageChange={handlePageChange}
           onFreezeAccount={handleFreezeAccount}
           onUnfreezeAccount={handleUnfreezeAccount}
-          onOpenDepositModal={openDepositModal}
+          onOpenTransactionModal={openTransactionModal}
           onOpenLimitModal={currentUser?.role === UserRole.TELLER ? undefined : openLimitModal}
           isSystemTab={type === 'system'}
         />
       </Card>
 
-      <AdminDepositModal
-        open={depositModalVisible}
+      <AdminTransactionModal
+        open={transactionModalVisible}
         account={selectedAccount}
-        onCancel={closeDepositModal}
+        onCancel={closeTransactionModal}
         onDeposit={handleDeposit}
+        onWithdraw={handleWithdraw}
+        onTransfer={handleTransfer}
         isDepositing={isDepositing}
+        isWithdrawing={isWithdrawing}
+        isTransferring={isTransferring}
       />
 
       <LimitModal

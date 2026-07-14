@@ -8,7 +8,11 @@ export class FeesService {
   ) { }
 
   getTransferFee(): { fee: string } {
-    const feeVal = this.systemSettingsService.getSetting<number>('transfer_fee');
-    return { fee: feeVal !== null ? feeVal.toFixed(2) : '0.00' };
+    const feeVal = this.systemSettingsService.getSetting<number | string>('transfer_fee');
+    if (feeVal === null || feeVal === undefined) {
+      return { fee: '0.00' };
+    }
+    const numFee = typeof feeVal === 'string' ? parseFloat(feeVal) : feeVal;
+    return { fee: isNaN(numFee) ? '0.00' : numFee.toFixed(2) };
   }
 }

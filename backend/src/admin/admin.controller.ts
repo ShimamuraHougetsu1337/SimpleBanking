@@ -209,6 +209,20 @@ export class AdminController {
     return this.adminService.withdrawFromAccount(id, amount, admin.id, description);
   }
 
+  @Post('accounts/:id/transfer')
+  @Roles(UserRole.TELLER, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Transfer money from an account (TELLER/MANAGER)' })
+  @AdminLog(AdminAuditAction.ADMIN_TRANSFER)
+  async transferFromAccount(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('toAccountNumber') toAccountNumber: string,
+    @Body('amount') amount: string,
+    @CurrentUser() admin: User,
+    @Body('description') description?: string,
+  ) {
+    return this.adminService.transferFromAccount(id, toAccountNumber, amount, admin.id, description);
+  }
+
   @Post('transaction-requests/:id/approve')
   @Roles(UserRole.MANAGER)
   @ApiOperation({ summary: 'Approve a pending transaction request (MANAGER only)' })

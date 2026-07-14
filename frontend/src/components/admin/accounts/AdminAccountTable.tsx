@@ -20,7 +20,7 @@ interface AdminAccountTableProps {
   onPageChange: (page: number, pageSize: number) => void;
   onFreezeAccount: (id: string) => void;
   onUnfreezeAccount: (id: string) => void;
-  onOpenDepositModal: (account: AdminAccount) => void;
+  onOpenTransactionModal: (account: AdminAccount) => void;
   onOpenLimitModal?: (account: AdminAccount) => void;
   isSystemTab?: boolean;
 }
@@ -34,7 +34,7 @@ export const AdminAccountTable = ({
   onPageChange,
   onFreezeAccount,
   onUnfreezeAccount,
-  onOpenDepositModal,
+  onOpenTransactionModal,
   onOpenLimitModal,
   isSystemTab = false,
 }: AdminAccountTableProps) => {
@@ -148,11 +148,11 @@ export const AdminAccountTable = ({
                 <Button
                   type="text"
                   icon={<DollarOutlined />}
-                  onClick={() => onOpenDepositModal(record)}
+                  onClick={() => onOpenTransactionModal(record)}
                   style={{ color: '#10B981' }}
                   disabled={record.status !== 'active'}
                 >
-                  Nạp tiền
+                  Giao dịch
                 </Button>
               )}
               {record.ownerEmail === 'admin@gmail.com' ? (

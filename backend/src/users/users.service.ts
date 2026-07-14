@@ -165,11 +165,17 @@ export class UsersService {
     return this.userRepository.count({ where: { status } });
   }
 
-  async updateProfile(id: string, dto: UpdateProfileDto): Promise<User> {
+  async updateProfile(id: string, dto: UpdateProfileDto): Promise<User & { oldValues?: any }> {
     const user = await this.findById(id);
     if (!user) {
       throw new NotFoundException(`User with id "${id}" not found`);
     }
+
+    const oldValues = {
+      fullName: user.fullName || null,
+      email: user.email || null,
+      phoneNumber: user.phoneNumber || null,
+    };
 
     // Ghi lại lịch sử các trường nhạy cảm
     for (const field of ['fullName', 'email', 'phoneNumber'] as const) {
@@ -189,7 +195,8 @@ export class UsersService {
     if (dto.phoneNumber !== undefined) user.phoneNumber = dto.phoneNumber;
 
     try {
-      return await this.userRepository.save(user);
+      const savedUser = await this.userRepository.save(user);
+      return Object.assign(savedUser, { oldValues });
     } catch (error) {
       if (error instanceof OptimisticLockVersionMismatchError) {
         throw new ConflictException(
