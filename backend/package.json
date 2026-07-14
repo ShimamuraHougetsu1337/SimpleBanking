@@ -8,6 +8,7 @@
   "scripts": {
     "build": "nest build && tsc-alias",
     "dev": "nest start --watch",
+    "dev:log": "npm run dev 2>&1 | tee logs/app.log",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

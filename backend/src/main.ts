@@ -8,10 +8,13 @@ import {
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
+import { JsonLogger } from './common/logger/json.logger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+
+  // --- Logger ---
+  app.useLogger(app.get(JsonLogger));
 
   // --- Global prefix ---
   app.setGlobalPrefix('api');
@@ -26,9 +29,6 @@ async function bootstrap() {
     origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
     credentials: true,
   });
-
-  // --- Global exception filter — standardized error format per API_SPEC.md ---
-  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // --- Cookie Parser ---
   app.use(cookieParser());

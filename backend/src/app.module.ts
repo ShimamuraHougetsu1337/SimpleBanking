@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
@@ -13,13 +13,18 @@ import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ThrottlerModule, ThrottlerModuleOptions } from '@nestjs/throttler';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { MaintenanceGuard } from './common/guards/maintenance.guard';
+import { GlobalExceptionFilter } from './common/filters/http-exception.filter';
 import databaseConfig from './config/database.config';
 import throttlerConfig from './config/throttler.config';
+import { AsyncContextModule } from './common/context/async-context.module';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
+    AsyncContextModule,
     // Load environment variables globally — all modules can use ConfigService
     ConfigModule.forRoot({
       isGlobal: true,
@@ -45,6 +50,7 @@ import throttlerConfig from './config/throttler.config';
     AdminModule,
     TasksModule,
     AuditLogsModule,
+    HealthModule,
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     ThrottlerModule.forRootAsync({
@@ -61,6 +67,14 @@ import throttlerConfig from './config/throttler.config';
       provide: APP_GUARD,
       useClass: MaintenanceGuard,
     },
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RequestIdMiddleware).forRoutes('*');
+  }
+}
