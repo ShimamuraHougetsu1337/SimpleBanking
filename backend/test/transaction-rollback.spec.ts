@@ -89,9 +89,12 @@ describe('Transaction Rollback Integration', () => {
       accountNumber: '2222222222', userId: userB.id, balance: '500.00', status: AccountStatus.ACTIVE, name: 'Account B'
     }));
     
-    // Create suspense account to avoid "not found" errors
+    // Create suspense and cash vault accounts to avoid "not found" errors
     await accountRepo.save(accountRepo.create({
       accountNumber: SystemAccount.FEE_SUSPENSE, balance: '0.00', status: AccountStatus.ACTIVE, name: 'Suspense', userId: userA.id
+    }));
+    await accountRepo.save(accountRepo.create({
+      accountNumber: SystemAccount.CASH_VAULT, balance: '1000000000.00', status: AccountStatus.ACTIVE, name: 'Cash Vault', userId: userA.id
     }));
   }, 30000);
 
