@@ -12,6 +12,7 @@ import { TransactionsHelper } from '../helpers/transactions.helper';
 import { SystemSettingsService } from '@/system-settings/system-settings.service';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { Transaction, TransactionType, TransactionStatus } from '../entities/transaction.entity';
+import { ReversalService } from './reversal.service';
 import Decimal from 'decimal.js';
 
 describe('TransactionRequestsService', () => {
@@ -21,6 +22,7 @@ describe('TransactionRequestsService', () => {
   let systemSettingsService: jest.Mocked<SystemSettingsService>;
   let transactionRequestRepository: jest.Mocked<Repository<TransactionRequest>>;
   let mockManager: jest.Mocked<EntityManager>;
+  let reversalService: jest.Mocked<ReversalService>;
 
   beforeEach(async () => {
     mockManager = {
@@ -69,6 +71,10 @@ describe('TransactionRequestsService', () => {
       count: jest.fn(),
     } as unknown as jest.Mocked<Repository<TransactionRequest>>;
 
+    reversalService = {
+      reverseTransaction: jest.fn(),
+    } as unknown as jest.Mocked<ReversalService>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TransactionRequestsService,
@@ -76,6 +82,7 @@ describe('TransactionRequestsService', () => {
         { provide: DataSource, useValue: dataSource },
         { provide: TransactionsHelper, useValue: transactionsHelper },
         { provide: SystemSettingsService, useValue: systemSettingsService },
+        { provide: ReversalService, useValue: reversalService },
       ],
     }).compile();
 

@@ -1,6 +1,7 @@
 {
   "moduleNameMapper": {
-    "^@/(.*)$": "<rootDir>/src/$1"
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^uuid$": "<rootDir>/test/__mocks__/uuid.ts"
   },
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": "..",

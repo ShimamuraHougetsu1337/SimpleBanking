@@ -90,9 +90,12 @@ describe('Concurrency Lock Verification Integration', () => {
       passwordHash: 'hash', fullName: 'Teller User', email: 'teller@example.com', phoneNumber: '000000000T', role: UserRole.TELLER
     }));
 
-    // Suspense account is needed by helper
+    // Suspense and Cash Vault accounts are needed by helper
     await accountRepo.save(accountRepo.create({
       accountNumber: SystemAccount.FEE_SUSPENSE, balance: '0.00', status: AccountStatus.ACTIVE, name: 'Suspense', userId: userA.id
+    }));
+    await accountRepo.save(accountRepo.create({
+      accountNumber: SystemAccount.CASH_VAULT, balance: '1000000000.00', status: AccountStatus.ACTIVE, name: 'Cash Vault', userId: userA.id
     }));
 
     accA = await accountRepo.save(accountRepo.create({ accountNumber: '111', userId: userA.id, balance: '0.00', status: AccountStatus.ACTIVE, name: 'Acc A' }));
@@ -179,7 +182,7 @@ describe('Concurrency Lock Verification Integration', () => {
     if (rejected.length > 0) {
       const reason: unknown = (rejected[0]).reason;
       const errorMessage = reason instanceof Error ? reason.message : String(reason);
-      expect(errorMessage).toContain('Số dư tài khoản không đủ');
+      expect(errorMessage).toContain('Số dư tài khoản khả dụng không đủ');
     }
   });
 
