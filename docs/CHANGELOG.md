@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ---
 
+## [2026-07-20]
+
+### Added
+- **Dedicated Idempotency Key Engine (Module 2)**: Added `IdempotencyKey` entity (`idempotency_keys` table) storing `key`, `request_hash`, `response`, `status_code`, `status`, `created_at`, and `expired_at` fields.
+- **Payload Conflict Protection (409 Conflict)**: Implemented `IdempotencyService` featuring deterministic SHA-256 payload hashing (`generateRequestHash`) to detect payload modifications for reused keys and throw HTTP `409 Conflict`.
+- **Idempotency Unit Tests**: Added `idempotency.service.spec.ts` unit test suite covering payload hash generation, cached response delivery, and status state machine transitions (`PROCESSING`, `COMPLETED`, `FAILED`).
+
+### Changed
+- **Protected Transaction API Endpoints**: Updated `TransactionsController` (`/transfer`, `/deposit`, `/withdraw`) to delegate request deduplication and response caching to `IdempotencyService`.
+- **Frontend Session Idempotency Keys**: Refactored `useTransferFlow`, `DepositModal`, and `WithdrawModal` on the frontend to generate `idempotencyKey` once per form/modal session and maintain the same key across retry attempts until transaction completion.
+
 ## [2026-07-13]
 
 ### Added
