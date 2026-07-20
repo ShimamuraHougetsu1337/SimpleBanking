@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, ConflictException, BadRequestException, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, OptimisticLockVersionMismatchError } from 'typeorm';
 import { SystemSetting } from './entities/system-setting.entity';
@@ -91,6 +91,26 @@ export class SystemSettingsService implements OnApplicationBootstrap {
     return null;
   }
 
+  private validateSettingValue(setting: SystemSetting, val: unknown): void {
+    if (
+      setting.groupName === 'transaction' ||
+      ['int', 'decimal', 'float'].includes(setting.dataType)
+    ) {
+      const numVal = Number(val);
+      if (
+        val === null ||
+        val === undefined ||
+        val === '' ||
+        isNaN(numVal) ||
+        numVal < 0
+      ) {
+        throw new BadRequestException(
+          `Giá trị cho "${setting.displayName || setting.settingKey}" phải là số hợp lệ lớn hơn hoặc bằng 0.`,
+        );
+      }
+    }
+  }
+
   async updateSettings(updates: Record<string, any>, updatedBy?: string): Promise<UpdateSettingsResult> {
     const settings = await this.settingsRepo.find();
 
@@ -99,6 +119,9 @@ export class SystemSettingsService implements OnApplicationBootstrap {
 
     for (const setting of settings) {
       if (updates[setting.settingKey] !== undefined) {
+        const val = updates[setting.settingKey] as unknown;
+        this.validateSettingValue(setting, val);
+
         // Snapshot giá trị cũ trước khi ghi đè
         oldValues[setting.settingKey] = this.parseValue(setting.settingValue, setting.dataType);
         const newValue = this.serializeValue(updates[setting.settingKey], setting.dataType);

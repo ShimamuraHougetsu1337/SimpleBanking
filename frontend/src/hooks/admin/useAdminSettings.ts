@@ -7,7 +7,7 @@ import type { SystemSetting } from '@/types/admin';
 
 export function useAdminSettings() {
   const queryClient = useQueryClient();
-  const [pendingUpdates, setPendingUpdates] = useState<Record<string, any>>({});
+  const [pendingUpdates, setPendingUpdates] = useState<Record<string, unknown>>({});
 
   const { data: serverSettings = [], isLoading } = useQuery({
     queryKey: queryKeys.admin.settings.all,
@@ -31,15 +31,31 @@ export function useAdminSettings() {
     return s;
   });
 
-  const handleUpdateSetting = (key: string, value: any) => {
+  const handleUpdateSetting = (key: string, value: unknown) => {
     setPendingUpdates(prev => ({ ...prev, [key]: value }));
   };
 
   const { mutate: handleSave, isPending: isSaving } = useMutation({
     mutationFn: async () => {
-      if (Object.keys(pendingUpdates).length === 0) {
+      const keys = Object.keys(pendingUpdates);
+      if (keys.length === 0) {
         throw new Error('NO_CHANGES');
       }
+
+      for (const key of keys) {
+        const setting = serverSettings.find((s: SystemSetting) => s.settingKey === key);
+        if (setting) {
+          const isNumeric = setting.groupName === 'transaction' || ['int', 'decimal', 'float'].includes(setting.dataType);
+          if (isNumeric) {
+            const val = pendingUpdates[key];
+            const numVal = Number(val);
+            if (val === '' || val === null || val === undefined || isNaN(numVal) || numVal < 0) {
+              throw new Error(`INVALID_VALUE:${setting.displayName || setting.settingKey}`);
+            }
+          }
+        }
+      }
+
       return await adminService.updateSettings(pendingUpdates);
     },
     onSuccess: () => {
@@ -50,12 +66,20 @@ export function useAdminSettings() {
         style: { marginTop: '10vh' },
       });
     },
-    onError: (error: any) => {
+    onError: (err: unknown) => {
+      const error = err as { message?: string; response?: { data?: { message?: string | string[] } } };
       if (error.message === 'NO_CHANGES') {
         message.info('Không có thay đổi nào để lưu');
+      } else if (typeof error.message === 'string' && error.message.startsWith('INVALID_VALUE:')) {
+        const name = error.message.replace('INVALID_VALUE:', '');
+        message.error(`Giá trị cho "${name}" phải là số lớn hơn hoặc bằng 0.`);
       } else {
-        console.error('Failed to update settings:', error);
-        message.error('Có lỗi xảy ra khi lưu cấu hình');
+        console.error('Failed to update settings:', err);
+        const serverMsg = error?.response?.data?.message;
+        const displayMsg = Array.isArray(serverMsg)
+          ? serverMsg.join(', ')
+          : serverMsg || 'Có lỗi xảy ra khi lưu cấu hình';
+        message.error(displayMsg);
       }
     },
   });

@@ -71,13 +71,25 @@ export default function AdminSettingsPage() {
       );
     }
 
-    if (setting.groupName === 'transaction') {
+    const isNumeric = setting.groupName === 'transaction' || ['int', 'decimal', 'float'].includes(setting.dataType);
+
+    if (isNumeric) {
       return (
         <InputNumber
-          value={setting.value ? Number(setting.value) : undefined}
+          value={setting.value !== undefined && setting.value !== null && setting.value !== '' ? Number(setting.value) : undefined}
           formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-          parser={(value) => value ? Number(value.replace(/,/g, '')) : 0}
-          onChange={(val) => handleUpdateSetting(setting.settingKey, val !== null ? String(val) : '')}
+          parser={(value) => {
+            if (!value) return 0;
+            const parsed = Number(value.replace(/,/g, ''));
+            return isNaN(parsed) ? 0 : parsed;
+          }}
+          onChange={(val) => {
+            if (val === null || val === undefined) {
+              handleUpdateSetting(setting.settingKey, '');
+            } else {
+              handleUpdateSetting(setting.settingKey, val);
+            }
+          }}
           style={{ width: '100%', minWidth: 200, maxWidth: 300, height: 40, borderRadius: 8, display: 'inline-flex', alignItems: 'center' }}
         />
       );
