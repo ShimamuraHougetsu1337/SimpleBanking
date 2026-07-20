@@ -14,6 +14,7 @@ import {
   BankOutlined,
   DatabaseOutlined,
   AuditOutlined,
+  WarningOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -26,6 +27,7 @@ const getNavGroups = (role?: string) => {
     { key: '/admin/accounts', label: 'Quản lý tài khoản', icon: <BankOutlined /> },
     { key: '/admin/transactions', label: 'Lịch sử giao dịch', icon: <TransactionOutlined /> },
     { key: '/admin/transaction-requests', label: 'Yêu cầu giao dịch', icon: <TransactionOutlined /> },
+    { key: '/admin/fraud-flags', label: 'Cảnh báo gian lận', icon: <WarningOutlined /> },
   ];
 
   if (role === UserRole.SUPERADMIN || role === UserRole.MANAGER) {

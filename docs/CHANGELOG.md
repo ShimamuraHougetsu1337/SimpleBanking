@@ -9,17 +9,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [2026-07-20]
 
 ### Added
+- **Basic Fraud Detection Module (Module 6.2)**: Implemented automated rule-based fraud detection engine including `FraudFlag` entity (`fraud_flags` table) and DTOs (`GetFraudFlagsQueryDto`, `ReviewFraudFlagDto`).
+- **Fraud Detection Rules**: Built high frequency detection rule (`HIGH_FREQUENCY_1MIN`, flags when >= 5 transactions occur within 1 minute from the same account) and high value spike detection rule (`HIGH_VALUE_SPIKE_30D`, flags when transaction amount is >= 5x the account's 30-day average volume after establishing a baseline of >= 2 past transactions).
+- **Non-blocking Fraud Trigger**: Integrated non-blocking fraud rule checking into `TransactionsHelper.executeMovement` to create `PENDING_REVIEW` flags without interrupting legitimate customer transactions.
+- **Admin Fraud Flag Review API & Portal**: Created `FraudDetectionController` (`GET /admin/fraud-flags`, `PATCH /admin/fraud-flags/:id/review`) and frontend management page `AdminFraudFlagsPage.tsx` with rule badges, full reason descriptions, status filtering, and review modal with optional instant account locking.
+- **Fraud Detection Unit Tests**: Added `fraud-detection.service.spec.ts` unit test suite covering high frequency detection, high value spike detection, flag approval/rejection workflows, and account lock behavior.
 - **Dedicated Idempotency Key Engine (Module 2)**: Added `IdempotencyKey` entity (`idempotency_keys` table) storing `key`, `request_hash`, `response`, `status_code`, `status`, `created_at`, and `expired_at` fields.
 - **Payload Conflict Protection (409 Conflict)**: Implemented `IdempotencyService` featuring deterministic SHA-256 payload hashing (`generateRequestHash`) to detect payload modifications for reused keys and throw HTTP `409 Conflict`.
 - **Idempotency Unit Tests**: Added `idempotency.service.spec.ts` unit test suite covering payload hash generation, cached response delivery, and status state machine transitions (`PROCESSING`, `COMPLETED`, `FAILED`).
 - **System Settings Validation Unit Tests**: Added `system-settings.service.spec.ts` unit test suite covering validation of non-negative values for transaction rules and numeric settings in `SystemSettingsService`.
 
 ### Changed
+- **Optimized Fraud Flag Query Field Selection**: Optimized `getFraudFlags` QueryBuilder in `FraudDetectionService` to perform partial field selection on `Transaction`, `Account`, and `User` relations, preventing sensitive user fields (`passwordHash`, `refreshTokenHash`) from leaking to the frontend while improving database query performance.
 - **Protected Transaction API Endpoints**: Updated `TransactionsController` (`/transfer`, `/deposit`, `/withdraw`) to delegate request deduplication and response caching to `IdempotencyService`.
 - **Frontend Session Idempotency Keys**: Refactored `useTransferFlow`, `DepositModal`, and `WithdrawModal` on the frontend to generate `idempotencyKey` once per form/modal session and maintain the same key across retry attempts until transaction completion.
 
 ### Fixed
 - **System Settings Non-Negative Validation (Transaction Rules)**: Enforced non-negative validation (`>= 0`) for transaction rules (`transfer_fee`, `daily_limit`, `high_value_transaction_threshold`, `otp_transaction_threshold`) and numeric settings on both frontend and backend. Backend throws `BadRequestException` via extracted `validateSettingValue` helper method, and frontend (`AdminSettingsPage` and `useAdminSettings`) displays user-facing validation error notifications upon saving.
+
+### Removed
+- **Legacy Idempotency Check Code**: Removed deprecated `checkIdempotency` helper method and redundant service calls in `TransactionsHelper`, `TransactionsService`, and `TransactionRequestsService` in favor of the dedicated `IdempotencyService` engine.
 
 ## [2026-07-13]
 

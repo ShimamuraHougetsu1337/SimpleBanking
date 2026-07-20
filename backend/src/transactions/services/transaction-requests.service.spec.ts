@@ -46,7 +46,6 @@ describe('TransactionRequestsService', () => {
     } as unknown as jest.Mocked<DataSource>;
 
     transactionsHelper = {
-      checkIdempotency: jest.fn(),
       executeTransaction: jest.fn((cb) => cb(mockManager)),
       getAccountWithLock: jest.fn(),
       validateAmount: jest.fn(),
@@ -113,7 +112,6 @@ describe('TransactionRequestsService', () => {
     } as Account;
 
     beforeEach(() => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
       transactionsHelper.validateAmount.mockImplementation((amt) => new Decimal(amt));
       transactionsHelper.getAccountWithLock.mockResolvedValue(sourceAccount);
       mockManager.findOne.mockImplementation((entityClass, options: any) => {

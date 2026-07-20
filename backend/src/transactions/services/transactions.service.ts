@@ -210,9 +210,6 @@ export class TransactionsService {
   // ===========================================================================
 
   async transfer(dto: TransferDto, currentUserId: string, idempotencyKey: string): Promise<Transaction> {
-    const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
-    if (existing) return existing;
-
     const user = await this.dataSource.getRepository(User).findOne({ where: { id: currentUserId } });
     const isCustomer = user?.role === UserRole.CUSTOMER;
 
@@ -265,9 +262,6 @@ export class TransactionsService {
   }
 
   async deposit(dto: DepositDto, currentUserId: string, idempotencyKey: string): Promise<Transaction> {
-    const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
-    if (existing) return existing;
-
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const account = await this.transactionsHelper.getAccountWithLock(manager, dto.accountId, currentUserId);
       const amount = this.transactionsHelper.validateAmount(dto.amount);
@@ -299,9 +293,6 @@ export class TransactionsService {
   }
 
   async withdraw(dto: WithdrawDto, currentUserId: string, idempotencyKey: string): Promise<Transaction> {
-    const existing = await this.transactionsHelper.checkIdempotency(idempotencyKey);
-    if (existing) return existing;
-
     const user = await this.dataSource.getRepository(User).findOne({ where: { id: currentUserId } });
     const isCustomer = user?.role === UserRole.CUSTOMER;
 

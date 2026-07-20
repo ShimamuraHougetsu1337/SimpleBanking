@@ -103,9 +103,6 @@ export class TransactionRequestsService {
     idempotencyKey: string,
     currentUserId: string,
   ): Promise<Transaction | TransactionRequest> {
-    const existingTx = await this.transactionsHelper.checkIdempotency(idempotencyKey);
-    if (existingTx) return existingTx;
-
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const { account, amount } = await this.validateAdminDepositEligibility(manager, accountId, amountStr);
 
@@ -136,9 +133,6 @@ export class TransactionRequestsService {
     idempotencyKey: string,
     currentUserId: string,
   ): Promise<Transaction | TransactionRequest> {
-    const existingTx = await this.transactionsHelper.checkIdempotency(idempotencyKey);
-    if (existingTx) return existingTx;
-
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const { account, amount } = await this.validateAdminWithdrawEligibility(manager, accountId, amountStr);
 
@@ -161,9 +155,6 @@ export class TransactionRequestsService {
     idempotencyKey: string,
     currentUserId: string,
   ): Promise<Transaction | TransactionRequest> {
-    const existingTx = await this.transactionsHelper.checkIdempotency(idempotencyKey);
-    if (existingTx) return existingTx;
-
     return this.transactionsHelper.executeTransaction(async (manager) => {
       const { fromAccount, toAccount, amount, feeValue } = await this.validateAdminTransferEligibility(
         manager,
