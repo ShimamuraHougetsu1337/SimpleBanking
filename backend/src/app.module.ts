@@ -21,6 +21,7 @@ import throttlerConfig from './config/throttler.config';
 import { AsyncContextModule } from './common/context/async-context.module';
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 import { HealthModule } from './health/health.module';
+import { FraudDetectionModule } from './fraud-detection/fraud-detection.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { HealthModule } from './health/health.module';
     TasksModule,
     AuditLogsModule,
     HealthModule,
+    FraudDetectionModule,
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot(),
     ThrottlerModule.forRootAsync({

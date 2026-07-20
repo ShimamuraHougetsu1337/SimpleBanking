@@ -6,6 +6,7 @@ import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { LedgerEntry, LedgerEntryType } from '../entities/ledger-entry.entity';
 import { SystemAccount } from '@/common/enums/system-account.enum';
 import { SystemSettingsService } from '@/system-settings/system-settings.service';
+import { FraudDetectionService } from '@/fraud-detection/fraud-detection.service';
 import Decimal from 'decimal.js';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class TransactionsHelper {
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
     private readonly systemSettingsService: SystemSettingsService,
+    private readonly fraudDetectionService: FraudDetectionService,
   ) { }
 
   /** Cached suspense account ID — loaded once on first use. */
@@ -76,10 +78,6 @@ export class TransactionsHelper {
     } finally {
       await queryRunner.release();
     }
-  }
-
-  async checkIdempotency(key: string): Promise<Transaction | null> {
-    return this.dataSource.getRepository(Transaction).findOne({ where: { idempotencyKey: key } });
   }
 
   async getAccountWithLock(manager: EntityManager, accountId: string, userId?: string): Promise<Account> {
@@ -240,7 +238,13 @@ export class TransactionsHelper {
     await this.createLedgerEntries(manager, ledgerEntries);
 
     tx.status = TransactionStatus.COMPLETED;
-    return manager.save(Transaction, tx);
+    const savedTx = await manager.save(Transaction, tx);
+
+    if (savedTx.fromAccountId) {
+      await this.fraudDetectionService.checkTransaction(manager, savedTx, savedTx.fromAccountId);
+    }
+
+    return savedTx;
   }
 
   /**

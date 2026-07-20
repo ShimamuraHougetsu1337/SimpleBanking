@@ -40,7 +40,6 @@ describe('TransactionsService', () => {
     } as unknown as jest.Mocked<DataSource>;
 
     transactionsHelper = {
-      checkIdempotency: jest.fn(),
       executeTransaction: jest.fn((cb) => cb(mockManager)),
       getAccountWithLock: jest.fn(),
       validateAmount: jest.fn(),
@@ -93,17 +92,7 @@ describe('TransactionsService', () => {
     const currentUserId = 'user-1';
     const idempotencyKey = 'key-1';
 
-    it('returns existing transaction if idempotency key exists', async () => {
-      const existingTx = { id: 'tx-1' } as Transaction;
-      transactionsHelper.checkIdempotency.mockResolvedValue(existingTx);
-
-      const result = await service.deposit(dto, currentUserId, idempotencyKey);
-      expect(result).toBe(existingTx);
-      expect(transactionsHelper.executeTransaction).not.toHaveBeenCalled();
-    });
-
     it('processes deposit successfully', async () => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockAccount = { id: 'acc-1' } as Account;
       transactionsHelper.getAccountWithLock.mockResolvedValue(mockAccount);
       transactionsHelper.validateAmount.mockReturnValue(new Decimal(100));
@@ -125,8 +114,6 @@ describe('TransactionsService', () => {
     const idempotencyKey = 'key-1';
 
     it('creates PENDING_OTP transaction for customer if amount >= threshold', async () => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
-
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
 
@@ -146,7 +133,6 @@ describe('TransactionsService', () => {
 
     it('executes directly if amount < threshold', async () => {
       const smallDto = { ...dto, amount: 500 };
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
 
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
@@ -166,7 +152,6 @@ describe('TransactionsService', () => {
 
     it('saves transaction with FAILED status if executeMovement fails', async () => {
       const smallDto = { ...dto, amount: 500 };
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
 
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
@@ -191,7 +176,6 @@ describe('TransactionsService', () => {
     const idempotencyKey = 'key-1';
 
     it('throws ForbiddenException if customer is OTP blocked', async () => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER, isOtpBlocked: true }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
 
@@ -199,7 +183,6 @@ describe('TransactionsService', () => {
     });
 
     it('creates PENDING_OTP transaction for customer', async () => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER, isOtpBlocked: false }) };
       dataSource.getRepository.mockReturnValue(mockUserRepo as any);
 
@@ -213,7 +196,6 @@ describe('TransactionsService', () => {
     });
 
     it('throws NotFoundException if destination account does not exist (TELLER)', async () => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.TELLER }) };
       const mockAccountRepo = { findOne: jest.fn().mockResolvedValue(null) }; // toAccountRef not found
       dataSource.getRepository.mockImplementation((entity) => {
@@ -226,7 +208,6 @@ describe('TransactionsService', () => {
     });
 
     it('processes transfer directly for TELLER', async () => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.TELLER }) };
       const mockAccountRepo = { findOne: jest.fn().mockResolvedValue({ id: 'acc-2' }) }; // toAccountRef found
       dataSource.getRepository.mockImplementation((entity) => {
@@ -253,7 +234,6 @@ describe('TransactionsService', () => {
     });
 
     it('saves transaction with FAILED status if executeMovement fails (TELLER)', async () => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.TELLER }) };
       const mockAccountRepo = { findOne: jest.fn().mockResolvedValue({ id: 'acc-2' }) }; // toAccountRef found
       dataSource.getRepository.mockImplementation((entity) => {
@@ -431,8 +411,6 @@ describe('TransactionsService', () => {
     const idempotencyKey = 'key-1';
 
     it('throws NotFoundException if destination account does not exist (CUSTOMER)', async () => {
-      transactionsHelper.checkIdempotency.mockResolvedValue(null);
-
       // We route repositories to avoid mock pollution
       const mockUserRepo = { findOne: jest.fn().mockResolvedValue({ id: currentUserId, role: UserRole.CUSTOMER, isOtpBlocked: false }) };
       const mockAccountRepo = { findOne: jest.fn().mockResolvedValue(null) }; // destination account not found

@@ -49,6 +49,10 @@ export const queryKeys = {
     reconciliation: {
       all: ['adminReconciliation'] as const,
       list: (params: unknown) => [...queryKeys.admin.reconciliation.all, params] as const,
+    },
+    fraudFlags: {
+      all: ['adminFraudFlags'] as const,
+      list: (params: unknown) => [...queryKeys.admin.fraudFlags.all, params] as const,
     }
   }
 };

@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TransactionsHelper } from './transactions.helper';
 import { DataSource, EntityManager } from 'typeorm';
 import { SystemSettingsService } from '@/system-settings/system-settings.service';
+import { FraudDetectionService } from '@/fraud-detection/fraud-detection.service';
 import { BadRequestException, UnprocessableEntityException, NotFoundException } from '@nestjs/common';
 import { Account, AccountStatus } from '@/accounts/entities/account.entity';
 import { Transaction, TransactionStatus, TransactionType } from '../entities/transaction.entity';
@@ -19,6 +20,7 @@ describe('TransactionsHelper', () => {
   let helper: TransactionsHelper;
   let dataSource: jest.Mocked<DataSource>;
   let systemSettingsService: jest.Mocked<SystemSettingsService>;
+  let fraudDetectionService: jest.Mocked<FraudDetectionService>;
   let mockManager: jest.Mocked<EntityManager>;
 
   beforeEach(async () => {
@@ -38,11 +40,16 @@ describe('TransactionsHelper', () => {
       getSetting: jest.fn(),
     } as unknown as jest.Mocked<SystemSettingsService>;
 
+    fraudDetectionService = {
+      checkTransaction: jest.fn().mockResolvedValue([]),
+    } as unknown as jest.Mocked<FraudDetectionService>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         TransactionsHelper,
         { provide: DataSource, useValue: dataSource },
         { provide: SystemSettingsService, useValue: systemSettingsService },
+        { provide: FraudDetectionService, useValue: fraudDetectionService },
       ],
     }).compile();
 
@@ -307,18 +314,6 @@ describe('TransactionsHelper', () => {
       expect(mockQueryRunner.commitTransaction).not.toHaveBeenCalled();
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
       expect(mockQueryRunner.release).toHaveBeenCalled();
-    });
-  });
-
-  describe('checkIdempotency', () => {
-    it('queries transaction repository for idempotency key', async () => {
-      const mockTx = { id: 'tx-123' };
-      const mockRepo = { findOne: jest.fn().mockResolvedValue(mockTx) };
-      dataSource.getRepository.mockReturnValue(mockRepo as any);
-
-      const result = await helper.checkIdempotency('key-123');
-      expect(result).toBe(mockTx);
-      expect(mockRepo.findOne).toHaveBeenCalledWith({ where: { idempotencyKey: 'key-123' } });
     });
   });
 

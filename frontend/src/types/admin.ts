@@ -255,3 +255,43 @@ export interface GetReconciliationReportsResponse {
   };
 }
 
+export interface FraudFlagRecord {
+  id: string;
+  transactionId: string | null;
+  accountId: string;
+  ruleName: 'HIGH_FREQUENCY_1MIN' | 'HIGH_VALUE_SPIKE_30D';
+  reason: string;
+  status: 'pending_review' | 'approved' | 'rejected';
+  reviewNote: string | null;
+  reviewedById: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  account?: {
+    id: string;
+    accountNumber: string;
+    status: string;
+  };
+  transaction?: {
+    id: string;
+    amount: string;
+    type: string;
+    status: string;
+  };
+  reviewedBy?: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
+}
+
+export interface GetFraudFlagsResponse {
+  data: FraudFlagRecord[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+
