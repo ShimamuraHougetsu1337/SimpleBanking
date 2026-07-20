@@ -25,6 +25,9 @@ import { SystemSettingsModule } from '@/system-settings/system-settings.module';
 import { Account } from '@/accounts/entities/account.entity';
 import { User } from '@/users/entities/user.entity';
 
+import { IdempotencyKey } from './entities/idempotency-key.entity';
+import { IdempotencyService } from './services/idempotency.service';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -35,6 +38,7 @@ import { User } from '@/users/entities/user.entity';
       ReconciliationReport,
       Account,
       User,
+      IdempotencyKey,
     ]),
     AccountsModule,
     AuditLogsModule,
@@ -53,7 +57,9 @@ import { User } from '@/users/entities/user.entity';
     ReconciliationCron,
     TransactionRateLimitGuard,
     OtpService,
+    IdempotencyService,
   ],
-  exports: [TransactionsService, TransactionRequestsService, LedgerService, TransactionRateLimitGuard, OtpService, ReversalService],
+  exports: [TransactionsService, TransactionRequestsService, LedgerService, TransactionRateLimitGuard, OtpService, ReversalService, IdempotencyService],
 })
 export class TransactionsModule { }
+

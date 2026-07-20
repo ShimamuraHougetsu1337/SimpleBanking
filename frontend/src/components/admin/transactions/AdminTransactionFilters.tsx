@@ -20,7 +20,7 @@ export const AdminTransactionFilters = ({
 }: AdminTransactionFiltersProps) => (
   <div style={{ padding: '24px 24px 16px', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
     <Input
-      placeholder="Search by Tx ID, Sender, or Receiver..."
+      placeholder="Tìm kiếm theo mã GD, Người gửi hoặc Người nhận..."
       prefix={<SearchOutlined style={{ color: '#64748b' }} />}
       style={{ width: 300, borderRadius: 8, height: 40 }}
       value={searchQuery}
@@ -32,9 +32,9 @@ export const AdminTransactionFilters = ({
       style={{ width: 150, height: 40 }}
       styles={{ popup: { root: { borderRadius: 8 } } }}
       options={[
-        { value: 'all', label: 'All Types' },
-        { value: 'deposit', label: 'Deposit' },
-        { value: 'transfer', label: 'Transfer' },
+        { value: 'all', label: 'Tất cả' },
+        { value: 'deposit', label: 'Nạp tiền' },
+        { value: 'transfer', label: 'Chuyển khoản' },
       ]}
     />
     <RangePicker

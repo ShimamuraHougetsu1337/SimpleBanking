@@ -13,12 +13,15 @@ import { CustomerAuditAction } from '@/audit-logs/enums/customer-audit-action.en
 import { isUUID } from 'class-validator';
 import { TransactionRateLimitGuard } from '../guards/transaction-rate-limit.guard';
 
+import { IdempotencyService } from '../services/idempotency.service';
+
 @Controller('transactions')
 @UseGuards(JwtAuthGuard)
 export class TransactionsController {
   constructor(
     private readonly transactionsService: TransactionsService,
     private readonly feesService: FeesService,
+    private readonly idempotencyService: IdempotencyService,
   ) { }
 
   @Post('transfer')
@@ -35,7 +38,17 @@ export class TransactionsController {
     if (!isUUID(idempotencyKey, '4')) {
       throw new BadRequestException('X-Idempotency-Key must be a valid UUID v4');
     }
-    return this.transactionsService.transfer(dto, user.id, idempotencyKey);
+    return this.idempotencyService.process(
+      idempotencyKey,
+      user.id,
+      'POST',
+      '/transactions/transfer',
+      dto,
+      async () => {
+        const tx = await this.transactionsService.transfer(dto, user.id, idempotencyKey);
+        return tx as unknown as Record<string, unknown>;
+      },
+    );
   }
 
   @Post('deposit')
@@ -52,7 +65,17 @@ export class TransactionsController {
     if (!isUUID(idempotencyKey, '4')) {
       throw new BadRequestException('X-Idempotency-Key must be a valid UUID v4');
     }
-    return this.transactionsService.deposit(dto, user.id, idempotencyKey);
+    return this.idempotencyService.process(
+      idempotencyKey,
+      user.id,
+      'POST',
+      '/transactions/deposit',
+      dto,
+      async () => {
+        const tx = await this.transactionsService.deposit(dto, user.id, idempotencyKey);
+        return tx as unknown as Record<string, unknown>;
+      },
+    );
   }
 
   @Post('withdraw')
@@ -69,7 +92,17 @@ export class TransactionsController {
     if (!isUUID(idempotencyKey, '4')) {
       throw new BadRequestException('X-Idempotency-Key must be a valid UUID v4');
     }
-    return this.transactionsService.withdraw(dto, user.id, idempotencyKey);
+    return this.idempotencyService.process(
+      idempotencyKey,
+      user.id,
+      'POST',
+      '/transactions/withdraw',
+      dto,
+      async () => {
+        const tx = await this.transactionsService.withdraw(dto, user.id, idempotencyKey);
+        return tx as unknown as Record<string, unknown>;
+      },
+    );
   }
 
   @Get('transfer-fee')

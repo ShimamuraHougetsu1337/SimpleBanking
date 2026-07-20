@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Modal, Form, InputNumber, Input, message } from 'antd';
 import { useDeposit } from '@/hooks/customer/useDeposit';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,17 +14,23 @@ interface ModalProps {
 export function DepositModal({ isOpen, onClose, accountId, onSuccess }: ModalProps) {
   const [form] = Form.useForm();
   const { mutate: deposit, isPending } = useDeposit();
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => uuidv4());
+
+  const handleClose = () => {
+    form.resetFields();
+    setIdempotencyKey(uuidv4());
+    onClose();
+  };
 
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
       deposit(
-        { accountId, amount: values.amount, description: values.description, idempotencyKey: uuidv4() },
+        { accountId, amount: values.amount, description: values.description, idempotencyKey },
         {
           onSuccess: (data) => {
             message.success('Nạp tiền vào tài khoản thành công!');
-            form.resetFields();
-            onClose();
+            handleClose();
             onSuccess?.(data);
           },
           onError: (err: unknown) => {
@@ -42,10 +49,7 @@ export function DepositModal({ isOpen, onClose, accountId, onSuccess }: ModalPro
       title="Nạp tiền"
       open={isOpen}
       onOk={handleOk}
-      onCancel={() => {
-        form.resetFields();
-        onClose();
-      }}
+      onCancel={handleClose}
       confirmLoading={isPending}
       okText="Nạp tiền"
       centered

@@ -57,12 +57,15 @@ export function useTransferFlow() {
     }
   }, [accounts, form, location.state]);
 
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => uuidv4());
+
   const onReview = async (values: TransferValues) => {
     try {
       setIsResolving(true);
       const res = await accountService.resolveAccountNumber(values.to_accountNumber);
       setReceiver(res);
       setPendingValues(values);
+      setIdempotencyKey(uuidv4());
       setIsModalVisible(true);
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number } };
@@ -94,6 +97,7 @@ export function useTransferFlow() {
     form.resetFields(['to_accountNumber', 'amount', 'description']);
     setPendingValues(null);
     setReceiver(null);
+    setIdempotencyKey(uuidv4());
   };
 
   const handleConfirm = () => {
@@ -103,7 +107,7 @@ export function useTransferFlow() {
       to_accountNumber: pendingValues.to_accountNumber,
       amount: pendingValues.amount,
       description: pendingValues.description,
-      idempotencyKey: uuidv4(),
+      idempotencyKey,
     }, {
       onSuccess: (data) => {
         setIsModalVisible(false);

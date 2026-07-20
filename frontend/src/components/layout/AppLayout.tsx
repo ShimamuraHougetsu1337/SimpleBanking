@@ -17,7 +17,7 @@ export function AppLayout() {
         <Header style={{ position: 'sticky', top: 0, zIndex: 10, background: '#fff', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', borderBottom: '1px solid #e2e8f0', height: 72 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '4px 8px', borderRadius: '8px' }}>
             <span style={{ fontWeight: 500, color: '#334155' }}>
-              {user?.full_name || (user as any)?.fullName || 'User'}
+              {user?.full_name || (user as any)?.fullName || 'Người dùng'}
             </span>
             <Avatar style={{ backgroundColor: '#3B82F6' }} icon={<UserOutlined />} />
           </div>

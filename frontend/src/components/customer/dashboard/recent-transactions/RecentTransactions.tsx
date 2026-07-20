@@ -26,9 +26,9 @@ export function RecentTransactions({ transactions, viewAllLink = '/transactions'
   return (
     <>
       <Card
-        title={<Title level={4} style={{ margin: 0, color: '#1e293b' }}>Recent Transactions</Title>}
+        title={<Title level={4} style={{ margin: 0, color: '#1e293b' }}>Giao dịch gần đây</Title>}
         variant="borderless"
-        extra={<Button type="link" onClick={() => navigate(viewAllLink)} style={{ fontWeight: 500 }}>View All</Button>}
+        extra={<Button type="link" onClick={() => navigate(viewAllLink)} style={{ fontWeight: 500 }}>Xem tất cả</Button>}
         styles={{ body: { padding: '0 24px' } }}
         style={{ borderRadius: 12, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)' }}
       >

@@ -67,7 +67,7 @@ const LABEL_MAP: Record<string, string> = {
   id: 'ID',
   context: 'Ngữ cảnh hệ thống',
   ip_address: 'Địa chỉ IP',
-  user_agent: 'User Agent',
+  user_agent: 'Trình duyệt / Thiết bị',
   data_changes: 'Thay đổi dữ liệu',
   old_data: 'Dữ liệu cũ',
   new_data: 'Dữ liệu mới',

@@ -28,7 +28,7 @@ const actionColors: Record<string, string> = {
 export default function AdminAuditLogTable({ logs, loading, pagination }: Props) {
   const columns: ColumnsType<AdminAuditLog> = [
     {
-      title: 'Time',
+      title: 'Thời gian',
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
@@ -36,18 +36,18 @@ export default function AdminAuditLogTable({ logs, loading, pagination }: Props)
       align: 'center',
     },
     {
-      title: 'Admin',
+      title: 'Quản trị viên',
       key: 'admin',
       align: 'center',
       render: (_, record) => (
         <div>
-          <Text strong>{record.adminName || 'System'}</Text>
+          <Text strong>{record.adminName || 'Hệ thống'}</Text>
           {record.adminEmail && <div style={{ fontSize: '12px', color: '#64748b' }}>{record.adminEmail}</div>}
         </div>
       ),
     },
     {
-      title: 'Action',
+      title: 'Thao tác',
       dataIndex: 'action',
       key: 'action',
       align: 'center',
@@ -56,7 +56,7 @@ export default function AdminAuditLogTable({ logs, loading, pagination }: Props)
       ),
     },
     {
-      title: 'Status',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       align: 'center',
