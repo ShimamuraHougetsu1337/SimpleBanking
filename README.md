@@ -19,16 +19,19 @@
 ## ✨ Các tính năng chính
 
 ### 👤 Cổng khách hàng (Customer Portal)
-- **Xác thực bảo mật:** Truy cập thông qua JWT với cơ chế xoay vòng Refresh Token (Refresh Token Rotation).
+- **Xác thực bảo mật:** Truy cập thông qua JWT với cơ chế xoay vòng Refresh Token.
 - **Quản lý tài khoản:** Xem số dư theo thời gian thực và thông tin chi tiết của tài khoản.
-- **Chuyển tiền nội bộ:** Hệ thống chuyển tiền được đảm bảo bởi các giao dịch nguyên tử (atomic transactions) và cơ chế chống lỗi tương tranh (race conditions).
+- **Chuyển tiền & Nạp/Rút:** Khách hàng có thể chuyển tiền nội bộ, tạo yêu cầu nạp/rút tiền (được bảo đảm bởi giao dịch nguyên tử và cơ chế chống lỗi tương tranh).
+- **Xác thực OTP:** Bảo mật các giao dịch nhạy cảm bằng mã OTP.
 - **Lịch sử giao dịch:** Xem lịch sử giao dịch phân trang cùng với các tính năng lọc mạnh mẽ.
 - **Xử lý phí bất đồng bộ:** Hệ thống xử lý phí giao dịch không gây tắc nghẽn, được vận hành bởi BullMQ và Redis.
 
-### 🛡️ Bảng điều khiển Quản trị viên (Admin Dashboard)
-- **Quản lý người dùng:** Danh sách đầy đủ và chi tiết của tất cả người dùng trong hệ thống.
-- **Kiểm soát bảo mật:** Khả năng khóa và mở khóa các tài khoản ngân hàng của người dùng.
-- **Giám sát toàn cầu:** Theo dõi và kiểm toán các giao dịch trên toàn hệ thống.
+### 🛡️ Cổng nhân viên & Quản trị (Staff & Admin Portal)
+- **Hệ thống Phân quyền (RBAC):** Hệ thống phân quyền nhiều cấp độ với các vai trò Teller (Giao dịch viên), Manager (Quản lý) và Superadmin.
+- **Quản lý Yêu cầu Giao dịch:** Teller có thể duyệt hoặc từ chối các yêu cầu nạp/rút tiền của khách hàng.
+- **Đối soát & Hoàn tác:** Khả năng đối soát (Reconciliation) và hoàn tác giao dịch (Reversal) dành riêng cho Manager và Superadmin.
+- **Quản lý Người dùng & Bảo mật:** Quản lý danh sách người dùng, khóa/mở khóa tài khoản, trạng thái OTP.
+- **Nhật ký Hệ thống (Audit Logs):** Ghi vết chi tiết mọi hành động của khách hàng và nhân viên trong hệ thống.
 
 ---
 
@@ -94,9 +97,12 @@ Sử dụng các thông tin đăng nhập sau để khám phá hệ thống (sau
 
 | Vai trò (Role) | Email | Mật khẩu |
 | :--- | :--- | :--- |
-| **Customer** (Khách hàng) | `customer1@banking.test` | `Test@123456` |
-| **Customer** (Khách hàng) | `customer2@banking.test` | `Test@123456` |
-| **Admin** (Quản trị viên) | `admin@banking.test` | `Admin@123456` |
+| **Superadmin** | `admin@gmail.com` | `123456` |
+| **Manager** | `manager1@gmail.com` | `123456` |
+| **Manager** | `manager2@gmail.com` | `123456` |
+| **Teller** | `teller1@gmail.com` | `123456` |
+| **Teller** | `teller2@gmail.com` | `123456` |
+| **Customer** | `customer@gmail.com` | `123456` |
 
 ---
 

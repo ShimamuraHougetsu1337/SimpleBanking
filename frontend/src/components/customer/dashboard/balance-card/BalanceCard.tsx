@@ -39,7 +39,7 @@ export function BalanceCard({ accountNumber, name, balance, owner, currency = 'V
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 32 }}>
           <div>
             <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, textTransform: 'uppercase', letterSpacing: 2 }}>
-              {name || 'Available Balance'}
+              {name || 'Số dư khả dụng'}
             </Text>
             <div style={{ marginTop: 8 }}>
               <span style={{ fontWeight: 700, fontSize: 42, color: '#F3F4F6', letterSpacing: '-0.5px' }}>
@@ -52,7 +52,7 @@ export function BalanceCard({ accountNumber, name, balance, owner, currency = 'V
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Account Number</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Số tài khoản</Text>
             <Text 
               copyable={{ 
                 text: accountNumber, 
@@ -64,7 +64,7 @@ export function BalanceCard({ accountNumber, name, balance, owner, currency = 'V
             </Text>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Card Holder</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: 1 }}>Chủ thẻ</Text>
             <Text style={{ color: '#E5E7EB', fontSize: 16, fontWeight: 500, letterSpacing: 1, textTransform: 'uppercase' }}>{owner}</Text>
           </div>
         </div>

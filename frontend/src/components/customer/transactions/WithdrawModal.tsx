@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Modal, Form, InputNumber, Input, message } from 'antd';
 import { useWithdraw } from '@/hooks/customer/useWithdraw';
 import { useAuthStore } from '@/store/auth.store';
@@ -16,18 +17,24 @@ export function WithdrawModal({ isOpen, onClose, accountId, onSuccess }: ModalPr
   const { mutate: withdraw, isPending } = useWithdraw();
   const user = useAuthStore(s => s.user);
   const defaultDescription = user?.full_name ? `${user.full_name} rút tiền ra khỏi tài khoản` : 'Rút tiền ra khỏi tài khoản';
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => uuidv4());
+
+  const handleClose = () => {
+    form.resetFields();
+    setIdempotencyKey(uuidv4());
+    onClose();
+  };
 
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
       const description = values.description?.trim() || defaultDescription;
       withdraw(
-        { accountId, amount: values.amount, description, idempotencyKey: uuidv4() },
+        { accountId, amount: values.amount, description, idempotencyKey },
         {
           onSuccess: (data) => {
             message.success('Rút tiền từ tài khoản thành công!');
-            form.resetFields();
-            onClose();
+            handleClose();
             onSuccess?.(data);
           },
           onError: (err: unknown) => {
@@ -51,10 +58,7 @@ export function WithdrawModal({ isOpen, onClose, accountId, onSuccess }: ModalPr
       title="Rút tiền"
       open={isOpen}
       onOk={handleOk}
-      onCancel={() => {
-        form.resetFields();
-        onClose();
-      }}
+      onCancel={handleClose}
       confirmLoading={isPending}
       okText="Rút tiền"
       okButtonProps={{ danger: true }}

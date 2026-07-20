@@ -29,7 +29,7 @@ const actionColors: Record<string, string> = {
 export default function CustomerAuditLogTable({ logs, loading, pagination }: Props) {
   const columns: ColumnsType<CustomerAuditLog> = [
     {
-      title: 'Time',
+      title: 'Thời gian',
       dataIndex: 'createdAt',
       key: 'createdAt',
       render: (text) => dayjs(text).format('YYYY-MM-DD HH:mm:ss'),
@@ -37,18 +37,18 @@ export default function CustomerAuditLogTable({ logs, loading, pagination }: Pro
       align: 'center',
     },
     {
-      title: 'Customer',
+      title: 'Khách hàng',
       key: 'customer',
       align: 'center',
       render: (_, record) => (
         <div>
-          <Text strong>{record.customerName || 'Unknown'}</Text>
+          <Text strong>{record.customerName || 'Không rõ'}</Text>
           {record.customerEmail && <div style={{ fontSize: '12px', color: '#64748b' }}>{record.customerEmail}</div>}
         </div>
       ),
     },
     {
-      title: 'Action',
+      title: 'Thao tác',
       dataIndex: 'action',
       key: 'action',
       align: 'center',
@@ -57,7 +57,7 @@ export default function CustomerAuditLogTable({ logs, loading, pagination }: Pro
       ),
     },
     {
-      title: 'Status',
+      title: 'Trạng thái',
       dataIndex: 'status',
       key: 'status',
       align: 'center',

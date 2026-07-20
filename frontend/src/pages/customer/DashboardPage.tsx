@@ -53,7 +53,7 @@ export default function DashboardPage() {
                       accountNumber={account.accountNumber}
                       name={account.name}
                       balance={Number(account.balance)}
-                      owner={account.user?.fullName || 'User'}
+                      owner={account.user?.fullName || 'Người dùng'}
                       currency={account.currency}
                       themeGradient={themeGradient}
                     />

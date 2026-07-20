@@ -65,7 +65,7 @@ export default function AccountsPage() {
                     accountNumber={account.accountNumber}
                     name={account.name}
                     balance={Number(account.balance)}
-                    owner={account.user?.fullName || 'Valued Customer'}
+                    owner={account.user?.fullName || 'Khách hàng'}
                     currency={account.currency}
                     themeGradient={themeGradient}
                   />

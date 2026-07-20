@@ -82,7 +82,7 @@ export default function AdminAuditLogsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Space size={12}>
           <DatabaseOutlined style={{ fontSize: 24, color: '#3B82F6' }} />
-          <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Audit Logs</Title>
+          <Title level={2} style={{ margin: 0, color: '#1e293b' }}>Nhật ký hệ thống</Title>
         </Space>
       </div>
 
@@ -93,15 +93,15 @@ export default function AdminAuditLogsPage() {
             style={{ borderRadius: 8 }}
           />
           <Select
-            placeholder="Filter by status"
+            placeholder="Lọc theo trạng thái"
             allowClear
             style={{ width: 150 }}
             onChange={setStatus}
             defaultValue="all"
             options={[
-              { value: 'all', label: 'All' },
-              { value: 'success', label: 'Success' },
-              { value: 'failed', label: 'Failed' },
+              { value: 'all', label: 'Tất cả' },
+              { value: 'success', label: 'Thành công' },
+              { value: 'failed', label: 'Thất bại' },
             ]}
           />
           <Button
@@ -120,7 +120,7 @@ export default function AdminAuditLogsPage() {
           items={[
             {
               key: 'admin',
-              label: 'Admin Actions',
+              label: 'Thao tác của Admin',
               children: (
                 <AdminAuditLogTable
                   logs={activeTab === 'admin' ? (logs as AdminAuditLog[]) : []}
@@ -131,7 +131,7 @@ export default function AdminAuditLogsPage() {
             },
             {
               key: 'customer',
-              label: 'Customer Actions',
+              label: 'Thao tác của Khách hàng',
               children: (
                 <CustomerAuditLogTable
                   logs={activeTab === 'customer' ? (logs as CustomerAuditLog[]) : []}
