@@ -37,6 +37,9 @@ services:
     container_name: banking_backend
     restart: unless-stopped
     env_file: ./backend/.env
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     depends_on:
