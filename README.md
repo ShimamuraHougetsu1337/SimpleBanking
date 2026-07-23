@@ -71,14 +71,13 @@ cd SimpleBankingApp
 
 # 2. Thiết lập biến môi trường
 cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 
-# 3. Khởi chạy các dịch vụ (container) ngầm
-docker-compose up -d
+# 3. Khởi chạy toàn bộ hệ thống container ngầm (Build & Run)
+docker-compose up -d --build
 
-# 4. Chạy migration cho cơ sở dữ liệu
-docker-compose exec backend npm run migration:run
-
-# 5. Khởi tạo dữ liệu mẫu (Seed)
+# 4. Khởi tạo dữ liệu mẫu (Seeding)
 docker-compose exec backend npm run seed
 ```
 
